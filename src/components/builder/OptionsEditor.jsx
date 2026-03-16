@@ -1,7 +1,13 @@
+import React from 'react';
 import { S } from '../../config/theme';
 import { slugify } from '../../lib/helpers';
 
-export const OptionsEditor = ({ options, onChange, itemLabel }) => {
+// ═══ Extracted Styles (P4) ═══
+const S_INPUT = { flex: 1, padding: '6px 10px', borderRadius: S.radius.sm, border: `1px solid ${S.colors.border}`, fontSize: '13px', fontFamily: 'inherit', outline: 'none', minWidth: 0 };
+const S_DEL = (enabled) => ({ background: 'none', border: 'none', cursor: enabled ? 'pointer' : 'not-allowed', fontSize: '13px', color: enabled ? S.colors.textMuted : S.colors.border, padding: '4px', flexShrink: 0 });
+const S_ADD = { padding: '6px 12px', borderRadius: S.radius.sm, border: `1px dashed ${S.colors.border}`, background: 'transparent', color: S.colors.textMuted, cursor: 'pointer', fontSize: '12px', fontFamily: 'inherit' };
+
+export const OptionsEditor = React.memo(({ options, onChange, itemLabel }) => {
   const lbl = itemLabel || 'Option';
   const add = () => onChange([...options, { value: `option-${options.length + 1}`, label: `${lbl} ${options.length + 1}` }]);
   const remove = (i) => { if (options.length <= 2) return; onChange(options.filter((_, j) => j !== i)); };
@@ -11,11 +17,13 @@ export const OptionsEditor = ({ options, onChange, itemLabel }) => {
       {options.map((opt, i) => (
         <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
           <input value={opt.label} onChange={e => update(i, 'label', e.target.value)} onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); add(); } }}
-            placeholder={`${lbl} ${i + 1}`} style={{ flex: 1, padding: '6px 10px', borderRadius: S.radius.sm, border: `1px solid ${S.colors.border}`, fontSize: '13px', fontFamily: 'inherit', outline: 'none', minWidth: 0 }} />
-          <button onClick={() => remove(i)} disabled={options.length <= 2} style={{ background: 'none', border: 'none', cursor: options.length <= 2 ? 'not-allowed' : 'pointer', fontSize: '13px', color: options.length <= 2 ? S.colors.border : S.colors.textMuted, padding: '4px', flexShrink: 0 }}>🗑</button>
+            placeholder={`${lbl} ${i + 1}`} style={S_INPUT} />
+          <button onClick={() => remove(i)} disabled={options.length <= 2} style={S_DEL(options.length > 2)}>🗑</button>
         </div>
       ))}
-      <button onClick={add} style={{ padding: '6px 12px', borderRadius: S.radius.sm, border: `1px dashed ${S.colors.border}`, background: 'transparent', color: S.colors.textMuted, cursor: 'pointer', fontSize: '12px', fontFamily: 'inherit' }}>＋ {lbl} hinzufügen</button>
+      <button onClick={add} style={S_ADD}>＋ {lbl} hinzufügen</button>
     </div>
   );
-};
+});
+
+OptionsEditor.displayName = 'OptionsEditor';
