@@ -7,7 +7,6 @@ export const USERS = [
 
 export const STORAGE_KEYS = {
   submissions: 'fp_submissions',
-  drafts: 'fp_drafts',
   session: 'fp_session',
   templates: 'fp_templates',
   customers: 'fp_customers',

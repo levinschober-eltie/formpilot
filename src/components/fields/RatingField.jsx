@@ -1,6 +1,6 @@
 import { S } from '../../config/theme';
 
-export const RatingField = ({ field, value, onChange }) => {
+export const RatingField = ({ field, value, onChange, error }) => {
   const max = field.maxStars || 5;
   const current = value || 0;
   if (field.ratingType === 'traffic') {

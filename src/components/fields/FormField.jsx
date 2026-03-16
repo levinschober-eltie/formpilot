@@ -1,6 +1,6 @@
 import { S } from '../../config/theme';
 import { styles } from '../../styles/shared';
-import { evaluateConditions } from '../../lib/validation';
+import { evaluateConditions, isConditionallyRequired, isConditionallyDisabled } from '../../lib/validation';
 import {
   TextField, TextareaField, NumberField, DateField, TimeField,
   SelectField, RadioField, CheckboxField, ToggleField,
@@ -15,6 +15,8 @@ export const FormField = ({ field, value, onChange, error, formData }) => {
   if (field.type === 'divider') return <DividerField />;
   if (field.type === 'info') return <InfoField field={field} />;
   const widthMap = { full: '100%', half: 'calc(50% - 8px)', third: 'calc(33.33% - 11px)' };
+  const disabled = isConditionallyDisabled(field, formData);
+  const condRequired = isConditionallyRequired(field, formData);
   const renderInput = () => {
     switch (field.type) {
       case 'text': return <TextField field={field} value={value} onChange={onChange} error={error} />;
@@ -23,11 +25,11 @@ export const FormField = ({ field, value, onChange, error, formData }) => {
       case 'date': return <DateField field={field} value={value} onChange={onChange} error={error} />;
       case 'time': return <TimeField field={field} value={value} onChange={onChange} error={error} />;
       case 'select': return <SelectField field={field} value={value} onChange={onChange} error={error} />;
-      case 'radio': return <RadioField field={field} value={value} onChange={onChange} />;
-      case 'checkbox': return <CheckboxField field={field} value={value} onChange={onChange} />;
-      case 'toggle': return <ToggleField field={field} value={value} onChange={onChange} />;
-      case 'checklist': return <ChecklistField field={field} value={value} onChange={onChange} />;
-      case 'rating': return <RatingField field={field} value={value} onChange={onChange} />;
+      case 'radio': return <RadioField field={field} value={value} onChange={onChange} error={error} />;
+      case 'checkbox': return <CheckboxField field={field} value={value} onChange={onChange} error={error} />;
+      case 'toggle': return <ToggleField field={field} value={value} onChange={onChange} error={error} />;
+      case 'checklist': return <ChecklistField field={field} value={value} onChange={onChange} error={error} />;
+      case 'rating': return <RatingField field={field} value={value} onChange={onChange} error={error} />;
       case 'signature': return <SignatureField field={field} value={value} onChange={onChange} error={error} />;
       case 'photo': return <PhotoField field={field} value={value} onChange={onChange} error={error} />;
       case 'repeater': return <RepeaterField field={field} value={value} onChange={onChange} formData={formData} />;
@@ -35,8 +37,8 @@ export const FormField = ({ field, value, onChange, error, formData }) => {
     }
   };
   return (
-    <div style={{ width: widthMap[field.width] || '100%', minWidth: 0 }}>
-      {field.label && <label style={styles.fieldLabel}>{field.label}{field.required && <span style={{ color: S.colors.danger, marginLeft: '4px' }}>*</span>}</label>}
+    <div style={{ width: widthMap[field.width] || '100%', minWidth: 0, opacity: disabled ? 0.5 : 1, pointerEvents: disabled ? 'none' : 'auto' }}>
+      {field.label && <label style={styles.fieldLabel}>{field.label}{(field.required || condRequired) && <span style={{ color: S.colors.danger, marginLeft: '4px' }}>*</span>}</label>}
       {renderInput()}
       {error && <div style={styles.fieldError}>{error}</div>}
     </div>

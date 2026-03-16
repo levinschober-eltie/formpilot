@@ -26,26 +26,25 @@ export const FormFiller = React.memo(({ template, onSubmit, onCancel, initialDat
   const [formData, setFormData] = useState(initialData || {});
   const [errors, setErrors] = useState({});
   const [showErrors, setShowErrors] = useState(false);
-  const autoSaveTimer = useRef(null);
+  const formDataRef = useRef(formData);
+  const pageIndexRef = useRef(pageIndex);
+  formDataRef.current = formData;
+  pageIndexRef.current = pageIndex;
   const pages = template.pages || [];
   const currentPage = pages[pageIndex];
   const isLastPage = pageIndex === pages.length - 1;
   const progress = useMemo(() => pages.length > 1 ? ((pageIndex + 1) / pages.length) * 100 : 100, [pageIndex, pages.length]);
 
   useEffect(() => {
-    autoSaveTimer.current = setInterval(async () => {
-      const key = draftId || `fp_draft_${template.id}_current`;
-      await storageSet(key, { templateId: template.id, data: formData, pageIndex, updatedAt: new Date().toISOString() });
+    const key = draftId || `fp_draft_${template.id}_current`;
+    const timer = setInterval(() => {
+      storageSet(key, { templateId: template.id, data: formDataRef.current, pageIndex: pageIndexRef.current, updatedAt: new Date().toISOString() });
     }, 30000);
-    return () => clearInterval(autoSaveTimer.current);
-  }, [formData, pageIndex]);
-
-  useEffect(() => {
     return () => {
-      const key = draftId || `fp_draft_${template.id}_current`;
-      storageSet(key, { templateId: template.id, data: formData, pageIndex, updatedAt: new Date().toISOString() });
+      clearInterval(timer);
+      storageSet(key, { templateId: template.id, data: formDataRef.current, pageIndex: pageIndexRef.current, updatedAt: new Date().toISOString() });
     };
-  }, [formData, pageIndex]);
+  }, [template.id, draftId]);
 
   const updateField = useCallback((fieldId, value) => {
     setFormData(prev => ({ ...prev, [fieldId]: value }));

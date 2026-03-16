@@ -1,6 +1,5 @@
 // ═══ FEATURE: Conditional Logic Engine (Chat F.1) ═══
-export const evaluateConditions = (conditions, conditionLogic, formData) => {
-  if (!conditions || conditions.length === 0) return true;
+const evalConditionResults = (conditions, conditionLogic, formData) => {
   const results = conditions.map(c => {
     const val = formData[c.field];
     switch (c.operator) {
@@ -15,18 +14,39 @@ export const evaluateConditions = (conditions, conditionLogic, formData) => {
     }
   });
   const logic = conditionLogic || 'AND';
-  const passes = logic === 'AND' ? results.every(Boolean) : results.some(Boolean);
+  return logic === 'AND' ? results.every(Boolean) : results.some(Boolean);
+};
+
+export const evaluateConditions = (conditions, conditionLogic, formData) => {
+  if (!conditions || conditions.length === 0) return true;
+  const passes = evalConditionResults(conditions, conditionLogic, formData);
   const action = conditions[0]?.action || 'show';
   if (action === 'show') return passes;
   if (action === 'hide') return !passes;
   return true;
 };
 
+export const isConditionallyRequired = (field, formData) => {
+  if (!field.conditions || field.conditions.length === 0) return false;
+  const action = field.conditions[0]?.action;
+  if (action !== 'require') return false;
+  return evalConditionResults(field.conditions, field.conditionLogic, formData);
+};
+
+export const isConditionallyDisabled = (field, formData) => {
+  if (!field.conditions || field.conditions.length === 0) return false;
+  const action = field.conditions[0]?.action;
+  if (action !== 'disable') return false;
+  return evalConditionResults(field.conditions, field.conditionLogic, formData);
+};
+
 // ═══ FEATURE: Validation Engine (Chat F.1) ═══
 export const validateField = (field, value, formData) => {
   if (field.conditions && !evaluateConditions(field.conditions, field.conditionLogic, formData)) return null;
+  if (isConditionallyDisabled(field, formData)) return null;
   const v = field.validation || {};
-  if (field.required && (value === undefined || value === null || value === '' || (Array.isArray(value) && value.length === 0))) {
+  const required = field.required || isConditionallyRequired(field, formData);
+  if (required && (value === undefined || value === null || value === '' || (Array.isArray(value) && value.length === 0))) {
     return `${field.label} ist erforderlich`;
   }
   if (!value && !field.required) return null;
@@ -40,6 +60,10 @@ export const validateField = (field, value, formData) => {
     if (isNaN(n)) return 'Bitte eine Zahl eingeben';
     if (v.min !== undefined && n < v.min) return `Minimum: ${v.min}`;
     if (v.max !== undefined && n > v.max) return `Maximum: ${v.max}`;
+  }
+  if (field.type === 'checkbox' && Array.isArray(value)) {
+    if (v.minSelect && value.length < v.minSelect) return `Mindestens ${v.minSelect} auswählen`;
+    if (v.maxSelect && value.length > v.maxSelect) return `Maximal ${v.maxSelect} auswählen`;
   }
   if (field.type === 'checklist' && field.required) {
     const checked = Object.values(value || {}).filter(v => v?.checked).length;
