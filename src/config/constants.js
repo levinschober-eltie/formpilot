@@ -10,6 +10,17 @@ export const STORAGE_KEYS = {
   drafts: 'fp_drafts',
   session: 'fp_session',
   templates: 'fp_templates',
+  customers: 'fp_customers',
+  activityLog: 'fp_activity_log',
+};
+
+// Felder die automatisch Kundendaten enthalten (Label-Matching)
+export const CUSTOMER_FIELD_PATTERNS = {
+  name: ['kundenname', 'kunde', 'auftraggeber', 'firma', 'firmenname', 'ansprechpartner', 'name des kunden'],
+  email: ['e-mail', 'email', 'kunden-email', 'mail'],
+  phone: ['telefon', 'tel', 'telefonnummer', 'handy', 'mobil'],
+  address: ['adresse', 'anschrift', 'straße', 'standort'],
+  project: ['projekt', 'baustelle', 'projektbezeichnung', 'projekt / baustelle', 'projektname'],
 };
 
 export const FIELD_TYPE_ICONS = {

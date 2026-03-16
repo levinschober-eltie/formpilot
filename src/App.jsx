@@ -4,12 +4,15 @@ import { styles } from './styles/shared';
 import { STORAGE_KEYS, USERS } from './config/constants';
 import { DEMO_TEMPLATES } from './config/templates';
 import { storageGet, storageSet } from './lib/storage';
+import { processCustomerFromSubmission, addActivityLog, getCustomers } from './lib/customerService';
 import { LoginScreen } from './components/layout/LoginScreen';
 import { SettingsScreen } from './components/layout/SettingsScreen';
 import { SubmissionsList } from './components/layout/SubmissionsList';
 import { SubmissionDetail } from './components/layout/SubmissionDetail';
 import { TemplatesOverview } from './components/layout/TemplatesOverview';
 import { DashboardScreen } from './components/layout/DashboardScreen';
+import { CustomersScreen } from './components/layout/CustomersScreen';
+import { CustomerDetail } from './components/layout/CustomerDetail';
 import { TemplateSelector } from './components/filler/TemplateSelector';
 import { FormFiller } from './components/filler/FormFiller';
 import { FormBuilder } from './components/builder/FormBuilder';
@@ -20,10 +23,12 @@ export default function FormPilot() {
   const [tab, setTab] = useState('fill');
   const [submissions, setSubmissions] = useState([]);
   const [customTemplates, setCustomTemplates] = useState([]);
+  const [customers, setCustomers] = useState([]);
   const [fillingTemplate, setFillingTemplate] = useState(null);
   const [draftData, setDraftData] = useState(null);
   const [builderTemplate, setBuilderTemplate] = useState(null);
   const [viewingSubmission, setViewingSubmission] = useState(null);
+  const [viewingCustomer, setViewingCustomer] = useState(null);
   const [loaded, setLoaded] = useState(false);
   const [darkMode, setDarkMode] = useState(() => localStorage.getItem('fp_darkMode') === 'true');
 
@@ -33,6 +38,7 @@ export default function FormPilot() {
       if (session) { const u = USERS.find(u => u.id === session.userId); if (u) setUser(u); }
       const subs = await storageGet(STORAGE_KEYS.submissions); if (subs) setSubmissions(subs);
       const tpls = await storageGet(STORAGE_KEYS.templates); if (tpls) setCustomTemplates(tpls);
+      const custs = await getCustomers(); setCustomers(custs);
       setLoaded(true);
     })();
   }, []);
@@ -54,11 +60,42 @@ export default function FormPilot() {
     setFillingTemplate(template);
   };
 
+  const allTemplates = [...DEMO_TEMPLATES, ...customTemplates];
+
   const handleSubmitForm = async (data) => {
     const newSub = { id: 'sub-' + Date.now(), templateId: fillingTemplate.id, templateVersion: fillingTemplate.version, status: 'completed', data, filledBy: user.id, filledByName: user.name, createdAt: new Date().toISOString(), completedAt: new Date().toISOString() };
     const updated = [...submissions, newSub]; setSubmissions(updated);
     await storageSet(STORAGE_KEYS.submissions, updated);
     await storageSet(`fp_draft_${fillingTemplate.id}_current`, null);
+
+    // ═══ Auto-Kundenerstellung + Aktivitätslog ═══
+    const template = allTemplates.find(t => t.id === fillingTemplate.id);
+    if (template) {
+      const result = await processCustomerFromSubmission(newSub, template);
+      if (result) {
+        setCustomers(result.customers);
+        // Log: Vertrag erstellt
+        await addActivityLog({
+          action: 'submission_created',
+          customerId: result.customer.id,
+          submissionId: newSub.id,
+          templateName: template.name,
+          userName: user.name,
+          details: `${template.name} ausgefüllt für ${result.customer.name}`,
+        });
+        // Log: Kunde erstellt oder aktualisiert
+        await addActivityLog({
+          action: result.isNew ? 'customer_created' : 'customer_updated',
+          customerId: result.customer.id,
+          submissionId: newSub.id,
+          userName: user.name,
+          details: result.isNew
+            ? `Neuer Kontakt "${result.customer.name}" automatisch angelegt`
+            : `Kontakt "${result.customer.name}" mit neuem Vertrag verknüpft`,
+        });
+      }
+    }
+
     setFillingTemplate(null); setDraftData(null); setTab('submissions');
   };
 
@@ -72,17 +109,21 @@ export default function FormPilot() {
   const handleBuilderSave = async () => { const tpls = await storageGet(STORAGE_KEYS.templates) || []; setCustomTemplates(tpls); };
   const handleDeleteTemplate = async (id) => { const tpls = (await storageGet(STORAGE_KEYS.templates) || []).filter(t => t.id !== id); await storageSet(STORAGE_KEYS.templates, tpls); setCustomTemplates(tpls); };
 
+  const handleCustomersChange = useCallback(async () => {
+    const custs = await getCustomers();
+    setCustomers(custs);
+  }, []);
+
   if (!loaded) return <div style={{ ...styles.app, alignItems: 'center', justifyContent: 'center' }}><div style={{ textAlign: 'center' }}><div style={{ fontSize: '48px', marginBottom: '12px' }}>📋</div><div style={{ color: S.colors.textSecondary }}>Laden...</div></div></div>;
   if (!user) return <LoginScreen onLogin={handleLogin} />;
   if (builderTemplate) return <FormBuilder template={builderTemplate} onSave={handleBuilderSave} onClose={() => setBuilderTemplate(null)} />;
-
-  const allTemplates = [...DEMO_TEMPLATES, ...customTemplates];
 
   const NAV_ITEMS = [
     { id: 'dashboard', label: 'Dashboard', icon: '📊', roles: ['admin', 'buero'] },
     { id: 'templates', label: 'Vorlagen', icon: '📑', roles: ['admin', 'buero'] },
     { id: 'fill', label: 'Ausfüllen', icon: '✏️', roles: ['admin', 'monteur'] },
-    { id: 'submissions', label: 'Eingereicht', icon: '📥', roles: ['admin', 'monteur', 'buero'] },
+    { id: 'submissions', label: 'Verträge', icon: '📥', roles: ['admin', 'monteur', 'buero'] },
+    { id: 'customers', label: 'Kontakte', icon: '👥', roles: ['admin', 'buero'] },
     { id: 'settings', label: 'Mehr', icon: '⚙️', roles: ['admin', 'monteur', 'buero'] },
   ];
   const visibleNav = NAV_ITEMS.filter(n => n.roles.includes(user.role));
@@ -111,15 +152,24 @@ export default function FormPilot() {
             template={allTemplates.find(t => t.id === viewingSubmission.templateId)}
             onBack={() => setViewingSubmission(null)}
           />
+        ) : viewingCustomer ? (
+          <CustomerDetail
+            customer={viewingCustomer}
+            submissions={submissions}
+            allTemplates={allTemplates}
+            onBack={() => { setViewingCustomer(null); handleCustomersChange(); }}
+            onCustomersChange={handleCustomersChange}
+          />
         ) : (<>
           {tab === 'dashboard' && <DashboardScreen submissions={submissions} allTemplates={allTemplates} user={user} />}
           {tab === 'templates' && <TemplatesOverview user={user} onOpenBuilder={setBuilderTemplate} customTemplates={customTemplates} onDeleteTemplate={handleDeleteTemplate} />}
           {tab === 'fill' && <TemplateSelector onSelect={handleStartFilling} customTemplates={customTemplates} />}
           {tab === 'submissions' && <SubmissionsList submissions={submissions} user={user} allTemplates={allTemplates} onViewSubmission={setViewingSubmission} onDeleteSubmission={handleDeleteSubmission} />}
+          {tab === 'customers' && <CustomersScreen customers={customers} submissions={submissions} allTemplates={allTemplates} onSelectCustomer={setViewingCustomer} />}
           {tab === 'settings' && <SettingsScreen user={user} onLogout={handleLogout} darkMode={darkMode} onToggleDarkMode={() => setDarkMode(p => !p)} />}
         </>)}
       </div>
-      {!fillingTemplate && !viewingSubmission && (
+      {!fillingTemplate && !viewingSubmission && !viewingCustomer && (
         <div style={styles.bottomNav}>
           {visibleNav.map(n => <button key={n.id} onClick={() => setTab(n.id)} style={styles.navItem(tab === n.id)}><span style={{ fontSize: '20px' }}>{n.icon}</span><span>{n.label}</span></button>)}
         </div>
