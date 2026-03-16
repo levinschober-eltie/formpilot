@@ -1,0 +1,71 @@
+import { S } from '../config/theme';
+
+export const styles = {
+  app: {
+    fontFamily: S.font.sans,
+    minHeight: '100vh',
+    background: `linear-gradient(135deg, ${S.colors.bg} 0%, #e0e7ef 100%)`,
+    color: S.colors.text,
+    display: 'flex',
+    flexDirection: 'column',
+    WebkitFontSmoothing: 'antialiased',
+  },
+  topBar: {
+    background: S.glass.background,
+    backdropFilter: S.glass.backdropFilter,
+    borderBottom: `1px solid ${S.colors.border}`,
+    padding: '12px 20px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    position: 'sticky',
+    top: 0,
+    zIndex: 100,
+  },
+  logo: { fontWeight: 700, fontSize: '20px', letterSpacing: '-0.5px', display: 'flex', alignItems: 'center', gap: '8px' },
+  main: { flex: 1, padding: '20px', maxWidth: '960px', width: '100%', margin: '0 auto', paddingBottom: '100px' },
+  card: {
+    background: S.colors.bgCard, backdropFilter: 'blur(12px)', borderRadius: S.radius.lg,
+    border: `1px solid ${S.colors.border}`, boxShadow: S.colors.shadow, padding: '24px', marginBottom: '16px', transition: S.transition,
+  },
+  bottomNav: {
+    position: 'fixed', bottom: 0, left: 0, right: 0, background: S.glass.background,
+    backdropFilter: S.glass.backdropFilter, borderTop: `1px solid ${S.colors.border}`,
+    display: 'flex', justifyContent: 'space-around', padding: '8px 0 max(8px, env(safe-area-inset-bottom))', zIndex: 100,
+  },
+  navItem: (active) => ({
+    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px', padding: '6px 16px',
+    borderRadius: S.radius.md, fontSize: '11px', fontWeight: active ? 700 : 500,
+    color: active ? S.colors.primary : S.colors.textSecondary, background: active ? `${S.colors.primary}11` : 'transparent',
+    transition: S.transition, cursor: 'pointer', border: 'none', fontFamily: 'inherit', WebkitTapHighlightColor: 'transparent',
+  }),
+  btn: (variant = 'primary', size = 'md') => ({
+    display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+    padding: size === 'sm' ? '8px 16px' : size === 'lg' ? '14px 28px' : '10px 20px',
+    borderRadius: S.radius.md, fontSize: size === 'sm' ? '13px' : size === 'lg' ? '16px' : '14px',
+    fontWeight: 600, fontFamily: 'inherit', border: 'none', cursor: 'pointer', transition: S.transition,
+    WebkitTapHighlightColor: 'transparent',
+    ...(variant === 'primary' && { background: S.colors.primary, color: S.colors.white }),
+    ...(variant === 'secondary' && { background: `${S.colors.primary}10`, color: S.colors.primary, border: `1.5px solid ${S.colors.primary}30` }),
+    ...(variant === 'danger' && { background: S.colors.danger, color: S.colors.white }),
+    ...(variant === 'ghost' && { background: 'transparent', color: S.colors.textSecondary }),
+    ...(variant === 'success' && { background: S.colors.success, color: S.colors.white }),
+  }),
+  input: (hasError) => ({
+    width: '100%', padding: '12px 14px', borderRadius: S.radius.md,
+    border: `1.5px solid ${hasError ? S.colors.danger : S.colors.border}`,
+    fontSize: '15px', fontFamily: 'inherit', background: S.colors.bgInput, color: S.colors.text,
+    transition: S.transition, outline: 'none', boxSizing: 'border-box', minHeight: '48px',
+  }),
+  fieldLabel: { display: 'block', fontSize: '14px', fontWeight: 600, color: S.colors.text, marginBottom: '6px' },
+  fieldError: { fontSize: '12px', color: S.colors.danger, marginTop: '4px', fontWeight: 500 },
+  badge: (color) => ({
+    display: 'inline-flex', alignItems: 'center', padding: '3px 10px', borderRadius: S.radius.full,
+    fontSize: '12px', fontWeight: 600, background: `${color}18`, color: color,
+  }),
+  progressBar: { height: '6px', background: S.colors.border, borderRadius: S.radius.full, overflow: 'hidden', marginBottom: '20px' },
+  progressFill: (pct) => ({
+    height: '100%', width: `${pct}%`, background: `linear-gradient(90deg, ${S.colors.primary}, ${S.colors.accent})`,
+    borderRadius: S.radius.full, transition: 'width 0.4s ease',
+  }),
+};
