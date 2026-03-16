@@ -20,8 +20,8 @@ const renderValue = (field, value) => {
       )) : String(value);
     case 'rating':
       if (field.ratingType === 'traffic') {
-        const m = { good: { label: 'Gut', color: S.colors.success }, medium: { label: 'Mittel', color: S.colors.warning }, bad: { label: 'Schlecht', color: S.colors.danger } };
-        const info = m[value] || { label: value, color: S.colors.textMuted };
+        const m = { 1: { label: 'Gut', color: S.colors.success }, 2: { label: 'Mittel', color: S.colors.warning }, 3: { label: 'Schlecht', color: S.colors.danger } };
+        const info = m[value] || { label: String(value), color: S.colors.textMuted };
         return <span style={styles.badge(info.color)}>{info.label}</span>;
       }
       return <span>{'★'.repeat(Number(value))}{'☆'.repeat((field.maxStars || 5) - Number(value))} ({value}/{field.maxStars || 5})</span>;

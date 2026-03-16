@@ -7,8 +7,8 @@ const formatValue = (field, value) => {
     case 'checkbox': return Array.isArray(value) ? value.join(', ') : String(value);
     case 'rating':
       if (field.ratingType === 'traffic') {
-        const labels = { good: 'Gut ✅', medium: 'Mittel ⚠️', bad: 'Schlecht ❌' };
-        return labels[value] || value;
+        const labels = { 1: 'Gut ✅', 2: 'Mittel ⚠️', 3: 'Schlecht ❌' };
+        return labels[value] || String(value);
       }
       return `${'★'.repeat(Number(value))}${'☆'.repeat((field.maxStars || 5) - Number(value))} (${value}/${field.maxStars || 5})`;
     case 'checklist':

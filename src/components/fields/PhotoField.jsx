@@ -29,10 +29,12 @@ const S_REMOVE = {
 };
 
 const compressImage = (file, maxWidth = 1200, quality = 0.8) => {
-  return new Promise((resolve) => {
+  return new Promise((resolve, reject) => {
     const reader = new FileReader();
+    reader.onerror = () => reject(new Error('Datei konnte nicht gelesen werden'));
     reader.onload = (e) => {
       const img = new Image();
+      img.onerror = () => reject(new Error('Bild konnte nicht geladen werden'));
       img.onload = () => {
         const canvas = document.createElement('canvas');
         const ratio = Math.min(maxWidth / img.width, maxWidth / img.height, 1);
