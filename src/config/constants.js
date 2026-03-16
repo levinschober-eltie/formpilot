@@ -16,7 +16,7 @@ export const FIELD_TYPE_ICONS = {
   text: '📝', textarea: '📄', number: '#️⃣', date: '📅', time: '🕐',
   select: '🔽', radio: '⭕', checkbox: '☑️', toggle: '🔘',
   checklist: '✅', rating: '⭐', heading: '📌', divider: '➖',
-  info: 'ℹ️', signature: '✍️', photo: '📷',
+  info: 'ℹ️', signature: '✍️', photo: '📷', repeater: '🔁',
 };
 
 export const CATEGORY_OPTIONS = [
@@ -56,7 +56,8 @@ export const FIELD_PALETTE = [
     { type: 'info', icon: 'ℹ️', label: 'Info-Text', desc: 'Hinweisblock' },
   ]},
   { group: 'Erweitert', items: [
-    { type: 'signature', icon: '✍️', label: 'Unterschrift', desc: 'Kommt in S02', disabled: true },
-    { type: 'photo', icon: '📷', label: 'Foto', desc: 'Kommt in S02', disabled: true },
+    { type: 'signature', icon: '✍️', label: 'Unterschrift', desc: 'Digitale Unterschrift' },
+    { type: 'photo', icon: '📷', label: 'Foto', desc: 'Kamera / Upload' },
+    { type: 'repeater', icon: '🔁', label: 'Wiederholung', desc: 'Dynamische Feldgruppe' },
   ]},
 ];

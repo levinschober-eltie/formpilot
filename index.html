@@ -1,10 +1,23 @@
 <!doctype html>
-<html lang="en">
+<html lang="de">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>formpilot</title>
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="theme-color" content="#2563eb" />
+    <meta name="description" content="FormPilot — Digitale Formulare für Handwerksbetriebe" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="FormPilot" />
+    <title>FormPilot</title>
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      body { overflow-x: hidden; -webkit-font-smoothing: antialiased; }
+      /* Dark Mode */
+      [data-theme="dark"] { --bg: #0f172a; --bg-card: rgba(30,41,59,0.82); --bg-input: #1e293b; --border: #334155; --text: #e2e8f0; --text-secondary: #94a3b8; --text-muted: #64748b; }
+      [data-theme="dark"] body { background: #0f172a; color: #e2e8f0; }
+    </style>
   </head>
   <body>
     <div id="root"></div>

@@ -45,6 +45,16 @@ export const validateField = (field, value, formData) => {
     const checked = Object.values(value || {}).filter(v => v?.checked).length;
     if (checked === 0) return 'Mindestens ein Punkt muss geprüft werden';
   }
+  if (field.type === 'signature' && field.required && !value) {
+    return 'Unterschrift ist erforderlich';
+  }
+  if (field.type === 'photo' && field.required) {
+    const photos = Array.isArray(value) ? value : value ? [value] : [];
+    if (photos.length === 0) return 'Mindestens ein Foto erforderlich';
+  }
+  if (field.type === 'repeater' && field.required) {
+    if (!Array.isArray(value) || value.length === 0) return 'Mindestens ein Eintrag erforderlich';
+  }
   return null;
 };
 

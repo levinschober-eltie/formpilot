@@ -21,6 +21,12 @@ export const createField = (type) => {
     case 'heading': return { ...base, label: 'Überschrift', level: 'h2' };
     case 'divider': return { ...base, type: 'divider', label: '' };
     case 'info': return { ...base, label: 'Info', content: 'Hinweis...' };
+    case 'signature': return { ...base, label: 'Unterschrift', width: 'full' };
+    case 'photo': return { ...base, label: 'Foto', width: 'full', validation: { maxPhotos: 5 } };
+    case 'repeater': return { ...base, label: 'Wiederholung', width: 'full', subFields: [
+      { id: `sf-${Date.now()}-1`, label: 'Spalte 1', type: 'text', placeholder: '' },
+      { id: `sf-${Date.now()}-2`, label: 'Spalte 2', type: 'text', placeholder: '' },
+    ], validation: { maxRows: 10 } };
     default: return base;
   }
 };

@@ -79,6 +79,29 @@ export const BuilderSettingsPanel = React.memo(({ field, allFields, onChange, on
             <div style={{ display: 'flex', gap: '4px' }}>{[{ v: 'stars', l: 'Sterne' }, { v: 'traffic', l: 'Ampel' }].map(rt => <button key={rt.v} onClick={() => upd('ratingType', rt.v)} style={widthBtn(field.ratingType, rt.v)}>{rt.l}</button>)}</div>
             {field.ratingType !== 'traffic' && <><label style={S_LABEL}>Max Sterne: {field.maxStars || 5}</label><input type="range" min={3} max={10} value={field.maxStars || 5} onChange={e => upd('maxStars', Number(e.target.value))} style={{ width: '100%' }} /></>}
           </>}
+          {field.type === 'photo' && <>
+            <label style={S_LABEL}>Max Fotos: {field.validation?.maxPhotos || 5}</label>
+            <input type="range" min={1} max={10} value={field.validation?.maxPhotos || 5} onChange={e => updV('maxPhotos', Number(e.target.value))} style={{ width: '100%' }} />
+          </>}
+          {field.type === 'repeater' && <>
+            <label style={S_LABEL}>Max Einträge: {field.validation?.maxRows || 10}</label>
+            <input type="range" min={1} max={50} value={field.validation?.maxRows || 10} onChange={e => updV('maxRows', Number(e.target.value))} style={{ width: '100%' }} />
+            <label style={S_LABEL}>Spalten</label>
+            {(field.subFields || []).map((sf, si) => (
+              <div key={sf.id} style={{ display: 'flex', gap: '4px', marginBottom: '4px', alignItems: 'center' }}>
+                <input value={sf.label} onChange={e => {
+                  const sfs = [...(field.subFields || [])];
+                  sfs[si] = { ...sfs[si], label: e.target.value };
+                  upd('subFields', sfs);
+                }} style={{ ...S_INPUT, flex: 1, marginBottom: 0 }} placeholder="Spaltenname" />
+                <button onClick={() => upd('subFields', (field.subFields || []).filter((_, i) => i !== si))} style={{ background: 'none', border: 'none', cursor: 'pointer', color: S.colors.textMuted, fontSize: '14px' }}>✕</button>
+              </div>
+            ))}
+            <button onClick={() => {
+              const id = `sf-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+              upd('subFields', [...(field.subFields || []), { id, label: `Spalte ${(field.subFields || []).length + 1}`, type: 'text', placeholder: '' }]);
+            }} style={S_ADD_COND}>＋ Spalte hinzufügen</button>
+          </>}
         </>}
 
         {activeTab === 'validation' && <>

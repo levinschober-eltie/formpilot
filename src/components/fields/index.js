@@ -10,3 +10,5 @@ export { ToggleField } from './ToggleField';
 export { ChecklistField } from './ChecklistField';
 export { RatingField } from './RatingField';
 export { HeadingField, DividerField, InfoField } from './LayoutFields';
+export { SignatureField } from './SignatureField';
+export { PhotoField } from './PhotoField';

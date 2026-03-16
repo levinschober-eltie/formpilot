@@ -5,9 +5,10 @@ import {
   TextField, TextareaField, NumberField, DateField, TimeField,
   SelectField, RadioField, CheckboxField, ToggleField,
   ChecklistField, RatingField, HeadingField, DividerField, InfoField,
+  SignatureField, PhotoField,
 } from './index';
 
-// ═══ FEATURE: Form Field Renderer (Chat F.1) ═══
+// ═══ FEATURE: Form Field Renderer (Chat F.1 + Signature/Photo) ═══
 export const FormField = ({ field, value, onChange, error, formData }) => {
   if (field.conditions && !evaluateConditions(field.conditions, field.conditionLogic, formData)) return null;
   if (field.type === 'heading') return <HeadingField field={field} />;
@@ -27,6 +28,9 @@ export const FormField = ({ field, value, onChange, error, formData }) => {
       case 'toggle': return <ToggleField field={field} value={value} onChange={onChange} />;
       case 'checklist': return <ChecklistField field={field} value={value} onChange={onChange} />;
       case 'rating': return <RatingField field={field} value={value} onChange={onChange} />;
+      case 'signature': return <SignatureField field={field} value={value} onChange={onChange} error={error} />;
+      case 'photo': return <PhotoField field={field} value={value} onChange={onChange} error={error} />;
+      case 'repeater': return <RepeaterField field={field} value={value} onChange={onChange} formData={formData} />;
       default: return <InfoField field={{ content: `Unbekannter Feldtyp: ${field.type}` }} />;
     }
   };
@@ -35,6 +39,57 @@ export const FormField = ({ field, value, onChange, error, formData }) => {
       {field.label && <label style={styles.fieldLabel}>{field.label}{field.required && <span style={{ color: S.colors.danger, marginLeft: '4px' }}>*</span>}</label>}
       {renderInput()}
       {error && <div style={styles.fieldError}>{error}</div>}
+    </div>
+  );
+};
+
+// ═══ FEATURE: Repeater Field ═══
+const RepeaterField = ({ field, value, onChange, formData }) => {
+  const rows = Array.isArray(value) ? value : [];
+  const subFields = field.subFields || [];
+  const maxRows = field.validation?.maxRows || 20;
+
+  const addRow = () => {
+    if (rows.length >= maxRows) return;
+    const emptyRow = {};
+    subFields.forEach(sf => { emptyRow[sf.id] = ''; });
+    onChange([...rows, emptyRow]);
+  };
+
+  const removeRow = (idx) => {
+    onChange(rows.filter((_, i) => i !== idx));
+  };
+
+  const updateRow = (idx, fieldId, val) => {
+    const updated = rows.map((r, i) => i === idx ? { ...r, [fieldId]: val } : r);
+    onChange(updated);
+  };
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+      {rows.map((row, ri) => (
+        <div key={ri} style={{ padding: '12px', borderRadius: S.radius.md, border: `1px solid ${S.colors.border}`, background: S.colors.bgInput, position: 'relative' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+            <span style={{ fontSize: '12px', fontWeight: 600, color: S.colors.textMuted }}>#{ri + 1}</span>
+            <button type="button" onClick={() => removeRow(ri)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: S.colors.danger, fontSize: '14px' }}>✕</button>
+          </div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+            {subFields.map(sf => (
+              <div key={sf.id} style={{ flex: '1 1 200px', minWidth: 0 }}>
+                <label style={{ fontSize: '12px', fontWeight: 600, color: S.colors.textSecondary, display: 'block', marginBottom: '3px' }}>{sf.label}</label>
+                <input value={row[sf.id] || ''} onChange={e => updateRow(ri, sf.id, e.target.value)}
+                  style={{ width: '100%', padding: '8px 10px', borderRadius: S.radius.sm, border: `1px solid ${S.colors.border}`, fontSize: '13px', fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box' }}
+                  placeholder={sf.placeholder || ''} />
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
+      {rows.length < maxRows && (
+        <button type="button" onClick={addRow} style={{ padding: '10px', borderRadius: S.radius.sm, border: `1.5px dashed ${S.colors.border}`, background: 'transparent', color: S.colors.textMuted, cursor: 'pointer', fontSize: '13px', fontFamily: 'inherit' }}>
+          ＋ Eintrag hinzufügen {rows.length > 0 && `(${rows.length}/${maxRows})`}
+        </button>
+      )}
     </div>
   );
 };
