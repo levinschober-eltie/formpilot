@@ -1,16 +1,15 @@
 # FormPilot
 
 Digitaler Formular-Generator für Handwerksbetriebe.
-Multi-File React/Vite Architektur. Wird später in LagerPilot eingebettet.
+Eigenständiges Projekt — Multi-File React/Vite + Supabase.
 
 ## Regeln (NIEMALS brechen)
 FR1: Modular. Neue Features als Hooks/Komponenten. NIE Bestehendes umschreiben.
 FR2: Feature-Flags: fp_{name}. undefined → deaktiviert.
 FR3: Schema abwärtskompatibel. Fallbacks für alles.
-FR4: LagerPilot-kompatibel (S-Objekt, Auth, Offline-Queue).
-FR5: Daten-Isolation. LagerPilot nur READ-ONLY.
-FR6: Regression nach jedem Feature.
-FR7: Am Ende: lauffähiger Code, Build muss durchlaufen.
+FR4: Eigene Supabase-Instanz (Auth, Storage, Realtime).
+FR5: Regression nach jedem Feature.
+FR6: Am Ende: lauffähiger Code, Build muss durchlaufen.
 
 ## Performance (IMMER)
 P1: React.memo auf Komponenten die Props empfangen + oft re-rendern.
