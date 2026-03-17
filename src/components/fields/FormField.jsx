@@ -11,9 +11,9 @@ import {
 // ═══ FEATURE: Form Field Renderer (Chat F.1 + Signature/Photo) ═══
 export const FormField = ({ field, value, onChange, error, formData }) => {
   if (field.conditions && !evaluateConditions(field.conditions, field.conditionLogic, formData)) return null;
-  if (field.type === 'heading') return <HeadingField field={field} />;
-  if (field.type === 'divider') return <DividerField />;
-  if (field.type === 'info') return <InfoField field={field} />;
+  if (field.type === 'heading') return <div style={{ width: '100%', minWidth: 0 }}><HeadingField field={field} /></div>;
+  if (field.type === 'divider') return <div style={{ width: '100%', minWidth: 0 }}><DividerField /></div>;
+  if (field.type === 'info') return <div style={{ width: '100%', minWidth: 0 }}><InfoField field={field} /></div>;
   const widthMap = { full: '100%', half: 'calc(50% - 8px)', third: 'calc(33.33% - 11px)' };
   const disabled = isConditionallyDisabled(field, formData);
   const condRequired = isConditionallyRequired(field, formData);

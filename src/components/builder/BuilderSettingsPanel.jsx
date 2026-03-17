@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { S } from '../../config/theme';
 import { FIELD_TYPE_ICONS } from '../../config/constants';
 import { MiniToggle } from '../common/MiniToggle';
@@ -42,6 +42,7 @@ const getOps = (refType) => {
 
 export const BuilderSettingsPanel = React.memo(({ field, allFields, onChange, onClose }) => {
   const [activeTab, setActiveTab] = useState('general');
+  useEffect(() => { setActiveTab('general'); }, [field.id]);
   if (!field) return null;
 
   const upd = useCallback((key, value) => onChange({ ...field, [key]: value }), [field, onChange]);

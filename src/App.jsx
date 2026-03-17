@@ -100,16 +100,20 @@ export default function FormPilot() {
   };
 
   const handleStatusChange = useCallback(async (subId, newStatus) => {
-    const updated = submissions.map(s => s.id === subId ? { ...s, status: newStatus } : s);
-    setSubmissions(updated);
-    await storageSet(STORAGE_KEYS.submissions, updated);
+    setSubmissions(prev => {
+      const updated = prev.map(s => s.id === subId ? { ...s, status: newStatus } : s);
+      storageSet(STORAGE_KEYS.submissions, updated);
+      return updated;
+    });
     setViewingSubmission(prev => prev?.id === subId ? { ...prev, status: newStatus } : prev);
-  }, [submissions]);
+  }, []);
 
   const handleDeleteSubmission = useCallback(async (subId) => {
-    const updated = submissions.filter(s => s.id !== subId);
-    setSubmissions(updated);
-    await storageSet(STORAGE_KEYS.submissions, updated);
+    setSubmissions(prev => {
+      const updated = prev.filter(s => s.id !== subId);
+      storageSet(STORAGE_KEYS.submissions, updated);
+      return updated;
+    });
     // Kunde-Verknüpfung bereinigen + Log
     const result = await removeSubmissionFromCustomer(subId);
     if (result) {
@@ -123,7 +127,7 @@ export default function FormPilot() {
       });
     }
     setViewingSubmission(null);
-  }, [submissions, user]);
+  }, [user]);
 
   const handleBuilderSave = async () => { const tpls = await storageGet(STORAGE_KEYS.templates) || []; setCustomTemplates(tpls); };
   const refreshTemplates = useCallback(async () => { const tpls = await storageGet(STORAGE_KEYS.templates) || []; setCustomTemplates(tpls); }, []);
@@ -135,6 +139,7 @@ export default function FormPilot() {
   const handleCustomersChange = useCallback(async () => {
     const custs = await getCustomers();
     setCustomers(custs);
+    setViewingCustomer(prev => prev ? custs.find(c => c.id === prev.id) || null : null);
   }, []);
 
   if (!loaded) return <div style={{ ...styles.app, alignItems: 'center', justifyContent: 'center' }}><div style={{ textAlign: 'center' }}><div style={{ fontSize: '48px', marginBottom: '12px' }}>📋</div><div style={{ color: S.colors.textSecondary }}>Laden...</div></div></div>;
