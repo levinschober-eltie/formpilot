@@ -40,6 +40,8 @@ export const FormBuilder = ({ template: initialTemplate, onSave, onClose }) => {
   const [showPaletteDrawer, setShowPaletteDrawer] = useState(false);
   const [showSettingsDrawer, setShowSettingsDrawer] = useState(false);
   const autoSaveRef = useRef(null);
+  const hasChangesRef = useRef(false);
+  const doSaveRef = useRef(null);
   const isDesktop = useMediaQuery('(min-width: 1024px)');
 
   // Keyboard shortcuts: Ctrl+Z / Ctrl+Shift+Z
@@ -47,18 +49,17 @@ export const FormBuilder = ({ template: initialTemplate, onSave, onClose }) => {
     const handler = (e) => {
       if ((e.metaKey || e.ctrlKey) && e.key === 'z' && !e.shiftKey) { e.preventDefault(); undo(); }
       if ((e.metaKey || e.ctrlKey) && ((e.key === 'z' && e.shiftKey) || e.key === 'y')) { e.preventDefault(); redo(); }
-      if ((e.metaKey || e.ctrlKey) && e.key === 's') { e.preventDefault(); doSaveRef.current(false); }
+      if ((e.metaKey || e.ctrlKey) && e.key === 's') { e.preventDefault(); if (doSaveRef.current) doSaveRef.current(false); }
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
   }, [undo, redo]);
 
-  const hasChangesRef = useRef(false);
+  // Refs updated every render (for stable closure in intervals/keyboard)
   hasChangesRef.current = hasChanges;
-  const doSaveRef = useRef(doSave);
-  doSaveRef.current = doSave;
+
   useEffect(() => {
-    autoSaveRef.current = setInterval(() => { if (hasChangesRef.current) doSaveRef.current(true); }, 60000);
+    autoSaveRef.current = setInterval(() => { if (hasChangesRef.current && doSaveRef.current) doSaveRef.current(true); }, 60000);
     return () => clearInterval(autoSaveRef.current);
   }, []);
 
@@ -143,6 +144,7 @@ export const FormBuilder = ({ template: initialTemplate, onSave, onClose }) => {
       return true;
     } catch { if (!silent) setToast({ message: 'Speichern fehlgeschlagen', type: 'error' }); return false; }
   }, [template, onSave]);
+  doSaveRef.current = doSave;
 
   const handleClose = useCallback(() => { if (hasChanges && !confirm('Ungespeicherte Änderungen verwerfen?')) return; onClose(); }, [hasChanges, onClose]);
 

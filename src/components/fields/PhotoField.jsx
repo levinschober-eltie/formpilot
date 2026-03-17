@@ -60,9 +60,13 @@ export const PhotoField = ({ field, value, onChange, error }) => {
   const addPhotos = useCallback(async (files) => {
     const remaining = maxPhotos - photos.length;
     const toProcess = Array.from(files).slice(0, remaining);
-    const compressed = await Promise.all(toProcess.map(f => compressImage(f)));
-    const updated = [...photos, ...compressed];
-    onChange(updated.length === 1 ? updated[0] : updated);
+    try {
+      const compressed = await Promise.all(toProcess.map(f => compressImage(f)));
+      const updated = [...photos, ...compressed];
+      onChange(updated.length === 1 ? updated[0] : updated);
+    } catch {
+      // Silently skip corrupt images
+    }
   }, [photos, maxPhotos, onChange]);
 
   const removePhoto = useCallback((idx) => {

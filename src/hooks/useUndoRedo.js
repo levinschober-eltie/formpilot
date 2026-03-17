@@ -3,8 +3,13 @@ import { useState, useCallback, useRef } from 'react';
 // ═══ HOOK: Undo/Redo für Builder (S01) ═══
 export const useUndoRedo = (initialState, maxHistory = 50) => {
   const [state, setState] = useState(initialState);
-  const historyRef = useRef([JSON.stringify(initialState)]);
+  const historyRef = useRef(null);
   const indexRef = useRef(0);
+  // Lazy init: compute initial history entry only once
+  if (historyRef.current === null) {
+    const resolved = typeof initialState === 'function' ? initialState() : initialState;
+    historyRef.current = [JSON.stringify(resolved)];
+  }
 
   const push = useCallback((next) => {
     const json = JSON.stringify(next);

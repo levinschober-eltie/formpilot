@@ -10,7 +10,7 @@
 
   /* Borders */
   --fp-border: #e2e8f0;
-  --fp-border-faint: rgba(226,232,240,0.03);
+  --fp-border-faint: rgba(226,232,240,0.3);
 
   /* Text */
   --fp-text: #0f172a;
@@ -39,7 +39,7 @@
 
   /* Borders */
   --fp-border: #334155;
-  --fp-border-faint: rgba(51,65,85,0.03);
+  --fp-border-faint: rgba(51,65,85,0.3);
 
   /* Text */
   --fp-text: #e2e8f0;
