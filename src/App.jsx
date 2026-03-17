@@ -43,7 +43,7 @@ export default function FormPilot() {
     })();
   }, []);
 
-  useEffect(() => { if (loaded && submissions.length > 0) storageSet(STORAGE_KEYS.submissions, submissions); }, [submissions, loaded]);
+  useEffect(() => { if (loaded) storageSet(STORAGE_KEYS.submissions, submissions); }, [submissions, loaded]);
 
   useEffect(() => {
     localStorage.setItem('fp_darkMode', darkMode);
@@ -140,14 +140,8 @@ export default function FormPilot() {
   ];
   const visibleNav = NAV_ITEMS.filter(n => n.roles.includes(user.role));
 
-  const appStyle = darkMode ? {
-    ...styles.app,
-    background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
-    color: '#e2e8f0',
-  } : styles.app;
-
   return (
-    <div style={appStyle} data-theme={darkMode ? 'dark' : 'light'}>
+    <div style={styles.app} data-theme={darkMode ? 'dark' : 'light'}>
       <div style={styles.topBar}>
         <div style={styles.logo}><span>📋</span><span>FormPilot</span></div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>

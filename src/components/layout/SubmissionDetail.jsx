@@ -5,7 +5,7 @@ import { exportSubmissionPdf } from '../../lib/exportPdf';
 // ═══ FEATURE: Submission Detail View ═══
 const S_HEADER = { display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' };
 const S_ACTIONS = { display: 'flex', gap: '8px', marginBottom: '20px', flexWrap: 'wrap' };
-const S_FIELD_ROW = { display: 'flex', padding: '10px 0', borderBottom: `1px solid ${S.colors.border}08`, gap: '12px' };
+const S_FIELD_ROW = { display: 'flex', padding: '10px 0', borderBottom: `1px solid ${S.colors.borderFaint}`, gap: '12px' };
 const S_FIELD_LABEL = { width: '35%', fontWeight: 600, fontSize: '13px', color: S.colors.textSecondary, flexShrink: 0 };
 const S_FIELD_VALUE = { flex: 1, fontSize: '14px', whiteSpace: 'pre-line', wordBreak: 'break-word' };
 

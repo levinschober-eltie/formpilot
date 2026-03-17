@@ -1,6 +1,7 @@
-// ═══ FEATURE: Style System (Chat F.1) ═══
+// ═══ FEATURE: Style System (CSS Variables + Static Tokens) ═══
 export const S = {
   colors: {
+    // Semantic colors (static — same in light & dark)
     primary: '#2563eb',
     primaryLight: '#3b82f6',
     primaryDark: '#1d4ed8',
@@ -9,18 +10,21 @@ export const S = {
     success: '#16a34a',
     warning: '#f59e0b',
     danger: '#dc2626',
-    bg: '#f1f5f9',
-    bgCard: 'rgba(255,255,255,0.82)',
-    bgCardSolid: '#ffffff',
-    bgInput: '#f8fafc',
-    border: '#e2e8f0',
     borderFocus: '#2563eb',
-    text: '#0f172a',
-    textSecondary: '#475569',
-    textMuted: '#94a3b8',
     white: '#ffffff',
-    shadow: '0 4px 24px rgba(0,0,0,0.06)',
-    shadowLg: '0 8px 40px rgba(0,0,0,0.10)',
+    // Theme-aware colors (CSS custom properties)
+    bg: 'var(--fp-bg)',
+    bgEnd: 'var(--fp-bg-end)',
+    bgCard: 'var(--fp-bg-card)',
+    bgCardSolid: 'var(--fp-bg-card-solid)',
+    bgInput: 'var(--fp-bg-input)',
+    border: 'var(--fp-border)',
+    borderFaint: 'var(--fp-border-faint)',
+    text: 'var(--fp-text)',
+    textSecondary: 'var(--fp-text-secondary)',
+    textMuted: 'var(--fp-text-muted)',
+    shadow: 'var(--fp-shadow)',
+    shadowLg: 'var(--fp-shadow-lg)',
   },
   radius: { sm: '8px', md: '12px', lg: '16px', xl: '20px', full: '9999px' },
   font: {
@@ -29,9 +33,9 @@ export const S = {
   },
   transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
   glass: {
-    background: 'rgba(255,255,255,0.72)',
+    background: 'var(--fp-glass-bg)',
     backdropFilter: 'blur(16px) saturate(180%)',
-    border: '1px solid rgba(255,255,255,0.4)',
+    border: '1px solid var(--fp-glass-border)',
   },
 };
 
@@ -41,14 +45,14 @@ export const CATEGORY_COLORS = {
   mangel: S.colors.danger,
   pruefung: S.colors.primaryLight,
   uebergabe: S.colors.success,
-  custom: S.colors.textSecondary,
+  custom: '#94a3b8',
 };
 
 export const STATUS_COLORS = {
   draft: S.colors.warning,
   completed: S.colors.success,
   sent: S.colors.primary,
-  archived: S.colors.textMuted,
+  archived: '#94a3b8',
 };
 
 export const STATUS_LABELS = {

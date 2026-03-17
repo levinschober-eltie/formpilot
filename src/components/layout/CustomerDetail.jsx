@@ -14,7 +14,7 @@ const S_INFO_VALUE = { fontSize: '14px', fontWeight: 500 };
 const S_SECTION_TITLE = { fontSize: '16px', fontWeight: 700, marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' };
 const S_TAB_BAR = { display: 'flex', gap: '4px', marginBottom: '16px', borderBottom: `1px solid ${S.colors.border}` };
 const S_TAB = (active) => ({ padding: '10px 16px', fontSize: '13px', fontWeight: active ? 700 : 500, border: 'none', borderBottom: `2px solid ${active ? S.colors.primary : 'transparent'}`, background: 'none', color: active ? S.colors.primary : S.colors.textSecondary, cursor: 'pointer', fontFamily: 'inherit' });
-const S_LOG_ITEM = { display: 'flex', gap: '12px', padding: '10px 0', borderBottom: `1px solid ${S.colors.border}08` };
+const S_LOG_ITEM = { display: 'flex', gap: '12px', padding: '10px 0', borderBottom: `1px solid ${S.colors.borderFaint}` };
 const S_LOG_DOT = (color) => ({ width: 8, height: 8, borderRadius: '50%', background: color, flexShrink: 0, marginTop: '6px' });
 const S_NOTES_AREA = { width: '100%', padding: '12px', borderRadius: S.radius.md, border: `1px solid ${S.colors.border}`, fontSize: '14px', fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box', minHeight: '100px', resize: 'vertical', background: S.colors.bgInput };
 
@@ -150,7 +150,7 @@ export const CustomerDetail = ({ customer, submissions, allTemplates, onBack, on
                   const preview = tplFields.filter(f => ['text', 'select', 'number', 'date'].includes(f.type) && sub.data[f.id]).slice(0, 4);
                   if (preview.length === 0) return null;
                   return (
-                    <div style={{ marginTop: '8px', paddingTop: '8px', borderTop: `1px solid ${S.colors.border}08`, display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
+                    <div style={{ marginTop: '8px', paddingTop: '8px', borderTop: `1px solid ${S.colors.borderFaint}`, display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
                       {preview.map(f => <div key={f.id} style={{ fontSize: '12px' }}><span style={{ color: S.colors.textMuted }}>{f.label}: </span><span style={{ fontWeight: 500 }}>{String(sub.data[f.id]).slice(0, 40)}</span></div>)}
                     </div>
                   );

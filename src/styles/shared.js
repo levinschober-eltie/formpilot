@@ -4,7 +4,7 @@ export const styles = {
   app: {
     fontFamily: S.font.sans,
     minHeight: '100vh',
-    background: `linear-gradient(135deg, ${S.colors.bg} 0%, #e0e7ef 100%)`,
+    background: `linear-gradient(135deg, ${S.colors.bg} 0%, ${S.colors.bgEnd} 100%)`,
     color: S.colors.text,
     display: 'flex',
     flexDirection: 'column',

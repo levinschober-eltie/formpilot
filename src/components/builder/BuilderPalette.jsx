@@ -7,7 +7,7 @@ const S_GROUP_BTN = { width: '100%', display: 'flex', alignItems: 'center', just
 const S_ITEMS_WRAP = { display: 'flex', flexDirection: 'column', gap: '4px', paddingBottom: '8px' };
 const S_ITEM = (disabled) => ({
   display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 10px', borderRadius: S.radius.sm,
-  border: `1px solid ${S.colors.border}`, background: disabled ? S.colors.bg : S.colors.white,
+  border: `1px solid ${S.colors.border}`, background: disabled ? S.colors.bg : S.colors.bgCardSolid,
   cursor: disabled ? 'not-allowed' : 'grab', transition: S.transition, opacity: disabled ? 0.5 : 1,
   fontSize: '13px', fontFamily: 'inherit',
 });
@@ -37,7 +37,7 @@ export const BuilderPalette = React.memo(({ onAddField }) => {
                   onClick={item.disabled ? undefined : () => onAddField(item.type)}
                   style={S_ITEM(item.disabled)}
                   onMouseEnter={item.disabled ? undefined : e => { e.currentTarget.style.borderColor = S.colors.primary; e.currentTarget.style.background = `${S.colors.primary}06`; }}
-                  onMouseLeave={item.disabled ? undefined : e => { e.currentTarget.style.borderColor = S.colors.border; e.currentTarget.style.background = S.colors.white; }}
+                  onMouseLeave={item.disabled ? undefined : e => { e.currentTarget.style.borderColor = S.colors.border; e.currentTarget.style.background = S.colors.bgCardSolid; }}
                   title={item.disabled ? item.desc : `${item.label} – ${item.desc}`}>
                   <span style={S_ITEM_ICON}>{item.icon}</span>
                   <div style={S_ITEM_CONTENT}>

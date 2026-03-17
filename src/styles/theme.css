@@ -1,0 +1,72 @@
+/* ═══ FormPilot Theme System (CSS Custom Properties) ═══ */
+
+:root {
+  /* Backgrounds */
+  --fp-bg: #f1f5f9;
+  --fp-bg-end: #e0e7ef;
+  --fp-bg-card: rgba(255,255,255,0.82);
+  --fp-bg-card-solid: #ffffff;
+  --fp-bg-input: #f8fafc;
+
+  /* Borders */
+  --fp-border: #e2e8f0;
+  --fp-border-faint: rgba(226,232,240,0.03);
+
+  /* Text */
+  --fp-text: #0f172a;
+  --fp-text-secondary: #475569;
+  --fp-text-muted: #94a3b8;
+
+  /* Shadows */
+  --fp-shadow: 0 4px 24px rgba(0,0,0,0.06);
+  --fp-shadow-lg: 0 8px 40px rgba(0,0,0,0.10);
+
+  /* Glass */
+  --fp-glass-bg: rgba(255,255,255,0.72);
+  --fp-glass-border: rgba(255,255,255,0.4);
+
+  /* Signature canvas */
+  --fp-canvas-stroke: #1a1a1a;
+}
+
+[data-theme="dark"] {
+  /* Backgrounds */
+  --fp-bg: #0f172a;
+  --fp-bg-end: #1e293b;
+  --fp-bg-card: rgba(30,41,59,0.82);
+  --fp-bg-card-solid: #1e293b;
+  --fp-bg-input: #0f172a;
+
+  /* Borders */
+  --fp-border: #334155;
+  --fp-border-faint: rgba(51,65,85,0.03);
+
+  /* Text */
+  --fp-text: #e2e8f0;
+  --fp-text-secondary: #94a3b8;
+  --fp-text-muted: #64748b;
+
+  /* Shadows */
+  --fp-shadow: 0 4px 24px rgba(0,0,0,0.25);
+  --fp-shadow-lg: 0 8px 40px rgba(0,0,0,0.35);
+
+  /* Glass */
+  --fp-glass-bg: rgba(15,23,42,0.85);
+  --fp-glass-border: rgba(51,65,85,0.4);
+
+  /* Signature canvas */
+  --fp-canvas-stroke: #e2e8f0;
+}
+
+/* ═══ Accessibility: Screen Reader Only ═══ */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}

@@ -5,7 +5,7 @@ import { styles } from '../../styles/shared';
 // ═══ FEATURE: Signature Capture (Canvas-based) ═══
 const S_CANVAS_WRAP = {
   position: 'relative', borderRadius: S.radius.md,
-  border: `1.5px solid ${S.colors.border}`, background: S.colors.white,
+  border: `1.5px solid ${S.colors.border}`, background: S.colors.bgCardSolid,
   overflow: 'hidden', touchAction: 'none',
 };
 const S_CANVAS = { display: 'block', width: '100%', cursor: 'crosshair' };
@@ -49,7 +49,7 @@ export const SignatureField = ({ field, value, onChange, error }) => {
     ctx.scale(2, 2);
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
-    ctx.strokeStyle = document.documentElement.getAttribute('data-theme') === 'dark' ? '#e2e8f0' : '#1a1a1a';
+    ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--fp-canvas-stroke').trim() || '#1a1a1a';
     ctx.lineWidth = 2;
     if (value) {
       const img = new Image();

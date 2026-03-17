@@ -12,9 +12,12 @@ const S_META = { fontSize: '12px', color: S.colors.textMuted };
 const S_BADGE = (count) => ({ ...styles.badge(count > 5 ? S.colors.success : S.colors.primary), fontSize: '11px', flexShrink: 0 });
 const S_EMPTY_ICON = { fontSize: '48px', marginBottom: '12px', opacity: 0.5 };
 
+const PAGE_SIZE = 20;
+
 // ═══ FEATURE: Kundenliste ═══
 export const CustomersScreen = ({ customers, submissions, allTemplates, onSelectCustomer }) => {
   const [search, setSearch] = useState('');
+  const [page, setPage] = useState(0);
 
   const templateMap = useMemo(() => {
     const map = {};
@@ -63,37 +66,51 @@ export const CustomersScreen = ({ customers, submissions, allTemplates, onSelect
         <input value={search} onChange={e => setSearch(e.target.value)} placeholder="🔍 Kontakte suchen..." style={S_SEARCH} />
       </div>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-        {filtered.map(customer => (
-          <div key={customer.id} style={{ ...styles.card, padding: '16px 20px', cursor: 'pointer', transition: S.transition }}
-            onClick={() => onSelectCustomer(customer)}
-            onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = S.colors.shadowLg; }}
-            onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = S.colors.shadow; }}>
-            <div style={S_CARD_ROW}>
-              <div style={S_AVATAR}>{getInitials(customer.name)}</div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={S_NAME}>{customer.name}</div>
-                <div style={S_META}>
-                  {customer.email && <span>{customer.email} · </span>}
-                  {customer.address && <span>{customer.address} · </span>}
-                  {customer.projects?.length > 0 && <span>{customer.projects[customer.projects.length - 1]}</span>}
+      {(() => {
+        const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
+        const currentPage = Math.min(page, Math.max(0, totalPages - 1));
+        const paged = filtered.slice(currentPage * PAGE_SIZE, (currentPage + 1) * PAGE_SIZE);
+        return (<>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            {paged.map(customer => (
+              <div key={customer.id} style={{ ...styles.card, padding: '16px 20px', cursor: 'pointer', transition: S.transition }}
+                onClick={() => onSelectCustomer(customer)}
+                onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = S.colors.shadowLg; }}
+                onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = S.colors.shadow; }}>
+                <div style={S_CARD_ROW}>
+                  <div style={S_AVATAR}>{getInitials(customer.name)}</div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={S_NAME}>{customer.name}</div>
+                    <div style={S_META}>
+                      {customer.email && <span>{customer.email} · </span>}
+                      {customer.address && <span>{customer.address} · </span>}
+                      {customer.projects?.length > 0 && <span>{customer.projects[customer.projects.length - 1]}</span>}
+                    </div>
+                  </div>
+                  <span style={S_BADGE(customer.submissionCount)}>{customer.submissionCount} {customer.submissionCount === 1 ? 'Vertrag' : 'Verträge'}</span>
                 </div>
+                {customer.lastSubmission && (
+                  <div style={{ marginTop: '8px', paddingTop: '8px', borderTop: `1px solid ${S.colors.borderFaint}`, fontSize: '12px', color: S.colors.textMuted }}>
+                    Letzter Vertrag: {templateMap[customer.lastSubmission.templateId]?.name || 'Formular'} — {new Date(customer.lastSubmission.createdAt).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                  </div>
+                )}
               </div>
-              <span style={S_BADGE(customer.submissionCount)}>{customer.submissionCount} {customer.submissionCount === 1 ? 'Vertrag' : 'Verträge'}</span>
-            </div>
-            {customer.lastSubmission && (
-              <div style={{ marginTop: '8px', paddingTop: '8px', borderTop: `1px solid ${S.colors.border}08`, fontSize: '12px', color: S.colors.textMuted }}>
-                Letzter Vertrag: {templateMap[customer.lastSubmission.templateId]?.name || 'Formular'} — {new Date(customer.lastSubmission.createdAt).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+            ))}
+            {filtered.length === 0 && search && (
+              <div style={{ ...styles.card, textAlign: 'center', padding: '32px' }}>
+                <p style={{ color: S.colors.textMuted }}>Keine Kontakte für "{search}" gefunden.</p>
               </div>
             )}
           </div>
-        ))}
-        {filtered.length === 0 && search && (
-          <div style={{ ...styles.card, textAlign: 'center', padding: '32px' }}>
-            <p style={{ color: S.colors.textMuted }}>Keine Kontakte für "{search}" gefunden.</p>
-          </div>
-        )}
-      </div>
+          {totalPages > 1 && (
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', marginTop: '16px' }} role="navigation" aria-label="Seitennavigation">
+              <button onClick={() => setPage(p => Math.max(0, p - 1))} disabled={currentPage === 0} style={styles.btn('ghost', 'sm')} aria-label="Vorherige Seite">← Zurück</button>
+              <span style={{ fontSize: '13px', color: S.colors.textSecondary }}>Seite {currentPage + 1} von {totalPages}</span>
+              <button onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))} disabled={currentPage >= totalPages - 1} style={styles.btn('ghost', 'sm')} aria-label="Nächste Seite">Weiter →</button>
+            </div>
+          )}
+        </>);
+      })()}
     </div>
   );
 };

@@ -17,14 +17,16 @@ export const FormField = ({ field, value, onChange, error, formData }) => {
   const widthMap = { full: '100%', half: 'calc(50% - 8px)', third: 'calc(33.33% - 11px)' };
   const disabled = isConditionallyDisabled(field, formData);
   const condRequired = isConditionallyRequired(field, formData);
+  const fieldInputId = `field-${field.id}`;
+  const errorId = error ? `error-${field.id}` : undefined;
   const renderInput = () => {
     switch (field.type) {
-      case 'text': return <TextField field={field} value={value} onChange={onChange} error={error} />;
-      case 'textarea': return <TextareaField field={field} value={value} onChange={onChange} error={error} />;
-      case 'number': return <NumberField field={field} value={value} onChange={onChange} error={error} />;
-      case 'date': return <DateField field={field} value={value} onChange={onChange} error={error} />;
-      case 'time': return <TimeField field={field} value={value} onChange={onChange} error={error} />;
-      case 'select': return <SelectField field={field} value={value} onChange={onChange} error={error} />;
+      case 'text': return <TextField field={field} value={value} onChange={onChange} error={error} id={fieldInputId} aria-describedby={errorId} />;
+      case 'textarea': return <TextareaField field={field} value={value} onChange={onChange} error={error} id={fieldInputId} aria-describedby={errorId} />;
+      case 'number': return <NumberField field={field} value={value} onChange={onChange} error={error} id={fieldInputId} aria-describedby={errorId} />;
+      case 'date': return <DateField field={field} value={value} onChange={onChange} error={error} id={fieldInputId} aria-describedby={errorId} />;
+      case 'time': return <TimeField field={field} value={value} onChange={onChange} error={error} id={fieldInputId} aria-describedby={errorId} />;
+      case 'select': return <SelectField field={field} value={value} onChange={onChange} error={error} id={fieldInputId} aria-describedby={errorId} />;
       case 'radio': return <RadioField field={field} value={value} onChange={onChange} error={error} />;
       case 'checkbox': return <CheckboxField field={field} value={value} onChange={onChange} error={error} />;
       case 'toggle': return <ToggleField field={field} value={value} onChange={onChange} error={error} />;
@@ -37,10 +39,10 @@ export const FormField = ({ field, value, onChange, error, formData }) => {
     }
   };
   return (
-    <div style={{ width: widthMap[field.width] || '100%', minWidth: 0, opacity: disabled ? 0.5 : 1, pointerEvents: disabled ? 'none' : 'auto' }}>
-      {field.label && <label style={styles.fieldLabel}>{field.label}{(field.required || condRequired) && <span style={{ color: S.colors.danger, marginLeft: '4px' }}>*</span>}</label>}
+    <div style={{ width: widthMap[field.width] || '100%', minWidth: 0, opacity: disabled ? 0.5 : 1, pointerEvents: disabled ? 'none' : 'auto' }} role={disabled ? 'group' : undefined} aria-disabled={disabled || undefined}>
+      {field.label && <label htmlFor={fieldInputId} style={styles.fieldLabel}>{field.label}{(field.required || condRequired) && <span style={{ color: S.colors.danger, marginLeft: '4px' }} aria-hidden="true">*</span>}{(field.required || condRequired) && <span className="sr-only"> (Pflichtfeld)</span>}</label>}
       {renderInput()}
-      {error && <div style={styles.fieldError}>{error}</div>}
+      {error && <div id={errorId} role="alert" style={styles.fieldError}>{error}</div>}
     </div>
   );
 };

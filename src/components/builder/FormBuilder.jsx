@@ -28,7 +28,7 @@ const S_DRAWER_RIGHT = { position: 'absolute', top: 0, right: 0, bottom: 0, widt
 const S_DRAWER_HEADER = { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' };
 const S_DRAWER_CLOSE = { background: 'none', border: 'none', cursor: 'pointer', fontSize: '20px', color: S.colors.textMuted };
 const S_EMPTY_SETTINGS = { padding: '24px', textAlign: 'center', color: S.colors.textMuted, fontSize: '13px' };
-const S_UNDO_BTN = (enabled) => ({ padding: '6px 10px', borderRadius: S.radius.sm, border: `1px solid ${S.colors.border}`, background: enabled ? S.colors.white : 'transparent', color: enabled ? S.colors.text : S.colors.border, cursor: enabled ? 'pointer' : 'default', fontSize: '14px', fontFamily: 'inherit', opacity: enabled ? 1 : 0.4 });
+const S_UNDO_BTN = (enabled) => ({ padding: '6px 10px', borderRadius: S.radius.sm, border: `1px solid ${S.colors.border}`, background: enabled ? S.colors.bgCardSolid : 'transparent', color: enabled ? S.colors.text : S.colors.border, cursor: enabled ? 'pointer' : 'default', fontSize: '14px', fontFamily: 'inherit', opacity: enabled ? 1 : 0.4 });
 
 // ═══ FEATURE: Form Builder Main (Chat C02 + S01 Polish) ═══
 export const FormBuilder = ({ template: initialTemplate, onSave, onClose }) => {
@@ -147,7 +147,7 @@ export const FormBuilder = ({ template: initialTemplate, onSave, onClose }) => {
   );
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', background: `linear-gradient(135deg, ${S.colors.bg} 0%, #e0e7ef 100%)`, fontFamily: S.font.sans }}>
+    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', background: `linear-gradient(135deg, ${S.colors.bg} 0%, ${S.colors.bgEnd} 100%)`, fontFamily: S.font.sans }}>
       {toast && <ToastMessage message={toast.message} type={toast.type} onDone={() => setToast(null)} />}
       <div style={S_HEADER}>
         <button onClick={handleClose} style={{ ...styles.btn('ghost'), padding: '8px', fontSize: '14px' }}>← Zurück</button>

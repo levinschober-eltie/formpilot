@@ -36,7 +36,7 @@ export const BuilderFieldCard = React.memo(({ field, isSelected, onSelect, onDel
   const cardStyle = {
     display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 12px', borderRadius: S.radius.md,
     border: `2px solid ${isSelected ? S.colors.primary : S.colors.border}`,
-    background: isSelected ? `${S.colors.primary}06` : S.colors.white,
+    background: isSelected ? `${S.colors.primary}06` : S.colors.bgCardSolid,
     cursor: 'pointer', transition: S.transition, fontFamily: 'inherit', width: '100%', minWidth: 0, flexShrink: 0,
   };
 
