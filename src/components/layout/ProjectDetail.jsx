@@ -1,6 +1,7 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { S } from '../../config/theme';
 import { styles } from '../../styles/shared';
+import { linkSubmissionToPhase } from '../../lib/projectService';
 
 // ═══ Extracted Styles (P4) ═══
 const S_BACK_ROW = { display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' };
@@ -33,10 +34,16 @@ const S_PHASE_LABEL = { fontSize: '12px', fontWeight: 600, color: S.colors.textM
 const S_SELECT = { padding: '6px 10px', borderRadius: S.radius.sm, border: `1px solid ${S.colors.border}`, fontSize: '13px', fontFamily: 'inherit', background: S.colors.bgInput, color: S.colors.text, flex: 1, maxWidth: '260px' };
 const S_DATE_INPUT = { padding: '6px 10px', borderRadius: S.radius.sm, border: `1px solid ${S.colors.border}`, fontSize: '13px', fontFamily: 'inherit', background: S.colors.bgInput, color: S.colors.text };
 
-const STATUS_OPTIONS = [
+const PHASE_STATUS_OPTIONS = [
   { value: 'pending', label: 'Ausstehend' },
   { value: 'in_progress', label: 'In Bearbeitung' },
   { value: 'completed', label: 'Abgeschlossen' },
+];
+const PROJECT_STATUS_OPTIONS = [
+  { value: 'planning', label: 'In Planung' },
+  { value: 'active', label: 'Aktiv' },
+  { value: 'completed', label: 'Abgeschlossen' },
+  { value: 'archived', label: 'Archiviert' },
 ];
 const STATUS_BADGE_COLORS = { pending: S.colors.textMuted, in_progress: S.colors.primary, completed: S.colors.success };
 
@@ -48,6 +55,13 @@ export const ProjectDetail = ({ project, submissions, allTemplates, onBack, onPr
   const [description, setDescription] = useState(project.description || '');
   const [phases, setPhases] = useState(project.phases || []);
   const [linkingPhaseId, setLinkingPhaseId] = useState(null);
+
+  // Sync local state when project prop changes (e.g. after submission link)
+  useEffect(() => {
+    setName(project.name || '');
+    setDescription(project.description || '');
+    setPhases(project.phases || []);
+  }, [project]);
 
   const templateMap = useMemo(() => {
     const map = {};
@@ -107,10 +121,24 @@ export const ProjectDetail = ({ project, submissions, allTemplates, onBack, onPr
     saveProject({ phases: next });
   }, [phases, saveProject]);
 
-  const handleLinkSubmission = useCallback((phaseId, subId) => {
-    updatePhase(phaseId, { submissionId: subId });
+  const removePhase = useCallback((phaseId) => {
+    const next = phases.filter(p => p.id !== phaseId);
+    setPhases(next);
+    saveProject({ phases: next });
+  }, [phases, saveProject]);
+
+  const handleLinkSubmission = useCallback(async (phaseId, subId) => {
+    // Call linkSubmissionToPhase to extract sharedData for auto-fill
+    const phase = phases.find(p => p.id === phaseId);
+    const tpl = phase?.templateId ? templateMap[phase.templateId] : null;
+    const updatedProj = await linkSubmissionToPhase(project.id, phaseId, subId, tpl);
+    if (updatedProj) {
+      onProjectChange(updatedProj);
+    } else {
+      updatePhase(phaseId, { submissionId: subId });
+    }
     setLinkingPhaseId(null);
-  }, [updatePhase]);
+  }, [phases, templateMap, project.id, onProjectChange, updatePhase]);
 
   const dotIcon = (status, idx) => {
     if (status === 'completed') return '\u2713';
@@ -126,9 +154,9 @@ export const ProjectDetail = ({ project, submissions, allTemplates, onBack, onPr
         <div style={{ flex: 1 }}>
           <input value={name} onChange={e => setName(e.target.value)} onBlur={handleNameBlur} style={S_NAME_INPUT} placeholder="Projektname..." />
         </div>
-        <span style={styles.badge(STATUS_BADGE_COLORS[project.status] || S.colors.textMuted)}>
-          {STATUS_OPTIONS.find(o => o.value === project.status)?.label || project.status || 'Aktiv'}
-        </span>
+        <select value={project.status || 'planning'} onChange={e => saveProject({ status: e.target.value })} style={S_SELECT}>
+          {PROJECT_STATUS_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+        </select>
         <button onClick={handleDelete} style={{ ...styles.btn('ghost', 'sm'), color: S.colors.danger }}>&#x1F5D1;</button>
       </div>
 
@@ -163,13 +191,16 @@ export const ProjectDetail = ({ project, submissions, allTemplates, onBack, onPr
 
               {/* Phase card */}
               <div style={S_PHASE_CARD}>
-                <input
-                  value={phase.title}
-                  onChange={e => { const v = e.target.value; setPhases(ps => ps.map(p => p.id === phase.id ? { ...p, title: v } : p)); }}
-                  onBlur={e => updatePhase(phase.id, { title: e.target.value })}
-                  style={S_PHASE_TITLE_INPUT}
-                  placeholder="Phasenname..."
-                />
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <input
+                    value={phase.title}
+                    onChange={e => { const v = e.target.value; setPhases(ps => ps.map(p => p.id === phase.id ? { ...p, title: v } : p)); }}
+                    onBlur={e => updatePhase(phase.id, { title: e.target.value })}
+                    style={{ ...S_PHASE_TITLE_INPUT, flex: 1 }}
+                    placeholder="Phasenname..."
+                  />
+                  <button onClick={() => { if (confirm(`Phase "${phase.title}" entfernen?`)) removePhase(phase.id); }} style={{ ...styles.btn('ghost', 'sm'), padding: '4px 8px', color: S.colors.danger, fontSize: '12px', flexShrink: 0 }} title="Phase entfernen">✕</button>
+                </div>
 
                 {/* Template selector */}
                 <div style={S_PHASE_FIELD}>
@@ -190,7 +221,7 @@ export const ProjectDetail = ({ project, submissions, allTemplates, onBack, onPr
                 <div style={S_PHASE_FIELD}>
                   <span style={S_PHASE_LABEL}>Status</span>
                   <select value={phase.status} onChange={e => updatePhase(phase.id, { status: e.target.value })} style={S_SELECT}>
-                    {STATUS_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                    {PHASE_STATUS_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                   </select>
                 </div>
 
@@ -204,7 +235,7 @@ export const ProjectDetail = ({ project, submissions, allTemplates, onBack, onPr
                     </div>
                   ) : phase.templateId ? (
                     <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                      <button onClick={() => tpl && onStartFilling(tpl, project)} style={styles.btn('primary', 'sm')}>Vertrag erstellen</button>
+                      <button onClick={() => tpl && onStartFilling(tpl, project, phase.id)} style={styles.btn('primary', 'sm')}>Vertrag erstellen</button>
                       <button onClick={() => setLinkingPhaseId(linkingPhaseId === phase.id ? null : phase.id)} style={styles.btn('secondary', 'sm')}>Vertrag verkn&uuml;pfen</button>
                     </div>
                   ) : (

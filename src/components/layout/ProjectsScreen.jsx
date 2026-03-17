@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { S } from '../../config/theme';
 import { styles } from '../../styles/shared';
+import { useDebounce } from '../../hooks/useDebounce';
 
 // ═══ Constants ═══
 const STATUS_LABELS = {
@@ -43,6 +44,7 @@ const S_STATUS_BADGE = (status) => ({
 // ═══ FEATURE: Projektliste ═══
 export const ProjectsScreen = ({ projects, onSelectProject, onCreateProject }) => {
   const [search, setSearch] = useState('');
+  const debouncedSearch = useDebounce(search);
   const [page, setPage] = useState(0);
   const [showCreate, setShowCreate] = useState(false);
   const [newName, setNewName] = useState('');
@@ -52,13 +54,13 @@ export const ProjectsScreen = ({ projects, onSelectProject, onCreateProject }) =
   }, [projects]);
 
   const filtered = useMemo(() => {
-    if (!search.trim()) return sorted;
-    const q = search.toLowerCase();
+    if (!debouncedSearch.trim()) return sorted;
+    const q = debouncedSearch.toLowerCase();
     return sorted.filter(p =>
       p.name?.toLowerCase().includes(q) ||
       p.description?.toLowerCase().includes(q)
     );
-  }, [sorted, search]);
+  }, [sorted, debouncedSearch]);
 
   const getPhaseProgress = (project) => {
     const phases = project.phases || [];

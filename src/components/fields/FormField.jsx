@@ -1,3 +1,4 @@
+import React from 'react';
 import { S } from '../../config/theme';
 import { styles } from '../../styles/shared';
 import { evaluateConditions, isConditionallyRequired, isConditionallyDisabled } from '../../lib/validation';
@@ -8,13 +9,15 @@ import {
   SignatureField, PhotoField,
 } from './index';
 
+// P4: widthMap outside render
+const widthMap = { full: '100%', half: 'calc(50% - 8px)', third: 'calc(33.33% - 11px)' };
+
 // ═══ FEATURE: Form Field Renderer (Chat F.1 + Signature/Photo) ═══
-export const FormField = ({ field, value, onChange, error, formData }) => {
+export const FormField = React.memo(({ field, value, onChange, error, formData }) => {
   if (field.conditions && !evaluateConditions(field.conditions, field.conditionLogic, formData)) return null;
   if (field.type === 'heading') return <div style={{ width: '100%', minWidth: 0 }}><HeadingField field={field} /></div>;
   if (field.type === 'divider') return <div style={{ width: '100%', minWidth: 0 }}><DividerField /></div>;
   if (field.type === 'info') return <div style={{ width: '100%', minWidth: 0 }}><InfoField field={field} /></div>;
-  const widthMap = { full: '100%', half: 'calc(50% - 8px)', third: 'calc(33.33% - 11px)' };
   const disabled = isConditionallyDisabled(field, formData);
   const condRequired = isConditionallyRequired(field, formData);
   const fieldInputId = `field-${field.id}`;
@@ -45,7 +48,9 @@ export const FormField = ({ field, value, onChange, error, formData }) => {
       {error && <div id={errorId} role="alert" style={styles.fieldError}>{error}</div>}
     </div>
   );
-};
+});
+
+FormField.displayName = 'FormField';
 
 // ═══ FEATURE: Repeater Field ═══
 const RepeaterField = ({ field, value, onChange, formData }) => {

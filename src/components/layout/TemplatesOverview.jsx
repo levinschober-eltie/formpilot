@@ -12,7 +12,7 @@ import { useConfirm } from '../../hooks/useConfirm';
 // ═══ Extracted Styles (P4) ═══
 const S_TOOLBAR = { display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' };
 
-export const TemplatesOverview = ({ user, onOpenBuilder, customTemplates, onDeleteTemplate }) => {
+export const TemplatesOverview = ({ user, onOpenBuilder, onStartFilling, customTemplates, onDeleteTemplate }) => {
   const [toast, setToast] = useState(null);
   const { confirm, confirmState, handleConfirm, handleCancel } = useConfirm();
   const fileInputRef = useRef(null);
@@ -102,12 +102,15 @@ export const TemplatesOverview = ({ user, onOpenBuilder, customTemplates, onDele
                   <span style={styles.badge(S.colors.textSecondary)}>{t.pages?.length || 0} Seiten</span>
                 </div>
               </div>
-              {user.role === 'admin' && <div style={{ display: 'flex', gap: '6px', flexShrink: 0, flexWrap: 'wrap' }}>
-                <button onClick={() => onOpenBuilder(t)} style={styles.btn('secondary', 'sm')}>✎ Bearbeiten</button>
-                <button onClick={() => handleDuplicate(t)} style={styles.btn('ghost', 'sm')} title="Duplizieren">📋</button>
-                <button onClick={() => handleExport(t)} style={styles.btn('ghost', 'sm')} title="Exportieren">📤</button>
-                <button onClick={() => handleDelete(t)} style={{ ...styles.btn('ghost', 'sm'), color: S.colors.danger }}>🗑</button>
-              </div>}
+              <div style={{ display: 'flex', gap: '6px', flexShrink: 0, flexWrap: 'wrap' }}>
+                {onStartFilling && <button onClick={() => onStartFilling(t)} style={styles.btn('primary', 'sm')}>✏️ Ausfüllen</button>}
+                {user.role === 'admin' && <>
+                  <button onClick={() => onOpenBuilder(t)} style={styles.btn('secondary', 'sm')}>✎ Bearbeiten</button>
+                  <button onClick={() => handleDuplicate(t)} style={styles.btn('ghost', 'sm')} title="Duplizieren">📋</button>
+                  <button onClick={() => handleExport(t)} style={styles.btn('ghost', 'sm')} title="Exportieren">📤</button>
+                  <button onClick={() => handleDelete(t)} style={{ ...styles.btn('ghost', 'sm'), color: S.colors.danger }}>🗑</button>
+                </>}
+              </div>
             </div>
           ))}
         </div>
@@ -126,13 +129,16 @@ export const TemplatesOverview = ({ user, onOpenBuilder, customTemplates, onDele
                 <span style={styles.badge(S.colors.textSecondary)}>{t.pages.length} Seiten</span>
               </div>
             </div>
-            {user.role === 'admin' && <button onClick={() => {
-              const copy = JSON.parse(JSON.stringify(t));
-              copy.id = `tpl-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-              copy.name = `${t.name} (Kopie)`;
-              copy.isDemo = false; copy.version = 1;
-              onOpenBuilder(copy);
-            }} style={styles.btn('secondary', 'sm')}>📋 Kopieren</button>}
+            <div style={{ display: 'flex', gap: '6px', flexShrink: 0, flexWrap: 'wrap' }}>
+              {onStartFilling && <button onClick={() => onStartFilling(t)} style={styles.btn('primary', 'sm')}>✏️ Ausfüllen</button>}
+              {user.role === 'admin' && <button onClick={() => {
+                const copy = JSON.parse(JSON.stringify(t));
+                copy.id = `tpl-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+                copy.name = `${t.name} (Kopie)`;
+                copy.isDemo = false; copy.version = 1;
+                onOpenBuilder(copy);
+              }} style={styles.btn('secondary', 'sm')}>📋 Kopieren</button>}
+            </div>
           </div>
         ))}
       </div>

@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { S } from '../../config/theme';
 import { styles } from '../../styles/shared';
+import { useDebounce } from '../../hooks/useDebounce';
 
 // ═══ Extracted Styles (P4) ═══
 const S_SEARCH = { flex: '1 1 200px', padding: '10px 14px', borderRadius: S.radius.md, border: `1.5px solid ${S.colors.border}`, fontSize: '14px', fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box', background: S.colors.bgInput, minWidth: '150px' };
@@ -17,6 +18,7 @@ const PAGE_SIZE = 20;
 // ═══ FEATURE: Kundenliste ═══
 export const CustomersScreen = ({ customers, submissions, allTemplates, onSelectCustomer }) => {
   const [search, setSearch] = useState('');
+  const debouncedSearch = useDebounce(search);
   const [page, setPage] = useState(0);
 
   const templateMap = useMemo(() => {
@@ -34,15 +36,15 @@ export const CustomersScreen = ({ customers, submissions, allTemplates, onSelect
   }, [customers, submissions]);
 
   const filtered = useMemo(() => {
-    if (!search.trim()) return enriched;
-    const q = search.toLowerCase();
+    if (!debouncedSearch.trim()) return enriched;
+    const q = debouncedSearch.toLowerCase();
     return enriched.filter(c =>
       c.name.toLowerCase().includes(q) ||
       c.email?.toLowerCase().includes(q) ||
       c.address?.toLowerCase().includes(q) ||
       c.projects?.some(p => p.toLowerCase().includes(q))
     );
-  }, [enriched, search]);
+  }, [enriched, debouncedSearch]);
 
   const getInitials = (name) => name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
 

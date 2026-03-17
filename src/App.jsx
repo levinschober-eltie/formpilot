@@ -20,6 +20,22 @@ import { TemplateSelector } from './components/filler/TemplateSelector';
 import { FormFiller } from './components/filler/FormFiller';
 import { FormBuilder } from './components/builder/FormBuilder';
 
+// ═══ Nav Items (P4: outside render) ═══
+const NAV_ITEMS = [
+  { id: 'dashboard', label: 'Dashboard', icon: '📊', roles: ['admin', 'buero'] },
+  { id: 'projects', label: 'Projekte', icon: '🏗️', roles: ['admin', 'buero'] },
+  { id: 'templates', label: 'Vorlagen', icon: '📑', roles: ['admin', 'buero'] },
+  { id: 'fill', label: 'Ausfüllen', icon: '✏️', roles: ['admin', 'monteur', 'buero'] },
+  { id: 'submissions', label: 'Verträge', icon: '📥', roles: ['admin', 'monteur', 'buero'] },
+  { id: 'customers', label: 'Kontakte', icon: '👥', roles: ['admin', 'buero'] },
+  { id: 'settings', label: 'Mehr', icon: '⚙️', roles: ['admin', 'monteur', 'buero'] },
+];
+
+const getDefaultTab = (role) => {
+  const first = NAV_ITEMS.find(n => n.roles.includes(role));
+  return first?.id || 'fill';
+};
+
 // ═══ FormPilot Main App ═══
 export default function FormPilot() {
   const [user, setUser] = useState(null);
@@ -41,7 +57,7 @@ export default function FormPilot() {
   useEffect(() => {
     (async () => {
       const session = await storageGet(STORAGE_KEYS.session);
-      if (session) { const u = USERS.find(u => u.id === session.userId); if (u) setUser(u); }
+      if (session) { const u = USERS.find(u => u.id === session.userId); if (u) { setUser(u); setTab(getDefaultTab(u.role)); } }
       const subs = await storageGet(STORAGE_KEYS.submissions); if (subs) setSubmissions(subs);
       const tpls = await storageGet(STORAGE_KEYS.templates); if (tpls) setCustomTemplates(tpls);
       const custs = await getCustomers(); setCustomers(custs);
@@ -57,10 +73,10 @@ export default function FormPilot() {
     document.documentElement.setAttribute('data-theme', darkMode ? 'dark' : 'light');
   }, [darkMode]);
 
-  const handleLogin = async (u) => { setUser(u); await storageSet(STORAGE_KEYS.session, { userId: u.id }); };
+  const handleLogin = async (u) => { setUser(u); setTab(getDefaultTab(u.role)); await storageSet(STORAGE_KEYS.session, { userId: u.id }); };
   const handleLogout = async () => { setUser(null); await storageSet(STORAGE_KEYS.session, null); };
 
-  const handleStartFilling = async (template, projectContext = null) => {
+  const handleStartFilling = useCallback(async (template, projectContext = null, phaseId = null) => {
     const dk = `fp_draft_${template.id}_current`;
     const draft = await storageGet(dk);
     let initial = draft?.data && Object.keys(draft.data).length > 0 ? draft.data : null;
@@ -68,17 +84,17 @@ export default function FormPilot() {
     if (projectContext) {
       const autoFill = buildAutoFillData(projectContext, template);
       initial = { ...autoFill, ...(initial || {}) }; // Draft hat Vorrang über AutoFill
-      setFillingProjectContext(projectContext);
+      setFillingProjectContext({ ...projectContext, _targetPhaseId: phaseId });
     } else {
       setFillingProjectContext(null);
     }
     setDraftData(initial);
     setFillingTemplate(template);
-  };
+  }, []);
 
   const allTemplates = useMemo(() => [...DEMO_TEMPLATES, ...customTemplates], [customTemplates]);
 
-  const handleSubmitForm = async (data) => {
+  const handleSubmitForm = useCallback(async (data) => {
     const newSub = { id: 'sub-' + Date.now(), templateId: fillingTemplate.id, templateVersion: fillingTemplate.version, status: 'completed', data, filledBy: user.id, filledByName: user.name, createdAt: new Date().toISOString(), completedAt: new Date().toISOString() };
     const updated = [...submissions, newSub]; setSubmissions(updated);
     await storageSet(STORAGE_KEYS.submissions, updated);
@@ -90,7 +106,6 @@ export default function FormPilot() {
       const result = await processCustomerFromSubmission(newSub, template);
       if (result) {
         setCustomers(result.customers);
-        // Log: Vertrag erstellt
         await addActivityLog({
           action: 'submission_created',
           customerId: result.customer.id,
@@ -99,7 +114,6 @@ export default function FormPilot() {
           userName: user.name,
           details: `${template.name} ausgefüllt für ${result.customer.name}`,
         });
-        // Log: Kunde erstellt oder aktualisiert
         await addActivityLog({
           action: result.isNew ? 'customer_created' : 'customer_updated',
           customerId: result.customer.id,
@@ -113,12 +127,15 @@ export default function FormPilot() {
     }
 
     // ═══ Projekt-Verknüpfung (wenn aus Projekt heraus erstellt) ═══
-    if (fillingProjectContext) {
-      const proj = fillingProjectContext;
-      // Finde die Phase die dieses Template verwendet und noch keine Submission hat
-      const phase = proj.phases.find(p => p.templateId === fillingTemplate.id && !p.submissionId);
+    const projCtx = fillingProjectContext;
+    if (projCtx) {
+      // Use stored phaseId if available, else fallback to first matching
+      const phaseId = projCtx._targetPhaseId;
+      const phase = phaseId
+        ? projCtx.phases.find(p => p.id === phaseId)
+        : projCtx.phases.find(p => p.templateId === fillingTemplate.id && !p.submissionId);
       if (phase) {
-        const updatedProj = await linkSubmissionToPhase(proj.id, phase.id, newSub.id, template);
+        const updatedProj = await linkSubmissionToPhase(projCtx.id, phase.id, newSub.id, template);
         if (updatedProj) {
           const projs = await getProjects(); setProjects(projs);
           setViewingProject(updatedProj);
@@ -127,8 +144,8 @@ export default function FormPilot() {
     }
 
     setFillingTemplate(null); setDraftData(null); setFillingProjectContext(null);
-    if (fillingProjectContext) { setTab('projects'); } else { setTab('submissions'); }
-  };
+    if (projCtx) { setTab('projects'); } else { setTab('submissions'); }
+  }, [fillingTemplate, fillingProjectContext, submissions, allTemplates, user]);
 
   const handleStatusChange = useCallback(async (subId, newStatus) => {
     setSubmissions(prev => {
@@ -157,6 +174,19 @@ export default function FormPilot() {
         details: `Vertrag ${subId} gelöscht`,
       });
     }
+    // Clean up dangling project phase references
+    const projs = await getProjects();
+    let projChanged = false;
+    for (const proj of projs) {
+      const phase = proj.phases?.find(p => p.submissionId === subId);
+      if (phase) {
+        phase.submissionId = null;
+        phase.status = 'pending';
+        await saveProject(proj);
+        projChanged = true;
+      }
+    }
+    if (projChanged) setProjects(await getProjects());
     setViewingSubmission(null);
   }, [user]);
 
@@ -186,24 +216,15 @@ export default function FormPilot() {
     setViewingProject(updated);
     await refreshProjects();
   }, [refreshProjects]);
-  const handleStartFillingFromProject = useCallback((template, project) => {
-    handleStartFilling(template, project);
-  }, []);
+  const handleStartFillingFromProject = useCallback((template, project, phaseId) => {
+    handleStartFilling(template, project, phaseId);
+  }, [handleStartFilling]);
 
   if (!loaded) return <div style={{ ...styles.app, alignItems: 'center', justifyContent: 'center' }}><div style={{ textAlign: 'center' }}><div style={{ fontSize: '48px', marginBottom: '12px' }}>📋</div><div style={{ color: S.colors.textSecondary }}>Laden...</div></div></div>;
   if (!user) return <LoginScreen onLogin={handleLogin} />;
   if (builderTemplate) return <FormBuilder template={builderTemplate} onSave={handleBuilderSave} onClose={() => setBuilderTemplate(null)} />;
 
-  const NAV_ITEMS = [
-    { id: 'dashboard', label: 'Dashboard', icon: '📊', roles: ['admin', 'buero'] },
-    { id: 'projects', label: 'Projekte', icon: '🏗️', roles: ['admin', 'buero'] },
-    { id: 'templates', label: 'Vorlagen', icon: '📑', roles: ['admin', 'buero'] },
-    { id: 'fill', label: 'Ausfüllen', icon: '✏️', roles: ['admin', 'monteur'] },
-    { id: 'submissions', label: 'Verträge', icon: '📥', roles: ['admin', 'monteur', 'buero'] },
-    { id: 'customers', label: 'Kontakte', icon: '👥', roles: ['admin', 'buero'] },
-    { id: 'settings', label: 'Mehr', icon: '⚙️', roles: ['admin', 'monteur', 'buero'] },
-  ];
-  const visibleNav = NAV_ITEMS.filter(n => n.roles.includes(user.role));
+  const visibleNav = useMemo(() => NAV_ITEMS.filter(n => n.roles.includes(user.role)), [user.role]);
 
   return (
     <div style={styles.app}>
@@ -216,7 +237,7 @@ export default function FormPilot() {
       </div>
       <div style={styles.main}>
         {fillingTemplate ? (
-          <FormFiller template={fillingTemplate} onSubmit={handleSubmitForm} onCancel={() => { setFillingTemplate(null); setDraftData(null); }} initialData={draftData} draftId={`fp_draft_${fillingTemplate.id}_current`} />
+          <FormFiller template={fillingTemplate} onSubmit={handleSubmitForm} onCancel={() => { setFillingTemplate(null); setDraftData(null); setFillingProjectContext(null); }} initialData={draftData} draftId={`fp_draft_${fillingTemplate.id}_current`} />
         ) : viewingSubmission ? (
           <SubmissionDetail
             submission={viewingSubmission}
@@ -245,7 +266,7 @@ export default function FormPilot() {
         ) : (<>
           {tab === 'dashboard' && <DashboardScreen submissions={submissions} allTemplates={allTemplates} user={user} />}
           {tab === 'projects' && <ProjectsScreen projects={projects} onSelectProject={setViewingProject} onCreateProject={handleCreateProject} />}
-          {tab === 'templates' && <TemplatesOverview user={user} onOpenBuilder={setBuilderTemplate} customTemplates={customTemplates} onDeleteTemplate={handleDeleteTemplate} />}
+          {tab === 'templates' && <TemplatesOverview user={user} onOpenBuilder={setBuilderTemplate} onStartFilling={handleStartFilling} customTemplates={customTemplates} onDeleteTemplate={handleDeleteTemplate} />}
           {tab === 'fill' && <TemplateSelector onSelect={handleStartFilling} customTemplates={customTemplates} />}
           {tab === 'submissions' && <SubmissionsList submissions={submissions} user={user} allTemplates={allTemplates} onViewSubmission={setViewingSubmission} onDeleteSubmission={handleDeleteSubmission} />}
           {tab === 'customers' && <CustomersScreen customers={customers} submissions={submissions} allTemplates={allTemplates} onSelectCustomer={setViewingCustomer} />}

@@ -4,6 +4,7 @@ import { styles } from '../../styles/shared';
 import { DEMO_TEMPLATES } from '../../config/templates';
 import { exportSubmissionsCsv } from '../../lib/exportCsv';
 import { exportSubmissionPdf } from '../../lib/exportPdf';
+import { useDebounce } from '../../hooks/useDebounce';
 
 // ═══ FEATURE: Submissions List (Enhanced with Search, Filter, Export) ═══
 const S_TOOLBAR = { display: 'flex', gap: '8px', marginBottom: '16px', flexWrap: 'wrap', alignItems: 'center' };
@@ -14,6 +15,7 @@ const PAGE_SIZE = 20;
 
 export const SubmissionsList = ({ submissions, user, allTemplates, onViewSubmission, onDeleteSubmission }) => {
   const [search, setSearch] = useState('');
+  const debouncedSearch = useDebounce(search);
   const [statusFilter, setStatusFilter] = useState('all');
   const [templateFilter, setTemplateFilter] = useState('all');
   const [dateFrom, setDateFrom] = useState('');
@@ -32,8 +34,8 @@ export const SubmissionsList = ({ submissions, user, allTemplates, onViewSubmiss
     if (templateFilter !== 'all') result = result.filter(s => s.templateId === templateFilter);
     if (dateFrom) result = result.filter(s => s.createdAt >= dateFrom);
     if (dateTo) result = result.filter(s => s.createdAt <= dateTo + 'T23:59:59');
-    if (search.trim()) {
-      const q = search.toLowerCase();
+    if (debouncedSearch.trim()) {
+      const q = debouncedSearch.toLowerCase();
       result = result.filter(s => {
         const tpl = templateMap[s.templateId];
         if (tpl?.name?.toLowerCase().includes(q)) return true;
@@ -45,7 +47,7 @@ export const SubmissionsList = ({ submissions, user, allTemplates, onViewSubmiss
       });
     }
     return result;
-  }, [submissions, search, statusFilter, templateFilter, dateFrom, dateTo, templateMap]);
+  }, [submissions, debouncedSearch, statusFilter, templateFilter, dateFrom, dateTo, templateMap]);
 
   const uniqueTemplates = useMemo(() => {
     const ids = [...new Set(submissions.map(s => s.templateId))];
