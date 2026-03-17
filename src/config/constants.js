@@ -11,6 +11,7 @@ export const STORAGE_KEYS = {
   templates: 'fp_templates',
   customers: 'fp_customers',
   activityLog: 'fp_activity_log',
+  projects: 'fp_projects',
 };
 
 // Felder die automatisch Kundendaten enthalten (Label-Matching)

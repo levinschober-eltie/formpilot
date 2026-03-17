@@ -5,6 +5,7 @@ import { STORAGE_KEYS, USERS } from './config/constants';
 import { DEMO_TEMPLATES } from './config/templates';
 import { storageGet, storageSet } from './lib/storage';
 import { processCustomerFromSubmission, addActivityLog, getCustomers, removeSubmissionFromCustomer } from './lib/customerService';
+import { getProjects, saveProject, deleteProject, createProject, linkSubmissionToPhase, buildAutoFillData } from './lib/projectService';
 import { LoginScreen } from './components/layout/LoginScreen';
 import { SettingsScreen } from './components/layout/SettingsScreen';
 import { SubmissionsList } from './components/layout/SubmissionsList';
@@ -13,6 +14,8 @@ import { TemplatesOverview } from './components/layout/TemplatesOverview';
 import { DashboardScreen } from './components/layout/DashboardScreen';
 import { CustomersScreen } from './components/layout/CustomersScreen';
 import { CustomerDetail } from './components/layout/CustomerDetail';
+import { ProjectsScreen } from './components/layout/ProjectsScreen';
+import { ProjectDetail } from './components/layout/ProjectDetail';
 import { TemplateSelector } from './components/filler/TemplateSelector';
 import { FormFiller } from './components/filler/FormFiller';
 import { FormBuilder } from './components/builder/FormBuilder';
@@ -29,6 +32,9 @@ export default function FormPilot() {
   const [builderTemplate, setBuilderTemplate] = useState(null);
   const [viewingSubmission, setViewingSubmission] = useState(null);
   const [viewingCustomer, setViewingCustomer] = useState(null);
+  const [projects, setProjects] = useState([]);
+  const [viewingProject, setViewingProject] = useState(null);
+  const [fillingProjectContext, setFillingProjectContext] = useState(null);
   const [loaded, setLoaded] = useState(false);
   const [darkMode, setDarkMode] = useState(() => localStorage.getItem('fp_darkMode') === 'true');
 
@@ -39,6 +45,7 @@ export default function FormPilot() {
       const subs = await storageGet(STORAGE_KEYS.submissions); if (subs) setSubmissions(subs);
       const tpls = await storageGet(STORAGE_KEYS.templates); if (tpls) setCustomTemplates(tpls);
       const custs = await getCustomers(); setCustomers(custs);
+      const projs = await getProjects(); setProjects(projs);
       setLoaded(true);
     })();
   }, []);
@@ -53,10 +60,19 @@ export default function FormPilot() {
   const handleLogin = async (u) => { setUser(u); await storageSet(STORAGE_KEYS.session, { userId: u.id }); };
   const handleLogout = async () => { setUser(null); await storageSet(STORAGE_KEYS.session, null); };
 
-  const handleStartFilling = async (template) => {
+  const handleStartFilling = async (template, projectContext = null) => {
     const dk = `fp_draft_${template.id}_current`;
     const draft = await storageGet(dk);
-    setDraftData(draft?.data && Object.keys(draft.data).length > 0 ? draft.data : null);
+    let initial = draft?.data && Object.keys(draft.data).length > 0 ? draft.data : null;
+    // Auto-Fill aus Projekt-Daten (Pacht, Gemeinde, etc. → gleiche Felder befüllen)
+    if (projectContext) {
+      const autoFill = buildAutoFillData(projectContext, template);
+      initial = { ...autoFill, ...(initial || {}) }; // Draft hat Vorrang über AutoFill
+      setFillingProjectContext(projectContext);
+    } else {
+      setFillingProjectContext(null);
+    }
+    setDraftData(initial);
     setFillingTemplate(template);
   };
 
@@ -96,7 +112,22 @@ export default function FormPilot() {
       }
     }
 
-    setFillingTemplate(null); setDraftData(null); setTab('submissions');
+    // ═══ Projekt-Verknüpfung (wenn aus Projekt heraus erstellt) ═══
+    if (fillingProjectContext) {
+      const proj = fillingProjectContext;
+      // Finde die Phase die dieses Template verwendet und noch keine Submission hat
+      const phase = proj.phases.find(p => p.templateId === fillingTemplate.id && !p.submissionId);
+      if (phase) {
+        const updatedProj = await linkSubmissionToPhase(proj.id, phase.id, newSub.id, template);
+        if (updatedProj) {
+          const projs = await getProjects(); setProjects(projs);
+          setViewingProject(updatedProj);
+        }
+      }
+    }
+
+    setFillingTemplate(null); setDraftData(null); setFillingProjectContext(null);
+    if (fillingProjectContext) { setTab('projects'); } else { setTab('submissions'); }
   };
 
   const handleStatusChange = useCallback(async (subId, newStatus) => {
@@ -142,12 +173,30 @@ export default function FormPilot() {
     setViewingCustomer(prev => prev ? custs.find(c => c.id === prev.id) || null : null);
   }, []);
 
+  // ═══ Projekt-Handler ═══
+  const refreshProjects = useCallback(async () => { const projs = await getProjects(); setProjects(projs); }, []);
+  const handleCreateProject = useCallback(async (name) => {
+    const proj = await createProject(name);
+    await refreshProjects();
+    setViewingProject(proj);
+  }, [refreshProjects]);
+  const handleProjectChange = useCallback(async (updated) => {
+    if (updated._deleted) { await deleteProject(updated.id); setViewingProject(null); await refreshProjects(); return; }
+    await saveProject(updated);
+    setViewingProject(updated);
+    await refreshProjects();
+  }, [refreshProjects]);
+  const handleStartFillingFromProject = useCallback((template, project) => {
+    handleStartFilling(template, project);
+  }, []);
+
   if (!loaded) return <div style={{ ...styles.app, alignItems: 'center', justifyContent: 'center' }}><div style={{ textAlign: 'center' }}><div style={{ fontSize: '48px', marginBottom: '12px' }}>📋</div><div style={{ color: S.colors.textSecondary }}>Laden...</div></div></div>;
   if (!user) return <LoginScreen onLogin={handleLogin} />;
   if (builderTemplate) return <FormBuilder template={builderTemplate} onSave={handleBuilderSave} onClose={() => setBuilderTemplate(null)} />;
 
   const NAV_ITEMS = [
     { id: 'dashboard', label: 'Dashboard', icon: '📊', roles: ['admin', 'buero'] },
+    { id: 'projects', label: 'Projekte', icon: '🏗️', roles: ['admin', 'buero'] },
     { id: 'templates', label: 'Vorlagen', icon: '📑', roles: ['admin', 'buero'] },
     { id: 'fill', label: 'Ausfüllen', icon: '✏️', roles: ['admin', 'monteur'] },
     { id: 'submissions', label: 'Verträge', icon: '📥', roles: ['admin', 'monteur', 'buero'] },
@@ -176,6 +225,15 @@ export default function FormPilot() {
             onStatusChange={handleStatusChange}
             onDelete={handleDeleteSubmission}
           />
+        ) : viewingProject ? (
+          <ProjectDetail
+            project={viewingProject}
+            submissions={submissions}
+            allTemplates={allTemplates}
+            onBack={() => { setViewingProject(null); refreshProjects(); }}
+            onProjectChange={handleProjectChange}
+            onStartFilling={handleStartFillingFromProject}
+          />
         ) : viewingCustomer ? (
           <CustomerDetail
             customer={viewingCustomer}
@@ -186,6 +244,7 @@ export default function FormPilot() {
           />
         ) : (<>
           {tab === 'dashboard' && <DashboardScreen submissions={submissions} allTemplates={allTemplates} user={user} />}
+          {tab === 'projects' && <ProjectsScreen projects={projects} onSelectProject={setViewingProject} onCreateProject={handleCreateProject} />}
           {tab === 'templates' && <TemplatesOverview user={user} onOpenBuilder={setBuilderTemplate} customTemplates={customTemplates} onDeleteTemplate={handleDeleteTemplate} />}
           {tab === 'fill' && <TemplateSelector onSelect={handleStartFilling} customTemplates={customTemplates} />}
           {tab === 'submissions' && <SubmissionsList submissions={submissions} user={user} allTemplates={allTemplates} onViewSubmission={setViewingSubmission} onDeleteSubmission={handleDeleteSubmission} />}
@@ -193,7 +252,7 @@ export default function FormPilot() {
           {tab === 'settings' && <SettingsScreen user={user} onLogout={handleLogout} darkMode={darkMode} onToggleDarkMode={() => setDarkMode(p => !p)} />}
         </>)}
       </div>
-      {!fillingTemplate && !viewingSubmission && !viewingCustomer && (
+      {!fillingTemplate && !viewingSubmission && !viewingCustomer && !viewingProject && (
         <div style={styles.bottomNav}>
           {visibleNav.map(n => <button key={n.id} onClick={() => setTab(n.id)} style={styles.navItem(tab === n.id)}><span style={{ fontSize: '20px' }}>{n.icon}</span><span>{n.label}</span></button>)}
         </div>
