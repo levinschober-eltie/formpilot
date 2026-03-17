@@ -42,14 +42,15 @@ const getOps = (refType) => {
 
 export const BuilderSettingsPanel = React.memo(({ field, allFields, onChange, onClose }) => {
   const [activeTab, setActiveTab] = useState('general');
-  useEffect(() => { setActiveTab('general'); }, [field.id]);
+  useEffect(() => { if (field) setActiveTab('general'); }, [field?.id]);
+  const upd = useCallback((key, value) => { if (field) onChange({ ...field, [key]: value }); }, [field, onChange]);
+  const updV = useCallback((key, value) => { if (field) onChange({ ...field, validation: { ...(field.validation || {}), [key]: value } }); }, [field, onChange]);
+  const referenceFields = useMemo(() => field ? allFields.filter(f => f.id !== field.id && !['heading', 'divider', 'info'].includes(f.type)) : [], [allFields, field?.id]);
+
   if (!field) return null;
 
-  const upd = useCallback((key, value) => onChange({ ...field, [key]: value }), [field, onChange]);
-  const updV = useCallback((key, value) => onChange({ ...field, validation: { ...(field.validation || {}), [key]: value } }), [field, onChange]);
   const isDisplay = ['heading', 'divider', 'info'].includes(field.type);
   const hasOptions = ['select', 'radio', 'checkbox'].includes(field.type);
-  const referenceFields = useMemo(() => allFields.filter(f => f.id !== field.id && !['heading', 'divider', 'info'].includes(f.type)), [allFields, field.id]);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
