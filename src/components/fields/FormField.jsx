@@ -12,46 +12,6 @@ import {
 // P4: widthMap outside render
 const widthMap = { full: '100%', half: 'calc(50% - 8px)', third: 'calc(33.33% - 11px)' };
 
-// ═══ FEATURE: Form Field Renderer (Chat F.1 + Signature/Photo) ═══
-export const FormField = React.memo(({ field, value, onChange, error, formData }) => {
-  if (field.conditions && !evaluateConditions(field.conditions, field.conditionLogic, formData)) return null;
-  if (field.type === 'heading') return <div style={{ width: '100%', minWidth: 0 }}><HeadingField field={field} /></div>;
-  if (field.type === 'divider') return <div style={{ width: '100%', minWidth: 0 }}><DividerField /></div>;
-  if (field.type === 'info') return <div style={{ width: '100%', minWidth: 0 }}><InfoField field={field} /></div>;
-  const disabled = isConditionallyDisabled(field, formData);
-  const condRequired = isConditionallyRequired(field, formData);
-  const fieldInputId = `field-${field.id}`;
-  const errorId = error ? `error-${field.id}` : undefined;
-  const renderInput = () => {
-    switch (field.type) {
-      case 'text': return <TextField field={field} value={value} onChange={onChange} error={error} id={fieldInputId} aria-describedby={errorId} />;
-      case 'textarea': return <TextareaField field={field} value={value} onChange={onChange} error={error} id={fieldInputId} aria-describedby={errorId} />;
-      case 'number': return <NumberField field={field} value={value} onChange={onChange} error={error} id={fieldInputId} aria-describedby={errorId} />;
-      case 'date': return <DateField field={field} value={value} onChange={onChange} error={error} id={fieldInputId} aria-describedby={errorId} />;
-      case 'time': return <TimeField field={field} value={value} onChange={onChange} error={error} id={fieldInputId} aria-describedby={errorId} />;
-      case 'select': return <SelectField field={field} value={value} onChange={onChange} error={error} id={fieldInputId} aria-describedby={errorId} />;
-      case 'radio': return <RadioField field={field} value={value} onChange={onChange} error={error} />;
-      case 'checkbox': return <CheckboxField field={field} value={value} onChange={onChange} error={error} />;
-      case 'toggle': return <ToggleField field={field} value={value} onChange={onChange} error={error} />;
-      case 'checklist': return <ChecklistField field={field} value={value} onChange={onChange} error={error} />;
-      case 'rating': return <RatingField field={field} value={value} onChange={onChange} error={error} />;
-      case 'signature': return <SignatureField field={field} value={value} onChange={onChange} error={error} />;
-      case 'photo': return <PhotoField field={field} value={value} onChange={onChange} error={error} />;
-      case 'repeater': return <RepeaterField field={field} value={value} onChange={onChange} formData={formData} />;
-      default: return <InfoField field={{ content: `Unbekannter Feldtyp: ${field.type}` }} />;
-    }
-  };
-  return (
-    <div style={{ width: widthMap[field.width] || '100%', minWidth: 0, opacity: disabled ? 0.5 : 1, pointerEvents: disabled ? 'none' : 'auto' }} role={disabled ? 'group' : undefined} aria-disabled={disabled || undefined}>
-      {field.label && <label htmlFor={fieldInputId} style={styles.fieldLabel}>{field.label}{(field.required || condRequired) && <span style={{ color: S.colors.danger, marginLeft: '4px' }} aria-hidden="true">*</span>}{(field.required || condRequired) && <span className="sr-only"> (Pflichtfeld)</span>}</label>}
-      {renderInput()}
-      {error && <div id={errorId} role="alert" style={styles.fieldError}>{error}</div>}
-    </div>
-  );
-});
-
-FormField.displayName = 'FormField';
-
 // ═══ FEATURE: Repeater Field ═══
 const RepeaterField = ({ field, value, onChange, formData }) => {
   const rows = Array.isArray(value) ? value : [];
@@ -102,3 +62,43 @@ const RepeaterField = ({ field, value, onChange, formData }) => {
     </div>
   );
 };
+
+// ═══ FEATURE: Form Field Renderer (Chat F.1 + Signature/Photo) ═══
+export const FormField = React.memo(({ field, value, onChange, error, formData }) => {
+  if (field.conditions && !evaluateConditions(field.conditions, field.conditionLogic, formData)) return null;
+  if (field.type === 'heading') return <div style={{ width: '100%', minWidth: 0 }}><HeadingField field={field} /></div>;
+  if (field.type === 'divider') return <div style={{ width: '100%', minWidth: 0 }}><DividerField /></div>;
+  if (field.type === 'info') return <div style={{ width: '100%', minWidth: 0 }}><InfoField field={field} /></div>;
+  const disabled = isConditionallyDisabled(field, formData);
+  const condRequired = isConditionallyRequired(field, formData);
+  const fieldInputId = `field-${field.id}`;
+  const errorId = error ? `error-${field.id}` : undefined;
+  const renderInput = () => {
+    switch (field.type) {
+      case 'text': return <TextField field={field} value={value} onChange={onChange} error={error} id={fieldInputId} aria-describedby={errorId} />;
+      case 'textarea': return <TextareaField field={field} value={value} onChange={onChange} error={error} id={fieldInputId} aria-describedby={errorId} />;
+      case 'number': return <NumberField field={field} value={value} onChange={onChange} error={error} id={fieldInputId} aria-describedby={errorId} />;
+      case 'date': return <DateField field={field} value={value} onChange={onChange} error={error} id={fieldInputId} aria-describedby={errorId} />;
+      case 'time': return <TimeField field={field} value={value} onChange={onChange} error={error} id={fieldInputId} aria-describedby={errorId} />;
+      case 'select': return <SelectField field={field} value={value} onChange={onChange} error={error} id={fieldInputId} aria-describedby={errorId} />;
+      case 'radio': return <RadioField field={field} value={value} onChange={onChange} error={error} />;
+      case 'checkbox': return <CheckboxField field={field} value={value} onChange={onChange} error={error} />;
+      case 'toggle': return <ToggleField field={field} value={value} onChange={onChange} error={error} />;
+      case 'checklist': return <ChecklistField field={field} value={value} onChange={onChange} error={error} />;
+      case 'rating': return <RatingField field={field} value={value} onChange={onChange} error={error} />;
+      case 'signature': return <SignatureField field={field} value={value} onChange={onChange} error={error} />;
+      case 'photo': return <PhotoField field={field} value={value} onChange={onChange} error={error} />;
+      case 'repeater': return <RepeaterField field={field} value={value} onChange={onChange} formData={formData} />;
+      default: return <InfoField field={{ content: `Unbekannter Feldtyp: ${field.type}` }} />;
+    }
+  };
+  return (
+    <div style={{ width: widthMap[field.width] || '100%', minWidth: 0, opacity: disabled ? 0.5 : 1, pointerEvents: disabled ? 'none' : 'auto' }} role={disabled ? 'group' : undefined} aria-disabled={disabled || undefined}>
+      {field.label && <label htmlFor={fieldInputId} style={styles.fieldLabel}>{field.label}{(field.required || condRequired) && <span style={{ color: S.colors.danger, marginLeft: '4px' }} aria-hidden="true">*</span>}{(field.required || condRequired) && <span className="sr-only"> (Pflichtfeld)</span>}</label>}
+      {renderInput()}
+      {error && <div id={errorId} role="alert" style={styles.fieldError}>{error}</div>}
+    </div>
+  );
+});
+
+FormField.displayName = 'FormField';
