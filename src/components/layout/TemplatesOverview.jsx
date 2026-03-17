@@ -1,14 +1,89 @@
+import { useState, useCallback, useRef } from 'react';
 import { S, CATEGORY_COLORS } from '../../config/theme';
 import { styles } from '../../styles/shared';
 import { DEMO_TEMPLATES } from '../../config/templates';
+import { STORAGE_KEYS } from '../../config/constants';
 import { createEmptyTemplate } from '../../lib/helpers';
+import { storageGet, storageSet } from '../../lib/storage';
+import { ToastMessage } from '../common/ToastMessage';
+import { ConfirmDialog } from '../common/ConfirmDialog';
+import { useConfirm } from '../../hooks/useConfirm';
+
+// ═══ Extracted Styles (P4) ═══
+const S_TOOLBAR = { display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' };
 
 export const TemplatesOverview = ({ user, onOpenBuilder, customTemplates, onDeleteTemplate }) => {
+  const [toast, setToast] = useState(null);
+  const { confirm, confirmState, handleConfirm, handleCancel } = useConfirm();
+  const fileInputRef = useRef(null);
+
+  const handleDuplicate = useCallback(async (t) => {
+    const copy = JSON.parse(JSON.stringify(t));
+    copy.id = `tpl-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    copy.name = `${t.name} (Kopie)`;
+    copy.version = 1;
+    copy.createdAt = new Date().toISOString();
+    copy.updatedAt = new Date().toISOString();
+    const existing = await storageGet(STORAGE_KEYS.templates) || [];
+    existing.push(copy);
+    await storageSet(STORAGE_KEYS.templates, existing);
+    if (onDeleteTemplate) onDeleteTemplate(null); // triggers refresh via parent
+    setToast({ message: `"${copy.name}" erstellt`, type: 'success' });
+  }, [onDeleteTemplate]);
+
+  const handleDelete = useCallback(async (t) => {
+    const yes = await confirm({ title: 'Vorlage löschen?', message: `"${t.name}" wird unwiderruflich gelöscht.`, confirmLabel: 'Löschen', variant: 'danger' });
+    if (yes) onDeleteTemplate(t.id);
+  }, [confirm, onDeleteTemplate]);
+
+  const handleExport = useCallback((t) => {
+    const data = JSON.parse(JSON.stringify(t));
+    delete data.isDemo;
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `${(t.name || 'vorlage').replace(/[^a-zA-Z0-9äöüÄÖÜß\s-]/g, '')}.json`;
+    a.click(); URL.revokeObjectURL(url);
+    setToast({ message: 'Vorlage exportiert', type: 'success' });
+  }, []);
+
+  const handleImport = useCallback(async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const text = await file.text();
+      const tpl = JSON.parse(text);
+      if (!tpl.pages || !Array.isArray(tpl.pages)) throw new Error('Ungültiges Format');
+      tpl.id = `tpl-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+      tpl.name = tpl.name ? `${tpl.name} (Import)` : 'Importierte Vorlage';
+      tpl.version = 1;
+      tpl.createdAt = new Date().toISOString();
+      tpl.updatedAt = new Date().toISOString();
+      const existing = await storageGet(STORAGE_KEYS.templates) || [];
+      existing.push(tpl);
+      await storageSet(STORAGE_KEYS.templates, existing);
+      if (onDeleteTemplate) onDeleteTemplate(null);
+      setToast({ message: `"${tpl.name}" importiert`, type: 'success' });
+    } catch {
+      setToast({ message: 'Import fehlgeschlagen — ungültiges JSON', type: 'error' });
+    }
+    e.target.value = '';
+  }, [onDeleteTemplate]);
+
   return (
     <div>
+      {toast && <ToastMessage message={toast.message} type={toast.type} onDone={() => setToast(null)} />}
+      {confirmState && <ConfirmDialog {...confirmState} onConfirm={handleConfirm} onCancel={handleCancel} />}
+      <input ref={fileInputRef} type="file" accept=".json" onChange={handleImport} style={{ display: 'none' }} />
+
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
         <h2 style={{ fontSize: '22px', fontWeight: 700 }}>Vorlagen</h2>
-        {user.role === 'admin' && <button onClick={() => onOpenBuilder(createEmptyTemplate())} style={styles.btn('primary')}>＋ Neues Formular</button>}
+        {user.role === 'admin' && (
+          <div style={S_TOOLBAR}>
+            <button onClick={() => fileInputRef.current?.click()} style={styles.btn('secondary', 'sm')}>📥 Importieren</button>
+            <button onClick={() => onOpenBuilder(createEmptyTemplate())} style={styles.btn('primary')}>＋ Neues Formular</button>
+          </div>
+        )}
       </div>
       <p style={{ color: S.colors.textSecondary, marginBottom: '20px', fontSize: '14px' }}>{user.role === 'admin' ? 'Formularvorlagen verwalten und erstellen' : 'Verfügbare Vorlagen'}</p>
 
@@ -27,9 +102,11 @@ export const TemplatesOverview = ({ user, onOpenBuilder, customTemplates, onDele
                   <span style={styles.badge(S.colors.textSecondary)}>{t.pages?.length || 0} Seiten</span>
                 </div>
               </div>
-              {user.role === 'admin' && <div style={{ display: 'flex', gap: '6px', flexShrink: 0 }}>
+              {user.role === 'admin' && <div style={{ display: 'flex', gap: '6px', flexShrink: 0, flexWrap: 'wrap' }}>
                 <button onClick={() => onOpenBuilder(t)} style={styles.btn('secondary', 'sm')}>✎ Bearbeiten</button>
-                <button onClick={() => { if (confirm(`"${t.name}" löschen?`)) onDeleteTemplate(t.id); }} style={{ ...styles.btn('ghost', 'sm'), color: S.colors.danger }}>🗑</button>
+                <button onClick={() => handleDuplicate(t)} style={styles.btn('ghost', 'sm')} title="Duplizieren">📋</button>
+                <button onClick={() => handleExport(t)} style={styles.btn('ghost', 'sm')} title="Exportieren">📤</button>
+                <button onClick={() => handleDelete(t)} style={{ ...styles.btn('ghost', 'sm'), color: S.colors.danger }}>🗑</button>
               </div>}
             </div>
           ))}

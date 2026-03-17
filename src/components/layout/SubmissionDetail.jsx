@@ -66,7 +66,7 @@ const renderValue = (field, value) => {
   }
 };
 
-export const SubmissionDetail = ({ submission, template, onBack }) => {
+export const SubmissionDetail = ({ submission, template, onBack, onStatusChange, onDelete }) => {
   if (!template) return <div style={styles.card}><p>Vorlage nicht gefunden.</p><button onClick={onBack} style={styles.btn('secondary')}>Zurück</button></div>;
 
   return (
@@ -85,6 +85,18 @@ export const SubmissionDetail = ({ submission, template, onBack }) => {
 
       <div style={S_ACTIONS}>
         <button onClick={() => exportSubmissionPdf(submission, template)} style={styles.btn('primary', 'sm')}>📄 PDF Export</button>
+        {onStatusChange && submission.status === 'completed' && (
+          <button onClick={() => onStatusChange(submission.id, 'sent')} style={styles.btn('secondary', 'sm')}>📤 Als versendet markieren</button>
+        )}
+        {onStatusChange && submission.status === 'sent' && (
+          <button onClick={() => onStatusChange(submission.id, 'archived')} style={styles.btn('ghost', 'sm')}>📦 Archivieren</button>
+        )}
+        {onStatusChange && submission.status === 'archived' && (
+          <button onClick={() => onStatusChange(submission.id, 'completed')} style={styles.btn('secondary', 'sm')}>↩ Wiederherstellen</button>
+        )}
+        {onDelete && (
+          <button onClick={() => { if (confirm('Eintrag unwiderruflich löschen?')) onDelete(submission.id); }} style={{ ...styles.btn('ghost', 'sm'), color: S.colors.danger }}>🗑 Löschen</button>
+        )}
       </div>
 
       {template.pages.map((page, pi) => (

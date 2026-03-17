@@ -16,6 +16,8 @@ export const SubmissionsList = ({ submissions, user, allTemplates, onViewSubmiss
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [templateFilter, setTemplateFilter] = useState('all');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
   const [page, setPage] = useState(0);
 
   const templateMap = useMemo(() => {
@@ -28,6 +30,8 @@ export const SubmissionsList = ({ submissions, user, allTemplates, onViewSubmiss
     let result = [...submissions].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
     if (statusFilter !== 'all') result = result.filter(s => s.status === statusFilter);
     if (templateFilter !== 'all') result = result.filter(s => s.templateId === templateFilter);
+    if (dateFrom) result = result.filter(s => s.createdAt >= dateFrom);
+    if (dateTo) result = result.filter(s => s.createdAt <= dateTo + 'T23:59:59');
     if (search.trim()) {
       const q = search.toLowerCase();
       result = result.filter(s => {
@@ -41,7 +45,7 @@ export const SubmissionsList = ({ submissions, user, allTemplates, onViewSubmiss
       });
     }
     return result;
-  }, [submissions, search, statusFilter, templateFilter, templateMap]);
+  }, [submissions, search, statusFilter, templateFilter, dateFrom, dateTo, templateMap]);
 
   const uniqueTemplates = useMemo(() => {
     const ids = [...new Set(submissions.map(s => s.templateId))];
@@ -76,6 +80,9 @@ export const SubmissionsList = ({ submissions, user, allTemplates, onViewSubmiss
           <option value="all">Alle Formulare</option>
           {uniqueTemplates.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
         </select>
+        <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} style={S_FILTER_SELECT} title="Von Datum" />
+        <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} style={S_FILTER_SELECT} title="Bis Datum" />
+        {(dateFrom || dateTo) && <button onClick={() => { setDateFrom(''); setDateTo(''); }} style={{ ...S_FILTER_SELECT, cursor: 'pointer', border: 'none', background: 'transparent', color: S.colors.textMuted, fontSize: '16px', padding: '6px' }} title="Datumsfilter zurücksetzen">✕</button>}
       </div>
 
       {(() => {

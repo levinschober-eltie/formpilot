@@ -106,6 +106,18 @@ export const FormBuilder = ({ template: initialTemplate, onSave, onClose }) => {
     upd({ ...template, pages: template.pages.map((p, i) => i === activePageIndex ? { ...p, fields: nf } : p) });
   }, [template, upd, activePageIndex, activeFields]);
 
+  const duplicateField = useCallback((fid) => {
+    const field = activeFields.find(f => f.id === fid);
+    if (!field) return;
+    const copy = JSON.parse(JSON.stringify(field));
+    copy.id = `field-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    copy.label = `${copy.label} (Kopie)`;
+    const idx = activeFields.findIndex(f => f.id === fid);
+    const nf = [...activeFields]; nf.splice(idx + 1, 0, copy);
+    upd({ ...template, pages: template.pages.map((p, i) => i === activePageIndex ? { ...p, fields: nf } : p) });
+    setSelectedFieldId(copy.id);
+  }, [template, upd, activePageIndex, activeFields]);
+
   const deleteField = useCallback((fid) => {
     upd({ ...template, pages: template.pages.map((p, i) => i === activePageIndex ? { ...p, fields: p.fields.filter(f => f.id !== fid) } : p) });
     if (selectedFieldId === fid) setSelectedFieldId(null);
@@ -171,7 +183,7 @@ export const FormBuilder = ({ template: initialTemplate, onSave, onClose }) => {
           <BuilderMetaPanel template={template} onChange={upd} />
           <BuilderCanvas pages={template.pages} activePageIndex={activePageIndex} onPageChange={setActivePageIndex} onAddPage={addPage} onDeletePage={deletePage} onRenamePage={renamePage}
             fields={activeFields} selectedFieldId={selectedFieldId} onSelectField={handleSelectField}
-            onDeleteField={deleteField} onAddFieldAtIndex={addFieldAtIndex} onMoveField={moveField} onFieldWidthChange={changeFieldWidth} />
+            onDeleteField={deleteField} onDuplicateField={duplicateField} onAddFieldAtIndex={addFieldAtIndex} onMoveField={moveField} onFieldWidthChange={changeFieldWidth} />
         </div>
         {isDesktop && <div style={S_RIGHT_PANEL}>{settingsContent}</div>}
       </div>

@@ -12,7 +12,7 @@ const S_SUMMARY = { fontSize: '11px', color: S.colors.textMuted, whiteSpace: 'no
 const S_WIDTH_SELECT = { padding: '2px 4px', borderRadius: '4px', border: `1px solid ${S.colors.border}`, fontSize: '10px', background: S.colors.bgInput, cursor: 'pointer', fontFamily: 'inherit', color: S.colors.textSecondary, flexShrink: 0 };
 const S_DELETE = { background: 'none', border: 'none', cursor: 'pointer', padding: '4px', fontSize: '14px', color: S.colors.textMuted, transition: S.transition, flexShrink: 0 };
 
-export const BuilderFieldCard = React.memo(({ field, isSelected, onSelect, onDelete, onWidthChange }) => {
+export const BuilderFieldCard = React.memo(({ field, isSelected, onSelect, onDelete, onDuplicate, onWidthChange }) => {
   const summaryParts = [];
   if (field.type !== 'divider') summaryParts.push(field.type);
   if (field.required) summaryParts.push('Pflichtfeld');
@@ -29,6 +29,7 @@ export const BuilderFieldCard = React.memo(({ field, isSelected, onSelect, onDel
   }, [field.id]);
 
   const handleClick = useCallback(() => onSelect(field.id), [onSelect, field.id]);
+  const handleDuplicate = useCallback((e) => { e.stopPropagation(); if (onDuplicate) onDuplicate(field.id); }, [onDuplicate, field.id]);
   const handleDelete = useCallback((e) => { e.stopPropagation(); if (confirm('Feld löschen?')) onDelete(field.id); }, [onDelete, field.id]);
   const handleWidthChange = useCallback((e) => { e.stopPropagation(); onWidthChange(field.id, e.target.value); }, [onWidthChange, field.id]);
   const handleWidthClick = useCallback((e) => e.stopPropagation(), []);
@@ -56,7 +57,10 @@ export const BuilderFieldCard = React.memo(({ field, isSelected, onSelect, onDel
           <option value="full">Full</option><option value="half">Half</option><option value="third">Third</option>
         </select>
       )}
-      <button onClick={handleDelete} style={S_DELETE}
+      <button onClick={handleDuplicate} style={S_DELETE} title="Duplizieren"
+        onMouseEnter={e => e.currentTarget.style.color = S.colors.primary}
+        onMouseLeave={e => e.currentTarget.style.color = S.colors.textMuted}>📋</button>
+      <button onClick={handleDelete} style={S_DELETE} title="Löschen"
         onMouseEnter={e => e.currentTarget.style.color = S.colors.danger}
         onMouseLeave={e => e.currentTarget.style.color = S.colors.textMuted}>🗑</button>
     </div>

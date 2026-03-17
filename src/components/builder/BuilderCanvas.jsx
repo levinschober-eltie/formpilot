@@ -15,7 +15,7 @@ const S_FIELDS_WRAP = { display: 'flex', flexWrap: 'wrap', gap: '8px', alignCont
 const S_DROP_LINE = { width: '100%', height: '3px', background: S.colors.primary, borderRadius: '2px', margin: '2px 0' };
 const FIELD_WIDTH = { half: 'calc(50% - 6px)', third: 'calc(33.33% - 8px)', full: '100%' };
 
-export const BuilderCanvas = React.memo(({ pages, activePageIndex, onPageChange, onAddPage, onDeletePage, onRenamePage, fields, selectedFieldId, onSelectField, onDeleteField, onAddFieldAtIndex, onMoveField, onFieldWidthChange }) => {
+export const BuilderCanvas = React.memo(({ pages, activePageIndex, onPageChange, onAddPage, onDeletePage, onRenamePage, fields, selectedFieldId, onSelectField, onDeleteField, onDuplicateField, onAddFieldAtIndex, onMoveField, onFieldWidthChange }) => {
   const [dropIndex, setDropIndex] = useState(-1);
   const [editingPageId, setEditingPageId] = useState(null);
   const [editPageName, setEditPageName] = useState('');
@@ -78,7 +78,7 @@ export const BuilderCanvas = React.memo(({ pages, activePageIndex, onPageChange,
               <React.Fragment key={field.id}>
                 {dropIndex === i && <div style={S_DROP_LINE} />}
                 <div data-fc="1" style={{ width: FIELD_WIDTH[field.width] || '100%' }}>
-                  <BuilderFieldCard field={field} isSelected={selectedFieldId === field.id} onSelect={onSelectField} onDelete={onDeleteField} onWidthChange={onFieldWidthChange} />
+                  <BuilderFieldCard field={field} isSelected={selectedFieldId === field.id} onSelect={onSelectField} onDelete={onDeleteField} onDuplicate={onDuplicateField} onWidthChange={onFieldWidthChange} />
                 </div>
               </React.Fragment>
             ))}

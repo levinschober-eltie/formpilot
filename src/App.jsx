@@ -99,6 +99,13 @@ export default function FormPilot() {
     setFillingTemplate(null); setDraftData(null); setTab('submissions');
   };
 
+  const handleStatusChange = useCallback(async (subId, newStatus) => {
+    const updated = submissions.map(s => s.id === subId ? { ...s, status: newStatus } : s);
+    setSubmissions(updated);
+    await storageSet(STORAGE_KEYS.submissions, updated);
+    setViewingSubmission(prev => prev?.id === subId ? { ...prev, status: newStatus } : prev);
+  }, [submissions]);
+
   const handleDeleteSubmission = useCallback(async (subId) => {
     const updated = submissions.filter(s => s.id !== subId);
     setSubmissions(updated);
@@ -119,7 +126,11 @@ export default function FormPilot() {
   }, [submissions, user]);
 
   const handleBuilderSave = async () => { const tpls = await storageGet(STORAGE_KEYS.templates) || []; setCustomTemplates(tpls); };
-  const handleDeleteTemplate = async (id) => { const tpls = (await storageGet(STORAGE_KEYS.templates) || []).filter(t => t.id !== id); await storageSet(STORAGE_KEYS.templates, tpls); setCustomTemplates(tpls); };
+  const refreshTemplates = useCallback(async () => { const tpls = await storageGet(STORAGE_KEYS.templates) || []; setCustomTemplates(tpls); }, []);
+  const handleDeleteTemplate = async (id) => {
+    if (!id) { await refreshTemplates(); return; }
+    const tpls = (await storageGet(STORAGE_KEYS.templates) || []).filter(t => t.id !== id); await storageSet(STORAGE_KEYS.templates, tpls); setCustomTemplates(tpls);
+  };
 
   const handleCustomersChange = useCallback(async () => {
     const custs = await getCustomers();
@@ -157,6 +168,8 @@ export default function FormPilot() {
             submission={viewingSubmission}
             template={allTemplates.find(t => t.id === viewingSubmission.templateId)}
             onBack={() => setViewingSubmission(null)}
+            onStatusChange={handleStatusChange}
+            onDelete={handleDeleteSubmission}
           />
         ) : viewingCustomer ? (
           <CustomerDetail

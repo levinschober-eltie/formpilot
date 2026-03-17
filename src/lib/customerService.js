@@ -168,3 +168,25 @@ export const updateCustomerNotes = async (customerId, notes) => {
   }
   return customers;
 };
+
+/**
+ * Kundendaten aktualisieren (Name, E-Mail, Telefon, Adresse)
+ */
+export const updateCustomer = async (customerId, data) => {
+  const customers = await storageGet(STORAGE_KEYS.customers) || [];
+  const idx = customers.findIndex(c => c.id === customerId);
+  if (idx >= 0) {
+    customers[idx] = { ...customers[idx], ...data, updatedAt: new Date().toISOString() };
+    await storageSet(STORAGE_KEYS.customers, customers);
+  }
+  return customers;
+};
+
+/**
+ * Kunde löschen
+ */
+export const deleteCustomer = async (customerId) => {
+  const customers = (await storageGet(STORAGE_KEYS.customers) || []).filter(c => c.id !== customerId);
+  await storageSet(STORAGE_KEYS.customers, customers);
+  return customers;
+};

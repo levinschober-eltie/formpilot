@@ -23,6 +23,8 @@ export const DEMO_TEMPLATES = [
           { value: 'offen', label: 'Folgetermin nötig' },
         ]},
         { id: 'f9', type: 'textarea', label: 'Bemerkungen', required: false, placeholder: 'Weitere Hinweise...', width: 'full' },
+        { id: 'f10', type: 'photo', label: 'Fotos vom Einsatz', width: 'full', validation: { maxPhotos: 5 } },
+        { id: 'f11', type: 'signature', label: 'Unterschrift Techniker', required: true, width: 'full' },
       ]
     }],
     pdfSettings: { orientation: 'portrait', showLogo: true, accentColor: '#2563eb' },
@@ -86,6 +88,9 @@ export const DEMO_TEMPLATES = [
           { id: 'a22', type: 'heading', label: 'Abschluss', level: 'h2' },
           { id: 'a23', type: 'toggle', label: 'Anlage abgenommen', labelOn: 'Ja', labelOff: 'Nein', required: true },
           { id: 'a24', type: 'textarea', label: 'Abschlussbemerkungen', placeholder: 'Weitere Hinweise...', width: 'full' },
+          { id: 'a25', type: 'photo', label: 'Fotos der Anlage', width: 'full', validation: { maxPhotos: 10 } },
+          { id: 'a26', type: 'signature', label: 'Unterschrift Auftraggeber', required: true, width: 'full' },
+          { id: 'a27', type: 'signature', label: 'Unterschrift Monteur', required: true, width: 'full' },
         ]
       }
     ],
@@ -133,6 +138,8 @@ export const DEMO_TEMPLATES = [
           { id: 'm12', type: 'text', label: 'Verantwortlich', required: true, width: 'half' },
           { id: 'm13', type: 'date', label: 'Frist', required: true, width: 'half' },
           { id: 'm14', type: 'textarea', label: 'Maßnahmen', placeholder: 'Empfohlene Maßnahmen...', width: 'full' },
+          { id: 'm15', type: 'photo', label: 'Fotos der Mängel', required: true, width: 'full', validation: { maxPhotos: 10 } },
+          { id: 'm16', type: 'signature', label: 'Unterschrift Prüfer', required: true, width: 'full' },
         ]
       }
     ],

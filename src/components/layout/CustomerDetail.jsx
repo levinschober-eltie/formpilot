@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { S, STATUS_COLORS, STATUS_LABELS } from '../../config/theme';
 import { styles } from '../../styles/shared';
-import { getActivityLog, updateCustomerNotes } from '../../lib/customerService';
+import { getActivityLog, updateCustomerNotes, updateCustomer, deleteCustomer, addActivityLog } from '../../lib/customerService';
 import { exportSubmissionPdf } from '../../lib/exportPdf';
 
 // ═══ Extracted Styles (P4) ═══
@@ -34,11 +34,16 @@ const LOG_LABELS = {
 };
 
 // ═══ FEATURE: Kunden-Detailansicht ═══
+const S_EDIT_INPUT = { width: '100%', padding: '8px 12px', borderRadius: S.radius.md, border: `1.5px solid ${S.colors.border}`, fontSize: '14px', fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box', background: S.colors.bgInput };
+const S_EDIT_LABEL = { fontSize: '12px', fontWeight: 600, color: S.colors.textMuted, marginBottom: '4px' };
+
 export const CustomerDetail = ({ customer, submissions, allTemplates, onBack, onCustomersChange }) => {
   const [tab, setTab] = useState('contracts');
   const [activityLog, setActivityLog] = useState([]);
   const [notes, setNotes] = useState(customer.notes || '');
   const [notesSaved, setNotesSaved] = useState(true);
+  const [editing, setEditing] = useState(false);
+  const [editData, setEditData] = useState({ name: customer.name, email: customer.email || '', phone: customer.phone || '', address: customer.address || '' });
 
   const templateMap = useMemo(() => {
     const map = {};
@@ -62,6 +67,21 @@ export const CustomerDetail = ({ customer, submissions, allTemplates, onBack, on
     if (onCustomersChange) onCustomersChange();
   }, [customer.id, notes, onCustomersChange]);
 
+  const handleSaveEdit = useCallback(async () => {
+    if (!editData.name.trim()) return;
+    await updateCustomer(customer.id, editData);
+    await addActivityLog({ action: 'customer_updated', customerId: customer.id, details: `Kontaktdaten bearbeitet` });
+    setEditing(false);
+    if (onCustomersChange) onCustomersChange();
+  }, [customer.id, editData, onCustomersChange]);
+
+  const handleDeleteCustomer = useCallback(async () => {
+    if (!confirm(`"${customer.name}" unwiderruflich löschen?`)) return;
+    await deleteCustomer(customer.id);
+    if (onCustomersChange) onCustomersChange();
+    onBack();
+  }, [customer.id, customer.name, onCustomersChange, onBack]);
+
   const getInitials = (name) => name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
 
   return (
@@ -77,7 +97,7 @@ export const CustomerDetail = ({ customer, submissions, allTemplates, onBack, on
       {/* Kunden-Profil */}
       <div style={{ ...styles.card, padding: '24px', marginBottom: '16px' }}>
         <div style={S_HEADER}>
-          <div style={S_AVATAR}>{getInitials(customer.name)}</div>
+          <div style={S_AVATAR}>{getInitials(editing ? editData.name || customer.name : customer.name)}</div>
           <div style={{ flex: 1 }}>
             <h3 style={{ fontSize: '22px', fontWeight: 700, margin: '0 0 4px' }}>{customer.name}</h3>
             <div style={{ fontSize: '13px', color: S.colors.textMuted }}>
@@ -85,34 +105,51 @@ export const CustomerDetail = ({ customer, submissions, allTemplates, onBack, on
               {' · '}{customerSubs.length} {customerSubs.length === 1 ? 'Vertrag' : 'Verträge'}
             </div>
           </div>
+          <div style={{ display: 'flex', gap: '6px', flexShrink: 0 }}>
+            {!editing && <button onClick={() => setEditing(true)} style={styles.btn('secondary', 'sm')}>✎ Bearbeiten</button>}
+            <button onClick={handleDeleteCustomer} style={{ ...styles.btn('ghost', 'sm'), color: S.colors.danger }}>🗑</button>
+          </div>
         </div>
 
-        <div style={S_INFO_GRID}>
-          {customer.email && (
-            <div style={S_INFO_ITEM}>
-              <div style={S_INFO_LABEL}>E-Mail</div>
-              <div style={S_INFO_VALUE}>{customer.email}</div>
+        {editing ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '8px' }}>
+            <div><div style={S_EDIT_LABEL}>Name *</div><input value={editData.name} onChange={e => setEditData(d => ({ ...d, name: e.target.value }))} style={S_EDIT_INPUT} /></div>
+            <div><div style={S_EDIT_LABEL}>E-Mail</div><input value={editData.email} onChange={e => setEditData(d => ({ ...d, email: e.target.value }))} style={S_EDIT_INPUT} type="email" /></div>
+            <div><div style={S_EDIT_LABEL}>Telefon</div><input value={editData.phone} onChange={e => setEditData(d => ({ ...d, phone: e.target.value }))} style={S_EDIT_INPUT} type="tel" /></div>
+            <div><div style={S_EDIT_LABEL}>Adresse</div><input value={editData.address} onChange={e => setEditData(d => ({ ...d, address: e.target.value }))} style={S_EDIT_INPUT} /></div>
+            <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+              <button onClick={() => setEditing(false)} style={styles.btn('ghost', 'sm')}>Abbrechen</button>
+              <button onClick={handleSaveEdit} style={styles.btn('primary', 'sm')}>Speichern</button>
             </div>
-          )}
-          {customer.phone && (
-            <div style={S_INFO_ITEM}>
-              <div style={S_INFO_LABEL}>Telefon</div>
-              <div style={S_INFO_VALUE}>{customer.phone}</div>
-            </div>
-          )}
-          {customer.address && (
-            <div style={S_INFO_ITEM}>
-              <div style={S_INFO_LABEL}>Adresse</div>
-              <div style={S_INFO_VALUE}>{customer.address}</div>
-            </div>
-          )}
-          {customer.projects?.length > 0 && (
-            <div style={S_INFO_ITEM}>
-              <div style={S_INFO_LABEL}>Projekte</div>
-              <div style={S_INFO_VALUE}>{customer.projects.join(', ')}</div>
-            </div>
-          )}
-        </div>
+          </div>
+        ) : (
+          <div style={S_INFO_GRID}>
+            {customer.email && (
+              <div style={S_INFO_ITEM}>
+                <div style={S_INFO_LABEL}>E-Mail</div>
+                <div style={S_INFO_VALUE}>{customer.email}</div>
+              </div>
+            )}
+            {customer.phone && (
+              <div style={S_INFO_ITEM}>
+                <div style={S_INFO_LABEL}>Telefon</div>
+                <div style={S_INFO_VALUE}>{customer.phone}</div>
+              </div>
+            )}
+            {customer.address && (
+              <div style={S_INFO_ITEM}>
+                <div style={S_INFO_LABEL}>Adresse</div>
+                <div style={S_INFO_VALUE}>{customer.address}</div>
+              </div>
+            )}
+            {customer.projects?.length > 0 && (
+              <div style={S_INFO_ITEM}>
+                <div style={S_INFO_LABEL}>Projekte</div>
+                <div style={S_INFO_VALUE}>{customer.projects.join(', ')}</div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Tabs */}

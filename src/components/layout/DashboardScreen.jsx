@@ -1,6 +1,7 @@
-import { useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { S, CATEGORY_COLORS, STATUS_COLORS, STATUS_LABELS } from '../../config/theme';
 import { styles } from '../../styles/shared';
+import { getActivityLog } from '../../lib/customerService';
 
 // ═══ FEATURE: Dashboard & Analytics ═══
 const S_GRID = { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '12px', marginBottom: '24px' };
@@ -19,7 +20,25 @@ const S_LEGEND_DOT = (color) => ({
 });
 const S_ROW = { display: 'flex', alignItems: 'center', gap: '10px', padding: '6px 0' };
 
+const LOG_COLORS = {
+  submission_created: S.colors.success,
+  submission_deleted: S.colors.danger,
+  customer_created: S.colors.primary,
+  customer_updated: S.colors.accent,
+  note_added: S.colors.warning,
+};
+const LOG_LABELS = {
+  submission_created: 'Vertrag erstellt',
+  submission_deleted: 'Vertrag gelöscht',
+  customer_created: 'Kontakt angelegt',
+  customer_updated: 'Kontakt aktualisiert',
+  note_added: 'Notiz',
+};
+const S_LOG_DOT = (color) => ({ width: 8, height: 8, borderRadius: '50%', background: color, flexShrink: 0, marginTop: '5px' });
+
 export const DashboardScreen = ({ submissions, allTemplates, user }) => {
+  const [recentLog, setRecentLog] = useState([]);
+  useEffect(() => { getActivityLog().then(log => setRecentLog(log.slice(0, 10))); }, []);
   const stats = useMemo(() => {
     const now = new Date();
     const today = now.toISOString().split('T')[0];
@@ -165,6 +184,26 @@ export const DashboardScreen = ({ submissions, allTemplates, user }) => {
           ))}
         </div>
       </div>
+
+      {/* Aktivitätslog */}
+      {recentLog.length > 0 && (
+        <div style={{ ...styles.card, marginTop: '16px' }}>
+          <h3 style={{ fontSize: '15px', fontWeight: 700, marginBottom: '12px' }}>Letzte Aktivitäten</h3>
+          {recentLog.map(entry => (
+            <div key={entry.id} style={{ display: 'flex', gap: '10px', padding: '8px 0', borderBottom: `1px solid ${S.colors.borderFaint}` }}>
+              <div style={S_LOG_DOT(LOG_COLORS[entry.action] || S.colors.textMuted)} />
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: '13px', fontWeight: 500 }}>{LOG_LABELS[entry.action] || entry.action}</div>
+                {entry.details && <div style={{ fontSize: '12px', color: S.colors.textMuted, marginTop: '2px' }}>{entry.details}</div>}
+                <div style={{ fontSize: '11px', color: S.colors.textMuted, marginTop: '2px' }}>
+                  {new Date(entry.createdAt).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                  {entry.userName && ` · ${entry.userName}`}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 };
