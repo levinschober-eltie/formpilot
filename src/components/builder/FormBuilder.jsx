@@ -47,7 +47,7 @@ export const FormBuilder = ({ template: initialTemplate, onSave, onClose }) => {
     const handler = (e) => {
       if ((e.metaKey || e.ctrlKey) && e.key === 'z' && !e.shiftKey) { e.preventDefault(); undo(); }
       if ((e.metaKey || e.ctrlKey) && ((e.key === 'z' && e.shiftKey) || e.key === 'y')) { e.preventDefault(); redo(); }
-      if ((e.metaKey || e.ctrlKey) && e.key === 's') { e.preventDefault(); doSave(false); }
+      if ((e.metaKey || e.ctrlKey) && e.key === 's') { e.preventDefault(); doSaveRef.current(false); }
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);

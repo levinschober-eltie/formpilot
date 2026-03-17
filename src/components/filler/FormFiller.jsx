@@ -52,6 +52,7 @@ export const FormFiller = React.memo(({ template, onSubmit, onCancel, initialDat
   }, [showErrors]);
 
   const goNext = useCallback(() => {
+    if (!currentPage) { if (isLastPage) onSubmit(formData); return; }
     const pageErrors = validatePage(currentPage, formData);
     if (Object.keys(pageErrors).length > 0) { setErrors(pageErrors); setShowErrors(true); return; }
     setShowErrors(false); setErrors({});

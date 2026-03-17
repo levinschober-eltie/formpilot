@@ -61,7 +61,7 @@ export const styles = {
   fieldError: { fontSize: '12px', color: S.colors.danger, marginTop: '4px', fontWeight: 500 },
   badge: (color) => ({
     display: 'inline-flex', alignItems: 'center', padding: '3px 10px', borderRadius: S.radius.full,
-    fontSize: '12px', fontWeight: 600, background: `${color}18`, color: color,
+    fontSize: '12px', fontWeight: 600, background: `color-mix(in srgb, ${color} 9%, transparent)`, color: color,
   }),
   progressBar: { height: '6px', background: S.colors.border, borderRadius: S.radius.full, overflow: 'hidden', marginBottom: '20px' },
   progressFill: (pct) => ({

@@ -1,5 +1,5 @@
 import { styles } from '../../styles/shared';
 
-export const TimeField = ({ field, value, onChange, error }) => (
-  <input type="time" style={styles.input(!!error)} value={value || ''} onChange={e => onChange(e.target.value)} />
+export const TimeField = ({ field, value, onChange, error, id, ...rest }) => (
+  <input type="time" id={id} style={styles.input(!!error)} value={value || ''} onChange={e => onChange(e.target.value)} aria-describedby={rest['aria-describedby']} />
 );

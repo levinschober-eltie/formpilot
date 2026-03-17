@@ -113,6 +113,7 @@ export const exportSubmissionPdf = (submission, template) => {
   html += `</body></html>`;
 
   const printWindow = window.open('', '_blank', 'width=800,height=600');
+  if (!printWindow) { alert('Pop-up wurde blockiert. Bitte Pop-ups für diese Seite erlauben.'); return; }
   printWindow.document.write(html);
   printWindow.document.close();
   printWindow.onload = () => {

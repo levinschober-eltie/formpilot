@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { S } from './config/theme';
 import { styles } from './styles/shared';
 import { STORAGE_KEYS, USERS } from './config/constants';
@@ -60,7 +60,7 @@ export default function FormPilot() {
     setFillingTemplate(template);
   };
 
-  const allTemplates = [...DEMO_TEMPLATES, ...customTemplates];
+  const allTemplates = useMemo(() => [...DEMO_TEMPLATES, ...customTemplates], [customTemplates]);
 
   const handleSubmitForm = async (data) => {
     const newSub = { id: 'sub-' + Date.now(), templateId: fillingTemplate.id, templateVersion: fillingTemplate.version, status: 'completed', data, filledBy: user.id, filledByName: user.name, createdAt: new Date().toISOString(), completedAt: new Date().toISOString() };
@@ -152,7 +152,7 @@ export default function FormPilot() {
   const visibleNav = NAV_ITEMS.filter(n => n.roles.includes(user.role));
 
   return (
-    <div style={styles.app} data-theme={darkMode ? 'dark' : 'light'}>
+    <div style={styles.app}>
       <div style={styles.topBar}>
         <div style={styles.logo}><span>📋</span><span>FormPilot</span></div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>

@@ -83,7 +83,7 @@ export const PhotoField = ({ field, value, onChange, error }) => {
           {photos.map((src, i) => (
             <div key={i} style={S_PREVIEW_ITEM}>
               <img src={src} alt={`Foto ${i + 1}`} style={S_PREVIEW_IMG} />
-              <button onClick={() => removePhoto(i)} style={S_REMOVE}>✕</button>
+              <button type="button" onClick={() => removePhoto(i)} style={S_REMOVE} aria-label={`Foto ${i + 1} entfernen`}>✕</button>
             </div>
           ))}
         </div>
