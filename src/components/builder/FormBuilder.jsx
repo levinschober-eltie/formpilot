@@ -53,10 +53,14 @@ export const FormBuilder = ({ template: initialTemplate, onSave, onClose }) => {
     return () => window.removeEventListener('keydown', handler);
   }, [undo, redo]);
 
+  const hasChangesRef = useRef(false);
+  hasChangesRef.current = hasChanges;
+  const doSaveRef = useRef(doSave);
+  doSaveRef.current = doSave;
   useEffect(() => {
-    autoSaveRef.current = setInterval(() => { if (hasChanges) doSave(true); }, 60000);
+    autoSaveRef.current = setInterval(() => { if (hasChangesRef.current) doSaveRef.current(true); }, 60000);
     return () => clearInterval(autoSaveRef.current);
-  }, [hasChanges, template]);
+  }, []);
 
   const activePage = template.pages[activePageIndex] || template.pages[0];
   const activeFields = activePage?.fields || [];

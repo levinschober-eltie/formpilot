@@ -4,7 +4,7 @@ import { styles } from './styles/shared';
 import { STORAGE_KEYS, USERS } from './config/constants';
 import { DEMO_TEMPLATES } from './config/templates';
 import { storageGet, storageSet } from './lib/storage';
-import { processCustomerFromSubmission, addActivityLog, getCustomers } from './lib/customerService';
+import { processCustomerFromSubmission, addActivityLog, getCustomers, removeSubmissionFromCustomer } from './lib/customerService';
 import { LoginScreen } from './components/layout/LoginScreen';
 import { SettingsScreen } from './components/layout/SettingsScreen';
 import { SubmissionsList } from './components/layout/SubmissionsList';
@@ -103,8 +103,20 @@ export default function FormPilot() {
     const updated = submissions.filter(s => s.id !== subId);
     setSubmissions(updated);
     await storageSet(STORAGE_KEYS.submissions, updated);
+    // Kunde-Verknüpfung bereinigen + Log
+    const result = await removeSubmissionFromCustomer(subId);
+    if (result) {
+      setCustomers(result.customers);
+      await addActivityLog({
+        action: 'submission_deleted',
+        customerId: result.customerId,
+        submissionId: subId,
+        userName: user?.name,
+        details: `Vertrag ${subId} gelöscht`,
+      });
+    }
     setViewingSubmission(null);
-  }, [submissions]);
+  }, [submissions, user]);
 
   const handleBuilderSave = async () => { const tpls = await storageGet(STORAGE_KEYS.templates) || []; setCustomTemplates(tpls); };
   const handleDeleteTemplate = async (id) => { const tpls = (await storageGet(STORAGE_KEYS.templates) || []).filter(t => t.id !== id); await storageSet(STORAGE_KEYS.templates, tpls); setCustomTemplates(tpls); };

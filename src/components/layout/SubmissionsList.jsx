@@ -94,7 +94,7 @@ export const SubmissionsList = ({ submissions, user, allTemplates, onViewSubmiss
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
                   <span style={styles.badge(STATUS_COLORS[sub.status] || S.colors.textMuted)}>{STATUS_LABELS[sub.status] || sub.status}</span>
-                  <button onClick={(e) => { e.stopPropagation(); exportSubmissionPdf(sub, tpl); }} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '16px', padding: '4px' }} title="PDF Export">📄</button>
+                  <button onClick={(e) => { e.stopPropagation(); if (tpl) exportSubmissionPdf(sub, tpl); }} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '16px', padding: '4px', opacity: tpl ? 1 : 0.3 }} title="PDF Export">📄</button>
                   {onDeleteSubmission && <button onClick={(e) => { e.stopPropagation(); if (confirm('Eintrag löschen?')) onDeleteSubmission(sub.id); }} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '16px', padding: '4px', color: S.colors.textMuted }} title="Löschen">🗑</button>}
                 </div>
               </div>

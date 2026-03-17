@@ -53,7 +53,7 @@ export const validateField = (field, value, formData) => {
   if (field.type === 'text' || field.type === 'textarea') {
     if (v.minLength && String(value).length < v.minLength) return `Mindestens ${v.minLength} Zeichen`;
     if (v.maxLength && String(value).length > v.maxLength) return `Maximal ${v.maxLength} Zeichen`;
-    if (v.pattern && !new RegExp(v.pattern).test(value)) return `Ungültiges Format`;
+    if (v.pattern) { try { if (!new RegExp(v.pattern).test(value)) return `Ungültiges Format`; } catch { /* ungültiges Pattern ignorieren */ } }
   }
   if (field.type === 'number') {
     const n = Number(value);

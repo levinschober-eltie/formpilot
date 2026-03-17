@@ -19,6 +19,8 @@ export const useUndoRedo = (initialState, maxHistory = 50) => {
     // Max-History einhalten
     if (historyRef.current.length > maxHistory) {
       historyRef.current.shift();
+      // indexRef bleibt am Ende (length - 1)
+      indexRef.current = historyRef.current.length - 1;
     } else {
       indexRef.current += 1;
     }

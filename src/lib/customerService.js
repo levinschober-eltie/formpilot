@@ -136,6 +136,26 @@ export const getCustomers = async () => {
 };
 
 /**
+ * Submission-Referenz aus Kunden entfernen (bei Löschung)
+ */
+export const removeSubmissionFromCustomer = async (submissionId) => {
+  const customers = await storageGet(STORAGE_KEYS.customers) || [];
+  let customerId = null;
+  const updated = customers.map(c => {
+    if (c.submissionIds?.includes(submissionId)) {
+      customerId = c.id;
+      return { ...c, submissionIds: c.submissionIds.filter(id => id !== submissionId), updatedAt: new Date().toISOString() };
+    }
+    return c;
+  });
+  if (customerId) {
+    await storageSet(STORAGE_KEYS.customers, updated);
+    return { customers: updated, customerId };
+  }
+  return null;
+};
+
+/**
  * Kunden-Notizen aktualisieren
  */
 export const updateCustomerNotes = async (customerId, notes) => {

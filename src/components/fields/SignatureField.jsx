@@ -49,7 +49,7 @@ export const SignatureField = ({ field, value, onChange, error }) => {
     ctx.scale(2, 2);
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
-    ctx.strokeStyle = '#1a1a1a';
+    ctx.strokeStyle = document.documentElement.getAttribute('data-theme') === 'dark' ? '#e2e8f0' : '#1a1a1a';
     ctx.lineWidth = 2;
     if (value) {
       const img = new Image();

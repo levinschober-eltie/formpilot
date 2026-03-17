@@ -1,5 +1,7 @@
 // ═══ FEATURE: PDF Export (Print-based) ═══
 
+const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
 const formatValue = (field, value) => {
   if (value === null || value === undefined || value === '') return '—';
   switch (field.type) {
@@ -34,6 +36,7 @@ const formatValue = (field, value) => {
 };
 
 export const exportSubmissionPdf = (submission, template) => {
+  if (!template || !submission) return;
   const settings = template.pdfSettings || {};
   const accent = settings.accentColor || '#2563eb';
   const footer = settings.footerText || 'Erstellt mit FormPilot';
@@ -64,35 +67,35 @@ export const exportSubmissionPdf = (submission, template) => {
 </style></head><body>`;
 
   html += `<div class="header">
-    <div><h1>${template.icon || '📋'} ${template.name}</h1>
-    <div style="font-size:9pt;color:#666;margin-top:4px">${template.description || ''}</div></div>
+    <div><h1>${esc(template.icon || '📋')} ${esc(template.name)}</h1>
+    <div style="font-size:9pt;color:#666;margin-top:4px">${esc(template.description || '')}</div></div>
     <div class="meta">
       <div>Ausgefüllt: ${new Date(submission.completedAt || submission.createdAt).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</div>
-      <div>Von: ${submission.filledByName || '—'}</div>
-      <div>ID: ${submission.id}</div>
+      <div>Von: ${esc(submission.filledByName || '—')}</div>
+      <div>ID: ${esc(submission.id)}</div>
     </div></div>`;
 
   template.pages.forEach((page) => {
     if (template.pages.length > 1) {
-      html += `<div class="page-title">${page.title}</div>`;
+      html += `<div class="page-title">${esc(page.title)}</div>`;
     }
     const inputFields = page.fields.filter(f => !['heading', 'divider', 'info'].includes(f.type));
     page.fields.forEach(f => {
       if (f.type === 'heading') {
-        html += `<div style="font-size:12pt;font-weight:700;margin:12px 0 6px;color:#333">${f.label}</div>`;
+        html += `<div style="font-size:12pt;font-weight:700;margin:12px 0 6px;color:#333">${esc(f.label)}</div>`;
       } else if (f.type === 'divider') {
         html += `<hr style="border:none;border-top:1px solid #ddd;margin:10px 0">`;
       } else if (f.type === 'info') {
-        html += `<div style="background:#f0f4ff;padding:8px 12px;border-radius:4px;font-size:10pt;margin:6px 0;color:#555">${f.content || ''}</div>`;
+        html += `<div style="background:#f0f4ff;padding:8px 12px;border-radius:4px;font-size:10pt;margin:6px 0;color:#555">${esc(f.content || '')}</div>`;
       } else if (f.type === 'signature') {
         const sig = submission.data?.[f.id];
-        html += `<div class="signature-section"><div class="field-row"><div class="field-label">${f.label}${f.required ? ' <span class="required">*</span>' : ''}</div><div class="field-value">`;
+        html += `<div class="signature-section"><div class="field-row"><div class="field-label">${esc(f.label)}${f.required ? ' <span class="required">*</span>' : ''}</div><div class="field-value">`;
         if (sig) html += `<img src="${sig}" class="signature-img" />`;
         else html += '—';
         html += `</div></div></div>`;
       } else if (f.type === 'photo') {
         const photos = (() => { const v = submission.data?.[f.id]; return Array.isArray(v) ? v : v ? [v] : []; })();
-        html += `<div class="field-row"><div class="field-label">${f.label}</div><div class="field-value">`;
+        html += `<div class="field-row"><div class="field-label">${esc(f.label)}</div><div class="field-value">`;
         if (photos.length) {
           html += `<div class="photo-grid">${photos.map(p => `<img src="${p}" class="photo-img" />`).join('')}</div>`;
         } else {
@@ -101,12 +104,12 @@ export const exportSubmissionPdf = (submission, template) => {
         html += `</div></div>`;
       } else {
         const val = formatValue(f, submission.data?.[f.id]);
-        html += `<div class="field-row"><div class="field-label">${f.label || f.type}${f.required ? ' <span class="required">*</span>' : ''}</div><div class="field-value">${val}</div></div>`;
+        html += `<div class="field-row"><div class="field-label">${esc(f.label || f.type)}${f.required ? ' <span class="required">*</span>' : ''}</div><div class="field-value">${esc(val)}</div></div>`;
       }
     });
   });
 
-  html += `<div class="footer">${footer} · ${new Date().toLocaleDateString('de-DE')}</div>`;
+  html += `<div class="footer">${esc(footer)} · ${new Date().toLocaleDateString('de-DE')}</div>`;
   html += `</body></html>`;
 
   const printWindow = window.open('', '_blank', 'width=800,height=600');

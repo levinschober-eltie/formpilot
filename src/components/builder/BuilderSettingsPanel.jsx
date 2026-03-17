@@ -94,7 +94,7 @@ export const BuilderSettingsPanel = React.memo(({ field, allFields, onChange, on
                   sfs[si] = { ...sfs[si], label: e.target.value };
                   upd('subFields', sfs);
                 }} style={{ ...S_INPUT, flex: 1, marginBottom: 0 }} placeholder="Spaltenname" />
-                <button onClick={() => upd('subFields', (field.subFields || []).filter((_, i) => i !== si))} style={{ background: 'none', border: 'none', cursor: 'pointer', color: S.colors.textMuted, fontSize: '14px' }}>✕</button>
+                <button onClick={() => { if ((field.subFields || []).length <= 1) return; upd('subFields', (field.subFields || []).filter((_, i) => i !== si)); }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: (field.subFields || []).length <= 1 ? S.colors.border : S.colors.textMuted, fontSize: '14px' }}>✕</button>
               </div>
             ))}
             <button onClick={() => {
