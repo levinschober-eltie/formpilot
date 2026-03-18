@@ -10,7 +10,7 @@ import { useAuth } from './AuthContext';
 
 const DataContext = createContext(null);
 
-export function DataProvider({ children }) {
+export function DataProvider({ children, externalProjects, externalCustomers, onSubmissionSave }) {
   const { loginFromStorage } = useAuth();
   const [submissions, setSubmissions] = useState([]);
   const [customTemplates, setCustomTemplates] = useState([]);
@@ -22,15 +22,16 @@ export function DataProvider({ children }) {
   useEffect(() => {
     (async () => {
       try {
-        // ═══ Integrity Check: Auto-Recovery from IndexedDB if localStorage wiped ═══
-        const integrity = await checkIntegrity();
-        if (integrity.needsRestore) {
-          console.warn(`[FormPilot] localStorage leer, stelle ${integrity.backupKeyCount} Keys aus Backup wieder her...`);
-          await restoreFromBackup();
+        // Integrity check only if not using external data
+        if (!externalProjects && !externalCustomers) {
+          const integrity = await checkIntegrity();
+          if (integrity.needsRestore) {
+            console.warn(`[FormPilot] localStorage leer, stelle ${integrity.backupKeyCount} Keys aus Backup wieder her...`);
+            await restoreFromBackup();
+          }
         }
 
-        // If not using Supabase, load session from localStorage
-        if (!isSupabaseConfigured()) {
+        if (!isSupabaseConfigured() && !externalProjects && !externalCustomers) {
           const session = await storageGet(STORAGE_KEYS.session);
           if (session) {
             const u = USERS.find(u => u.id === session.userId);
@@ -40,17 +41,32 @@ export function DataProvider({ children }) {
 
         const subs = await storageGet(STORAGE_KEYS.submissions); if (subs) setSubmissions(subs);
         const tpls = await storageGet(STORAGE_KEYS.templates); if (tpls) setCustomTemplates(tpls);
-        const custs = await fetchCustomers(); setCustomers(custs);
-        const projs = await fetchProjects(); setProjects(projs);
 
-        // Create full backup after successful load
-        createFullBackup().catch(() => {});
+        if (!externalCustomers) {
+          const custs = await fetchCustomers(); setCustomers(custs);
+        }
+        if (!externalProjects) {
+          const projs = await fetchProjects(); setProjects(projs);
+        }
+
+        if (!externalProjects && !externalCustomers) {
+          createFullBackup().catch(() => {});
+        }
       } catch (e) {
         console.error('Init load failed:', e);
       }
       setLoaded(true);
     })();
-  }, [loginFromStorage]);
+  }, [loginFromStorage, externalProjects, externalCustomers]);
+
+  // ═══ Sync external data when props change ═══
+  useEffect(() => {
+    if (externalProjects) setProjects(externalProjects);
+  }, [externalProjects]);
+
+  useEffect(() => {
+    if (externalCustomers) setCustomers(externalCustomers);
+  }, [externalCustomers]);
 
   // ═══ Persist submissions ═══
   useEffect(() => { if (loaded) storageSet(STORAGE_KEYS.submissions, submissions); }, [submissions, loaded]);
@@ -85,20 +101,23 @@ export function DataProvider({ children }) {
   }, [refreshTemplates]);
 
   const handleCustomersChange = useCallback(async () => {
+    if (externalCustomers) return; // External data managed by host
     const custs = await fetchCustomers();
     setCustomers(custs);
-  }, []);
+  }, [externalCustomers]);
 
   const refreshProjects = useCallback(async () => {
+    if (externalProjects) return; // External data managed by host
     const projs = await fetchProjects();
     setProjects(projs);
-  }, []);
+  }, [externalProjects]);
 
   const handleCreateProject = useCallback(async (name) => {
+    if (externalProjects) return null; // External data managed by host
     const proj = await createProject(name);
     await refreshProjects();
     return proj;
-  }, [refreshProjects]);
+  }, [refreshProjects, externalProjects]);
 
   const value = useMemo(() => ({
     submissions, setSubmissions,
@@ -110,8 +129,10 @@ export function DataProvider({ children }) {
     handleCustomersChange,
     refreshProjects, handleCreateProject,
     saveProject, deleteProject,
+    onSubmissionSave,
   }), [submissions, customTemplates, allTemplates, activeTemplates, customers, projects, loaded,
-       refreshTemplates, updateTemplate, handleDeleteTemplate, handleCustomersChange, refreshProjects, handleCreateProject]);
+       refreshTemplates, updateTemplate, handleDeleteTemplate, handleCustomersChange, refreshProjects, handleCreateProject,
+       onSubmissionSave]);
 
   return <DataContext.Provider value={value}>{children}</DataContext.Provider>;
 }

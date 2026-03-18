@@ -55,7 +55,7 @@ const LoadingFallback = () => (
 );
 
 // ═══ FormPilot Inner (uses Contexts) ═══
-function FormPilotInner() {
+function FormPilotInner({ hiddenTabs = [], embeddedMode = false, onNavigateToHost, customFieldTypes }) {
   const { user, authChecked, handleLogin } = useAuth();
   const {
     submissions, setSubmissions,
@@ -238,7 +238,11 @@ function FormPilotInner() {
     handleStartFilling(template, project, phaseId);
   }, [handleStartFilling]);
 
-  const visibleNav = useMemo(() => user ? NAV_ITEMS.filter(n => n.roles.includes(user.role)) : [], [user]);
+  const visibleNav = useMemo(() => {
+    let items = user ? NAV_ITEMS.filter(n => n.roles.includes(user.role)) : [];
+    if (hiddenTabs.length > 0) items = items.filter(n => !hiddenTabs.includes(n.id));
+    return items;
+  }, [user, hiddenTabs]);
 
   // ═══ Loading state — wait for both data and auth check ═══
   const isLoading = !loaded || (isSupabaseConfigured() && !authChecked);
@@ -249,17 +253,26 @@ function FormPilotInner() {
   return (
     <div style={styles.app}>
       <OfflineIndicator />
-      <div style={styles.topBar}>
-        <div style={styles.logo}><span>📋</span><span>FormPilot</span></div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <span style={{ fontSize: '13px', color: S.colors.textSecondary }}>{user.name}</span>
-          <div style={{ width: 32, height: 32, borderRadius: '50%', background: S.colors.primary, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '12px' }}>{user.name.split(' ').map(w => w[0]).join('')}</div>
-        </div>
+      <div style={embeddedMode ? { ...styles.topBar, padding: '8px 16px', minHeight: 44 } : styles.topBar}>
+        {embeddedMode && onNavigateToHost ? (
+          <button onClick={onNavigateToHost} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', color: S.colors.primary, fontSize: '14px', fontWeight: 600, fontFamily: 'inherit', padding: 0 }}>
+            <span style={{ fontSize: '18px' }}>←</span>
+            <span>Zurück</span>
+          </button>
+        ) : (
+          <div style={styles.logo}><span>📋</span><span>FormPilot</span></div>
+        )}
+        {!embeddedMode && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <span style={{ fontSize: '13px', color: S.colors.textSecondary }}>{user.name}</span>
+            <div style={{ width: 32, height: 32, borderRadius: '50%', background: S.colors.primary, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '12px' }}>{user.name.split(' ').map(w => w[0]).join('')}</div>
+          </div>
+        )}
       </div>
       <div style={styles.main}>
         {fillingTemplate ? (
           <ErrorBoundary>
-            <FormFiller template={fillingTemplate} onSubmit={handleSubmitForm} onCancel={() => { setFillingTemplate(null); setDraftData(null); setFillingProjectContext(null); }} initialData={draftData} draftId={`fp_draft_${fillingTemplate.id}_current`} />
+            <FormFiller template={fillingTemplate} onSubmit={handleSubmitForm} onCancel={() => { setFillingTemplate(null); setDraftData(null); setFillingProjectContext(null); }} initialData={draftData} draftId={`fp_draft_${fillingTemplate.id}_current`} customFieldTypes={customFieldTypes} />
           </ErrorBoundary>
         ) : viewingSubmission ? (
           <ErrorBoundary>
@@ -309,11 +322,11 @@ function FormPilotInner() {
 }
 
 // ═══ FormPilot Root (Provider Shell) ═══
-export default function FormPilot() {
+export default function FormPilot({ hiddenTabs = [], embeddedMode = false, onNavigateToHost, initialUser, customFieldTypes, externalProjects, externalCustomers, onSubmissionSave } = {}) {
   return (
-    <AuthProvider>
-      <DataProvider>
-        <FormPilotInner />
+    <AuthProvider initialUser={initialUser}>
+      <DataProvider externalProjects={externalProjects} externalCustomers={externalCustomers} onSubmissionSave={onSubmissionSave}>
+        <FormPilotInner hiddenTabs={hiddenTabs} embeddedMode={embeddedMode} onNavigateToHost={onNavigateToHost} customFieldTypes={customFieldTypes} />
       </DataProvider>
     </AuthProvider>
   );

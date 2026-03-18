@@ -22,7 +22,7 @@ const pageBtnStyle = (i, pageIndex) => ({
 });
 
 // ═══ FEATURE: Form Filler (Chat F.1 + S01 Polish) ═══
-export const FormFiller = React.memo(({ template, onSubmit, onCancel, initialData, draftId }) => {
+export const FormFiller = React.memo(({ template, onSubmit, onCancel, initialData, draftId, customFieldTypes }) => {
   const [pageIndex, setPageIndex] = useState(0);
   const [formData, setFormData] = useState(initialData || {});
   const [errors, setErrors] = useState({});
@@ -96,7 +96,7 @@ export const FormFiller = React.memo(({ template, onSubmit, onCancel, initialDat
       <div style={{ ...styles.card, padding: '24px' }}>
         <div style={S_FIELDS_WRAP}>
           {(currentPage?.fields || []).map(field => (
-            <FormField key={field.id} field={field} value={formData[field.id]} onChange={(val) => updateField(field.id, val)} error={showErrors ? errors[field.id] : null} formData={formData} />
+            <FormField key={field.id} field={field} value={formData[field.id]} onChange={(val) => updateField(field.id, val)} error={showErrors ? errors[field.id] : null} formData={formData} customFieldTypes={customFieldTypes} />
           ))}
         </div>
       </div>

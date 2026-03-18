@@ -107,8 +107,30 @@ const RepeaterField = ({ field, value, onChange, formData }) => {
 };
 
 // ═══ FEATURE: Form Field Renderer (Chat F.1 + Signature/Photo) ═══
-export const FormField = React.memo(({ field, value, onChange, error, formData }) => {
+export const FormField = React.memo(({ field, value, onChange, error, formData, customFieldTypes, readOnly }) => {
   if (field.conditions && !evaluateConditions(field.conditions, field.conditionLogic, formData)) return null;
+
+  // ═══ Custom Field Types Plugin System ═══
+  if (customFieldTypes && customFieldTypes[field.type]) {
+    const CustomComponent = customFieldTypes[field.type];
+    const disabled = isConditionallyDisabled(field, formData);
+    const condRequired = isConditionallyRequired(field, formData);
+    return (
+      <div style={{ width: widthMap[field.width] || '100%', minWidth: 0, opacity: disabled ? 0.5 : 1, pointerEvents: disabled ? 'none' : 'auto' }}>
+        {field.label && <label style={styles.fieldLabel}>{field.label}{(field.required || condRequired) && <span style={{ color: S.colors.danger, marginLeft: '4px' }} aria-hidden="true">*</span>}</label>}
+        <CustomComponent
+          field={field}
+          value={value}
+          onChange={onChange}
+          error={error}
+          readOnly={readOnly || disabled}
+          formData={formData}
+        />
+        {error && <div role="alert" style={styles.fieldError}>{error}</div>}
+      </div>
+    );
+  }
+
   if (field.type === 'heading') return <div style={{ width: '100%', minWidth: 0 }}><HeadingField field={field} /></div>;
   if (field.type === 'divider') return <div style={{ width: '100%', minWidth: 0 }}><DividerField /></div>;
   if (field.type === 'info') return <div style={{ width: '100%', minWidth: 0 }}><InfoField field={field} /></div>;
