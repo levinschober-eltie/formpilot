@@ -30,7 +30,7 @@ import { ErrorBoundary } from './components/common/ErrorBoundary';
 const NAV_ITEMS = [
   { id: 'dashboard', label: 'Dashboard', icon: '📊', roles: ['admin', 'buero'] },
   { id: 'projects', label: 'Projekte', icon: '🏗️', roles: ['admin', 'buero'] },
-  { id: 'templates', label: 'Vorlagen', icon: '📑', roles: ['admin', 'buero'] },
+  { id: 'templates', label: 'Formulare', icon: '📑', roles: ['admin', 'buero'] },
   { id: 'fill', label: 'Ausfüllen', icon: '✏️', roles: ['admin', 'monteur', 'buero'] },
   { id: 'submissions', label: 'Verträge', icon: '📥', roles: ['admin', 'monteur', 'buero'] },
   { id: 'customers', label: 'Kontakte', icon: '👥', roles: ['admin', 'buero'] },

@@ -57,7 +57,9 @@ function mapTemplateFromDb(row) {
     pdfSettings: row.pdf_settings || {},
     emailTemplate: row.email_template || {},
     isDemo: row.is_demo,
+    isActive: row.is_active ?? true,
     isArchived: row.is_archived,
+    visibleForRoles: row.visible_for_roles || ['admin', 'monteur', 'buero'],
     createdAt: row.created_at,
     updatedAt: row.updated_at,
     organizationId: row.organization_id,
@@ -72,7 +74,7 @@ function mapTemplateFromDb(row) {
 function mapTemplateToDb(template, orgId, userId) {
   // Extract schema-specific fields from the template
   const { id, name, description, category, icon, version, pages, fields,
-    pdfSettings, emailTemplate, isDemo, isArchived,
+    pdfSettings, emailTemplate, isDemo, isActive, isArchived, visibleForRoles,
     organizationId: _organizationId, createdBy: _createdBy,
     createdAt: _createdAt, updatedAt: _updatedAt, ...rest } = template;
 
@@ -89,6 +91,8 @@ function mapTemplateToDb(template, orgId, userId) {
     pdf_settings: pdfSettings || {},
     email_template: emailTemplate || {},
     is_demo: isDemo || false,
+    is_active: isActive !== false,
     is_archived: isArchived || false,
+    visible_for_roles: visibleForRoles || ['admin', 'monteur', 'buero'],
   };
 }

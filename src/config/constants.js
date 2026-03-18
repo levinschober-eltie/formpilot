@@ -40,6 +40,12 @@ export const CATEGORY_OPTIONS = [
   { value: 'custom', label: 'Sonstige' },
 ];
 
+export const ROLES = [
+  { id: 'admin', label: 'Admin' },
+  { id: 'monteur', label: 'Monteur' },
+  { id: 'buero', label: 'Büro' },
+];
+
 export const BUILDER_ICONS = ['📋', '🔧', '🏗️', '⚠️', '📐', '🔌', '🏠', '🛠️', '📊', '✅', '🔍', '📦', '🚿', '💡', '🔥', '❄️', '⚡', '🏢', '🧰', '📝'];
 
 export const FIELD_PALETTE = [

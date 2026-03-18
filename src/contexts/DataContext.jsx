@@ -57,8 +57,23 @@ export function DataProvider({ children }) {
 
   const allTemplates = useMemo(() => [...DEMO_TEMPLATES, ...customTemplates], [customTemplates]);
 
+  // Active templates for "Ausfüllen" tab: only custom, active, not archived
+  const activeTemplates = useMemo(() =>
+    customTemplates.filter(t => t.isActive !== false && !t.isArchived),
+    [customTemplates]
+  );
+
   const refreshTemplates = useCallback(async () => {
     const tpls = await storageGet(STORAGE_KEYS.templates) || [];
+    setCustomTemplates(tpls);
+  }, []);
+
+  // Update a single template's properties (active, roles, archive)
+  const updateTemplate = useCallback(async (id, updates) => {
+    const tpls = (await storageGet(STORAGE_KEYS.templates) || []).map(t =>
+      t.id === id ? { ...t, ...updates, updatedAt: new Date().toISOString() } : t
+    );
+    await storageSet(STORAGE_KEYS.templates, tpls);
     setCustomTemplates(tpls);
   }, []);
 
@@ -87,16 +102,16 @@ export function DataProvider({ children }) {
 
   const value = useMemo(() => ({
     submissions, setSubmissions,
-    customTemplates, allTemplates,
+    customTemplates, allTemplates, activeTemplates,
     customers, setCustomers,
     projects, setProjects,
     loaded,
-    refreshTemplates, handleDeleteTemplate,
+    refreshTemplates, updateTemplate, handleDeleteTemplate,
     handleCustomersChange,
     refreshProjects, handleCreateProject,
     saveProject, deleteProject,
-  }), [submissions, customTemplates, allTemplates, customers, projects, loaded,
-       refreshTemplates, handleDeleteTemplate, handleCustomersChange, refreshProjects, handleCreateProject]);
+  }), [submissions, customTemplates, allTemplates, activeTemplates, customers, projects, loaded,
+       refreshTemplates, updateTemplate, handleDeleteTemplate, handleCustomersChange, refreshProjects, handleCreateProject]);
 
   return <DataContext.Provider value={value}>{children}</DataContext.Provider>;
 }
