@@ -23,6 +23,8 @@ import { ProjectDetail } from './components/layout/ProjectDetail';
 import { TemplateSelector } from './components/filler/TemplateSelector';
 import { FormFiller } from './components/filler/FormFiller';
 import { FormBuilder } from './components/builder/FormBuilder';
+import { OfflineIndicator } from './components/common/OfflineIndicator';
+import { InstallPrompt } from './components/common/InstallPrompt';
 
 // ═══ Nav Items (P4: outside render) ═══
 const NAV_ITEMS = [
@@ -340,6 +342,7 @@ export default function FormPilot() {
 
   return (
     <div style={styles.app}>
+      <OfflineIndicator />
       <div style={styles.topBar}>
         <div style={styles.logo}><span>📋</span><span>FormPilot</span></div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -390,6 +393,7 @@ export default function FormPilot() {
           {visibleNav.map(n => <button key={n.id} onClick={() => setTab(n.id)} style={styles.navItem(tab === n.id)}><span style={{ fontSize: '20px' }}>{n.icon}</span><span>{n.label}</span></button>)}
         </div>
       )}
+      <InstallPrompt />
     </div>
   );
 }

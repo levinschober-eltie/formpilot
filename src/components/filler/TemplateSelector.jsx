@@ -1,17 +1,40 @@
-import { useState, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { S, CATEGORY_COLORS } from '../../config/theme';
 import { styles } from '../../styles/shared';
 import { DEMO_TEMPLATES } from '../../config/templates';
 import { CATEGORY_OPTIONS } from '../../config/constants';
+import { getCachedTemplates } from '../../lib/offlineDb';
 
 // ═══ Extracted Styles (P4) ═══
 const S_SEARCH = { flex: '1 1 200px', padding: '10px 14px', borderRadius: S.radius.md, border: `1.5px solid ${S.colors.border}`, fontSize: '14px', fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box', background: S.colors.bgInput, minWidth: '150px' };
 const S_FILTER_SELECT = { padding: '10px 14px', borderRadius: S.radius.md, border: `1.5px solid ${S.colors.border}`, fontSize: '13px', fontFamily: 'inherit', background: S.colors.bgInput, cursor: 'pointer' };
 
+// ═══ Badge style for offline indicator (P4) ═══
+const S_OFFLINE_BADGE = {
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: '3px',
+  padding: '1px 8px',
+  borderRadius: '9999px',
+  fontSize: '11px',
+  fontWeight: 600,
+  background: '#22c55e18',
+  color: '#16a34a',
+  border: '1px solid #22c55e40',
+};
+
 export const TemplateSelector = ({ onSelect, customTemplates }) => {
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
+  const [cachedIds, setCachedIds] = useState(new Set());
   const allTemplates = useMemo(() => [...DEMO_TEMPLATES, ...(customTemplates || [])], [customTemplates]);
+
+  // Load cached template IDs to show offline badge
+  useEffect(() => {
+    getCachedTemplates()
+      .then(cached => setCachedIds(new Set(cached.map(t => t.id))))
+      .catch(() => {});
+  }, []);
 
   const filtered = useMemo(() => {
     let result = allTemplates;
@@ -53,6 +76,7 @@ export const TemplateSelector = ({ onSelect, customTemplates }) => {
                 <span style={styles.badge(S.colors.textSecondary)}>{t.pages.length} {t.pages.length === 1 ? 'Seite' : 'Seiten'}</span>
                 <span style={styles.badge(S.colors.textSecondary)}>{t.pages.reduce((a, p) => a + p.fields.filter(f => !['heading', 'divider', 'info'].includes(f.type)).length, 0)} Felder</span>
                 {!t.isDemo && <span style={styles.badge(S.colors.primary)}>Eigenes</span>}
+                {(cachedIds.has(t.id) || t.isDemo) && <span style={S_OFFLINE_BADGE}>Offline verfuegbar</span>}
               </div>
             </div>
             <span style={{ fontSize: '20px', color: S.colors.textMuted, flexShrink: 0 }}>›</span>

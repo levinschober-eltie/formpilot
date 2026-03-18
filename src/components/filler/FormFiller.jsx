@@ -3,6 +3,7 @@ import { S } from '../../config/theme';
 import { styles } from '../../styles/shared';
 import { validatePage } from '../../lib/validation';
 import { storageSet } from '../../lib/storage';
+import { saveDraft, getDraft, deleteDraft } from '../../lib/offlineDb';
 import { FormField } from '../fields/FormField';
 
 // ═══ Extracted Styles (P4) ═══
@@ -37,12 +38,16 @@ export const FormFiller = React.memo(({ template, onSubmit, onCancel, initialDat
 
   useEffect(() => {
     const key = draftId || `fp_draft_${template.id}_current`;
-    const timer = setInterval(() => {
-      storageSet(key, { templateId: template.id, data: formDataRef.current, pageIndex: pageIndexRef.current, updatedAt: new Date().toISOString() });
-    }, 30000);
+    const saveBoth = () => {
+      const draftPayload = { templateId: template.id, data: formDataRef.current, pageIndex: pageIndexRef.current, updatedAt: new Date().toISOString() };
+      storageSet(key, draftPayload);
+      // Also persist in IndexedDB for offline resilience
+      saveDraft(key, draftPayload).catch(() => {});
+    };
+    const timer = setInterval(saveBoth, 30000);
     return () => {
       clearInterval(timer);
-      storageSet(key, { templateId: template.id, data: formDataRef.current, pageIndex: pageIndexRef.current, updatedAt: new Date().toISOString() });
+      saveBoth();
     };
   }, [template.id, draftId]);
 

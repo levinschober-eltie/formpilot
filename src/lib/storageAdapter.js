@@ -1,22 +1,38 @@
-// ═══ FEATURE: Storage Adapter (S05) ═══
+// ═══ FEATURE: Storage Adapter (S05) + Offline Fallback (S04) ═══
 // Switches between localStorage and Supabase based on configuration.
-// Provides the same API shape so the rest of the app doesn't need to know.
+// Falls back to IndexedDB offline storage when network is unavailable.
 
 import { isSupabaseConfigured } from './supabase';
 import { storageGet, storageSet } from './storage';
 import * as supa from './supabaseService';
 import { STORAGE_KEYS } from '../config/constants';
+import { getOfflineDb, cacheTemplates, getCachedTemplates, cacheSubmissions, getCachedSubmissions, offlinePut, offlineGetAll } from './offlineDb';
+import { syncQueue } from './syncQueue';
 
 // ═══ Check mode ═══
 export const useSupabase = () => isSupabaseConfigured();
+
+// ═══ Helper: check if error is a network error ═══
+function isNetworkError(e) {
+  if (!navigator.onLine) return true;
+  const msg = (e?.message || '').toLowerCase();
+  return msg.includes('fetch') || msg.includes('network') || msg.includes('failed') || msg.includes('timeout') || msg.includes('aborted');
+}
 
 // ═══ TEMPLATES ═══
 export async function loadTemplates() {
   if (useSupabase()) {
     try {
-      return await supa.getTemplates();
+      const templates = await supa.getTemplates();
+      // Cache in IndexedDB for offline access
+      cacheTemplates(templates).catch(() => {});
+      return templates;
     } catch (e) {
-      console.error('[StorageAdapter] Supabase templates load failed, falling back to localStorage:', e);
+      console.error('[StorageAdapter] Supabase templates load failed, trying offline cache:', e);
+      if (isNetworkError(e)) {
+        const cached = await getCachedTemplates();
+        if (cached && cached.length > 0) return cached;
+      }
     }
   }
   return (await storageGet(STORAGE_KEYS.templates)) || [];
@@ -24,11 +40,18 @@ export async function loadTemplates() {
 
 export async function saveTemplate(template) {
   if (useSupabase()) {
-    try {
-      return await supa.saveTemplate(template);
-    } catch (e) {
-      console.error('[StorageAdapter] Supabase template save failed:', e);
-      throw e;
+    if (navigator.onLine) {
+      try {
+        return await supa.saveTemplate(template);
+      } catch (e) {
+        if (isNetworkError(e)) {
+          return await _saveTemplateOffline(template);
+        }
+        console.error('[StorageAdapter] Supabase template save failed:', e);
+        throw e;
+      }
+    } else {
+      return await _saveTemplateOffline(template);
     }
   }
   // localStorage: update the templates array
@@ -39,13 +62,37 @@ export async function saveTemplate(template) {
   return template;
 }
 
+async function _saveTemplateOffline(template) {
+  const db = await getOfflineDb();
+  await db.put('templates', template);
+  await syncQueue.enqueue({
+    type: template.id ? 'update' : 'create',
+    entity: 'template',
+    data: template,
+  });
+  return template;
+}
+
 export async function deleteTemplate(id) {
   if (useSupabase()) {
-    try {
-      return await supa.deleteTemplate(id);
-    } catch (e) {
-      console.error('[StorageAdapter] Supabase template delete failed:', e);
-      throw e;
+    if (navigator.onLine) {
+      try {
+        return await supa.deleteTemplate(id);
+      } catch (e) {
+        if (isNetworkError(e)) {
+          await syncQueue.enqueue({ type: 'delete', entity: 'template', data: { id } });
+          const db = await getOfflineDb();
+          await db.delete('templates', id);
+          return;
+        }
+        console.error('[StorageAdapter] Supabase template delete failed:', e);
+        throw e;
+      }
+    } else {
+      await syncQueue.enqueue({ type: 'delete', entity: 'template', data: { id } });
+      const db = await getOfflineDb();
+      await db.delete('templates', id);
+      return;
     }
   }
   const templates = ((await storageGet(STORAGE_KEYS.templates)) || []).filter(t => t.id !== id);
@@ -56,9 +103,16 @@ export async function deleteTemplate(id) {
 export async function loadSubmissions(filters = {}) {
   if (useSupabase()) {
     try {
-      return await supa.getSubmissions(filters);
+      const submissions = await supa.getSubmissions(filters);
+      // Cache in IndexedDB for offline access
+      cacheSubmissions(submissions).catch(() => {});
+      return submissions;
     } catch (e) {
-      console.error('[StorageAdapter] Supabase submissions load failed, falling back:', e);
+      console.error('[StorageAdapter] Supabase submissions load failed, trying offline cache:', e);
+      if (isNetworkError(e)) {
+        const cached = await getCachedSubmissions();
+        if (cached && cached.length > 0) return cached;
+      }
     }
   }
   return (await storageGet(STORAGE_KEYS.submissions)) || [];
@@ -66,11 +120,22 @@ export async function loadSubmissions(filters = {}) {
 
 export async function saveSubmission(submission) {
   if (useSupabase()) {
-    try {
-      return await supa.saveSubmission(submission);
-    } catch (e) {
-      console.error('[StorageAdapter] Supabase submission save failed:', e);
-      throw e;
+    if (navigator.onLine) {
+      try {
+        const saved = await supa.saveSubmission(submission);
+        // Also cache locally
+        const db = await getOfflineDb();
+        await db.put('offlineSubmissions', saved);
+        return saved;
+      } catch (e) {
+        if (isNetworkError(e)) {
+          return await _saveSubmissionOffline(submission);
+        }
+        console.error('[StorageAdapter] Supabase submission save failed:', e);
+        throw e;
+      }
+    } else {
+      return await _saveSubmissionOffline(submission);
     }
   }
   const subs = (await storageGet(STORAGE_KEYS.submissions)) || [];
@@ -80,13 +145,46 @@ export async function saveSubmission(submission) {
   return submission;
 }
 
+async function _saveSubmissionOffline(submission) {
+  const db = await getOfflineDb();
+  await db.put('offlineSubmissions', submission);
+  await syncQueue.enqueue({
+    type: submission.id ? 'update' : 'create',
+    entity: 'submission',
+    data: submission,
+  });
+  return submission;
+}
+
 export async function updateSubmissionStatus(id, status) {
   if (useSupabase()) {
-    try {
-      return await supa.updateSubmissionStatus(id, status);
-    } catch (e) {
-      console.error('[StorageAdapter] Supabase submission status update failed:', e);
-      throw e;
+    if (navigator.onLine) {
+      try {
+        return await supa.updateSubmissionStatus(id, status);
+      } catch (e) {
+        if (isNetworkError(e)) {
+          // Store status change offline
+          const db = await getOfflineDb();
+          const existing = await db.get('offlineSubmissions', id);
+          if (existing) {
+            existing.status = status;
+            await db.put('offlineSubmissions', existing);
+            await syncQueue.enqueue({ type: 'update', entity: 'submission', data: existing });
+            return existing;
+          }
+        }
+        console.error('[StorageAdapter] Supabase submission status update failed:', e);
+        throw e;
+      }
+    } else {
+      const db = await getOfflineDb();
+      const existing = await db.get('offlineSubmissions', id);
+      if (existing) {
+        existing.status = status;
+        await db.put('offlineSubmissions', existing);
+        await syncQueue.enqueue({ type: 'update', entity: 'submission', data: existing });
+        return existing;
+      }
     }
   }
   const subs = (await storageGet(STORAGE_KEYS.submissions)) || [];
@@ -97,11 +195,24 @@ export async function updateSubmissionStatus(id, status) {
 
 export async function deleteSubmission(id) {
   if (useSupabase()) {
-    try {
-      return await supa.deleteSubmission(id);
-    } catch (e) {
-      console.error('[StorageAdapter] Supabase submission delete failed:', e);
-      throw e;
+    if (navigator.onLine) {
+      try {
+        return await supa.deleteSubmission(id);
+      } catch (e) {
+        if (isNetworkError(e)) {
+          await syncQueue.enqueue({ type: 'delete', entity: 'submission', data: { id } });
+          const db = await getOfflineDb();
+          await db.delete('offlineSubmissions', id);
+          return;
+        }
+        console.error('[StorageAdapter] Supabase submission delete failed:', e);
+        throw e;
+      }
+    } else {
+      await syncQueue.enqueue({ type: 'delete', entity: 'submission', data: { id } });
+      const db = await getOfflineDb();
+      await db.delete('offlineSubmissions', id);
+      return;
     }
   }
   const subs = ((await storageGet(STORAGE_KEYS.submissions)) || []).filter(s => s.id !== id);
@@ -112,9 +223,20 @@ export async function deleteSubmission(id) {
 export async function loadCustomers() {
   if (useSupabase()) {
     try {
-      return await supa.getCustomers();
+      const customers = await supa.getCustomers();
+      // Cache in IndexedDB
+      const db = await getOfflineDb();
+      const tx = db.transaction('customers', 'readwrite');
+      for (const c of customers) { await tx.store.put(c); }
+      await tx.done;
+      return customers;
     } catch (e) {
-      console.error('[StorageAdapter] Supabase customers load failed, falling back:', e);
+      console.error('[StorageAdapter] Supabase customers load failed, trying offline cache:', e);
+      if (isNetworkError(e)) {
+        const db = await getOfflineDb();
+        const cached = await db.getAll('customers');
+        if (cached && cached.length > 0) return cached;
+      }
     }
   }
   return (await storageGet(STORAGE_KEYS.customers)) || [];
@@ -122,11 +244,18 @@ export async function loadCustomers() {
 
 export async function saveCustomer(customer) {
   if (useSupabase()) {
-    try {
-      return await supa.saveCustomer(customer);
-    } catch (e) {
-      console.error('[StorageAdapter] Supabase customer save failed:', e);
-      throw e;
+    if (navigator.onLine) {
+      try {
+        return await supa.saveCustomer(customer);
+      } catch (e) {
+        if (isNetworkError(e)) {
+          return await _saveCustomerOffline(customer);
+        }
+        console.error('[StorageAdapter] Supabase customer save failed:', e);
+        throw e;
+      }
+    } else {
+      return await _saveCustomerOffline(customer);
     }
   }
   const custs = (await storageGet(STORAGE_KEYS.customers)) || [];
@@ -136,13 +265,37 @@ export async function saveCustomer(customer) {
   return customer;
 }
 
+async function _saveCustomerOffline(customer) {
+  const db = await getOfflineDb();
+  await db.put('customers', customer);
+  await syncQueue.enqueue({
+    type: customer.id ? 'update' : 'create',
+    entity: 'customer',
+    data: customer,
+  });
+  return customer;
+}
+
 export async function deleteCustomer(id) {
   if (useSupabase()) {
-    try {
-      return await supa.deleteCustomer(id);
-    } catch (e) {
-      console.error('[StorageAdapter] Supabase customer delete failed:', e);
-      throw e;
+    if (navigator.onLine) {
+      try {
+        return await supa.deleteCustomer(id);
+      } catch (e) {
+        if (isNetworkError(e)) {
+          await syncQueue.enqueue({ type: 'delete', entity: 'customer', data: { id } });
+          const db = await getOfflineDb();
+          await db.delete('customers', id);
+          return;
+        }
+        console.error('[StorageAdapter] Supabase customer delete failed:', e);
+        throw e;
+      }
+    } else {
+      await syncQueue.enqueue({ type: 'delete', entity: 'customer', data: { id } });
+      const db = await getOfflineDb();
+      await db.delete('customers', id);
+      return;
     }
   }
   const custs = ((await storageGet(STORAGE_KEYS.customers)) || []).filter(c => c.id !== id);
@@ -153,9 +306,20 @@ export async function deleteCustomer(id) {
 export async function loadProjects() {
   if (useSupabase()) {
     try {
-      return await supa.getProjects();
+      const projects = await supa.getProjects();
+      // Cache in IndexedDB
+      const db = await getOfflineDb();
+      const tx = db.transaction('projects', 'readwrite');
+      for (const p of projects) { await tx.store.put(p); }
+      await tx.done;
+      return projects;
     } catch (e) {
-      console.error('[StorageAdapter] Supabase projects load failed, falling back:', e);
+      console.error('[StorageAdapter] Supabase projects load failed, trying offline cache:', e);
+      if (isNetworkError(e)) {
+        const db = await getOfflineDb();
+        const cached = await db.getAll('projects');
+        if (cached && cached.length > 0) return cached;
+      }
     }
   }
   return (await storageGet(STORAGE_KEYS.projects)) || [];
@@ -163,11 +327,18 @@ export async function loadProjects() {
 
 export async function saveProject(project) {
   if (useSupabase()) {
-    try {
-      return await supa.saveProject(project);
-    } catch (e) {
-      console.error('[StorageAdapter] Supabase project save failed:', e);
-      throw e;
+    if (navigator.onLine) {
+      try {
+        return await supa.saveProject(project);
+      } catch (e) {
+        if (isNetworkError(e)) {
+          return await _saveProjectOffline(project);
+        }
+        console.error('[StorageAdapter] Supabase project save failed:', e);
+        throw e;
+      }
+    } else {
+      return await _saveProjectOffline(project);
     }
   }
   const projs = (await storageGet(STORAGE_KEYS.projects)) || [];
@@ -177,13 +348,37 @@ export async function saveProject(project) {
   return project;
 }
 
+async function _saveProjectOffline(project) {
+  const db = await getOfflineDb();
+  await db.put('projects', project);
+  await syncQueue.enqueue({
+    type: project.id ? 'update' : 'create',
+    entity: 'project',
+    data: project,
+  });
+  return project;
+}
+
 export async function deleteProject(id) {
   if (useSupabase()) {
-    try {
-      return await supa.deleteProject(id);
-    } catch (e) {
-      console.error('[StorageAdapter] Supabase project delete failed:', e);
-      throw e;
+    if (navigator.onLine) {
+      try {
+        return await supa.deleteProject(id);
+      } catch (e) {
+        if (isNetworkError(e)) {
+          await syncQueue.enqueue({ type: 'delete', entity: 'project', data: { id } });
+          const db = await getOfflineDb();
+          await db.delete('projects', id);
+          return;
+        }
+        console.error('[StorageAdapter] Supabase project delete failed:', e);
+        throw e;
+      }
+    } else {
+      await syncQueue.enqueue({ type: 'delete', entity: 'project', data: { id } });
+      const db = await getOfflineDb();
+      await db.delete('projects', id);
+      return;
     }
   }
   const projs = ((await storageGet(STORAGE_KEYS.projects)) || []).filter(p => p.id !== id);
@@ -193,11 +388,24 @@ export async function deleteProject(id) {
 // ═══ FILE STORAGE ═══
 export async function uploadFileData(bucket, path, base64) {
   if (useSupabase()) {
-    try {
-      return await supa.uploadBase64(bucket, path, base64);
-    } catch (e) {
-      console.error('[StorageAdapter] File upload failed:', e);
-      throw e;
+    if (navigator.onLine) {
+      try {
+        return await supa.uploadBase64(bucket, path, base64);
+      } catch (e) {
+        if (isNetworkError(e)) {
+          // Store file offline
+          const db = await getOfflineDb();
+          await db.put('offlineFiles', { path, base64, bucket });
+          return path; // Return path as reference
+        }
+        console.error('[StorageAdapter] File upload failed:', e);
+        throw e;
+      }
+    } else {
+      // Offline: store in IndexedDB
+      const db = await getOfflineDb();
+      await db.put('offlineFiles', { path, base64, bucket });
+      return path;
     }
   }
   // localStorage fallback: just return the base64 as-is (no upload)
@@ -207,6 +415,18 @@ export async function uploadFileData(bucket, path, base64) {
 export async function getFileData(bucket, pathOrBase64) {
   // If it's already a base64 string (localStorage mode), return as-is
   if (pathOrBase64 && pathOrBase64.startsWith('data:')) return pathOrBase64;
+
+  // Check offline files first
+  if (pathOrBase64) {
+    try {
+      const db = await getOfflineDb();
+      const offlineFile = await db.get('offlineFiles', pathOrBase64);
+      if (offlineFile && offlineFile.base64) return offlineFile.base64;
+    } catch (e) {
+      // Ignore IndexedDB errors
+    }
+  }
+
   if (useSupabase() && pathOrBase64) {
     try {
       return await supa.downloadAsBase64(bucket, pathOrBase64);
