@@ -4,6 +4,7 @@ import { styles } from '../../styles/shared';
 import { DEMO_TEMPLATES } from '../../config/templates';
 import { CATEGORY_OPTIONS } from '../../config/constants';
 import { getCachedTemplates } from '../../lib/offlineDb';
+import { useData } from '../../contexts/DataContext';
 
 // ═══ Extracted Styles (P4) ═══
 const S_SEARCH = { flex: '1 1 200px', padding: '10px 14px', borderRadius: S.radius.md, border: `1.5px solid ${S.colors.border}`, fontSize: '14px', fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box', background: S.colors.bgInput, minWidth: '150px' };
@@ -23,7 +24,8 @@ const S_OFFLINE_BADGE = {
   border: '1px solid #22c55e40',
 };
 
-export const TemplateSelector = ({ onSelect, customTemplates }) => {
+export const TemplateSelector = ({ onSelect }) => {
+  const { customTemplates } = useData();
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [cachedIds, setCachedIds] = useState(new Set());

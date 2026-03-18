@@ -29,9 +29,7 @@ export const FormFiller = React.memo(({ template, onSubmit, onCancel, initialDat
   const [showErrors, setShowErrors] = useState(false);
   const formDataRef = useRef(formData);
   const pageIndexRef = useRef(pageIndex);
-  // eslint-disable-next-line react-hooks/refs
   formDataRef.current = formData;
-  // eslint-disable-next-line react-hooks/refs
   pageIndexRef.current = pageIndex;
   const pages = template.pages || [];
   const currentPage = pages[pageIndex];

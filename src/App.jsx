@@ -56,14 +56,14 @@ const LoadingFallback = () => (
 
 // ═══ FormPilot Inner (uses Contexts) ═══
 function FormPilotInner() {
-  const { user, authChecked, handleLogin, handleLogout } = useAuth();
+  const { user, authChecked, handleLogin } = useAuth();
   const {
     submissions, setSubmissions,
-    customTemplates, allTemplates,
+    allTemplates,
     customers, setCustomers,
     projects,
     loaded,
-    refreshTemplates, handleDeleteTemplate,
+    refreshTemplates,
     handleCustomersChange,
     refreshProjects, handleCreateProject,
     saveProject, deleteProject,
@@ -285,13 +285,13 @@ function FormPilotInner() {
             onCustomersChange={handleCustomersChange}
           />
         ) : (<>
-          {tab === 'dashboard' && <DashboardScreen submissions={submissions} allTemplates={allTemplates} user={user} />}
-          {tab === 'projects' && <ProjectsScreen projects={projects} onSelectProject={setViewingProject} onCreateProject={handleCreateProjectAndView} />}
-          {tab === 'templates' && <TemplatesOverview user={user} onOpenBuilder={setBuilderTemplate} onStartFilling={handleStartFilling} customTemplates={customTemplates} onDeleteTemplate={handleDeleteTemplate} />}
-          {tab === 'fill' && <TemplateSelector onSelect={handleStartFilling} customTemplates={customTemplates} />}
-          {tab === 'submissions' && <SubmissionsList submissions={submissions} user={user} allTemplates={allTemplates} onViewSubmission={setViewingSubmission} onDeleteSubmission={handleDeleteSubmission} />}
-          {tab === 'customers' && <CustomersScreen customers={customers} submissions={submissions} allTemplates={allTemplates} onSelectCustomer={setViewingCustomer} />}
-          {tab === 'settings' && <SettingsScreen user={user} onLogout={handleLogout} darkMode={darkMode} onToggleDarkMode={() => setDarkMode(p => !p)} />}
+          {tab === 'dashboard' && <DashboardScreen />}
+          {tab === 'projects' && <ProjectsScreen onSelectProject={setViewingProject} onCreateProject={handleCreateProjectAndView} />}
+          {tab === 'templates' && <TemplatesOverview onOpenBuilder={setBuilderTemplate} onStartFilling={handleStartFilling} />}
+          {tab === 'fill' && <TemplateSelector onSelect={handleStartFilling} />}
+          {tab === 'submissions' && <SubmissionsList onViewSubmission={setViewingSubmission} onDeleteSubmission={handleDeleteSubmission} />}
+          {tab === 'customers' && <CustomersScreen onSelectCustomer={setViewingCustomer} />}
+          {tab === 'settings' && <SettingsScreen darkMode={darkMode} onToggleDarkMode={() => setDarkMode(p => !p)} />}
         </>)}
       </div>
       {!fillingTemplate && !viewingSubmission && !viewingCustomer && !viewingProject && (

@@ -7,12 +7,13 @@ import { ChecklistItemsEditor } from './ChecklistItemsEditor';
 import { useDebounce } from '../../hooks/useDebounce';
 
 // ═══ Debounced Input wrapper (P6) ═══
-const DebouncedInput = ({ value, onChange, component: Comp = 'input', ...props }) => {
+const DebouncedInput = ({ value, onChange, component = 'input', ...props }) => {
   const [local, setLocal] = useState(value);
   const debounced = useDebounce(local, 300);
   useEffect(() => { if (debounced !== value) onChange(debounced); }, [debounced]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { setLocal(value); }, [value]);
-  return <Comp {...props} value={local} onChange={e => setLocal(e.target.value)} />;
+  const Tag = component;
+  return <Tag {...props} value={local} onChange={e => setLocal(e.target.value)} />;
 };
 
 // ═══ Extracted Styles (P4) ═══
@@ -55,8 +56,8 @@ const getOps = (refType) => {
 
 export const BuilderSettingsPanel = React.memo(({ field, allFields, onChange, onClose }) => {
   const [activeTab, setActiveTab] = useState('general');
-  // eslint-disable-next-line react-hooks/set-state-in-effect
-  useEffect(() => { if (field) setActiveTab('general'); }, [field?.id]);
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional: reset tab when selected field changes
+  useEffect(() => { if (field) setActiveTab('general'); }, [field?.id]); // eslint-disable-line react-hooks/exhaustive-deps
   const upd = useCallback((key, value) => { if (field) onChange({ ...field, [key]: value }); }, [field, onChange]);
   const updV = useCallback((key, value) => { if (field) onChange({ ...field, validation: { ...(field.validation || {}), [key]: value } }); }, [field, onChange]);
   const referenceFields = useMemo(() => field ? allFields.filter(f => f.id !== field.id && !['heading', 'divider', 'info'].includes(f.type)) : [], [allFields, field]);

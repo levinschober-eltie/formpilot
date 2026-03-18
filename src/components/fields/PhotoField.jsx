@@ -1,4 +1,4 @@
-import { useRef, useState, useCallback } from 'react';
+import { useRef, useState, useCallback, useMemo } from 'react';
 import { S } from '../../config/theme';
 import { dialog } from '../../lib/dialogService';
 import PhotoAnnotation from './PhotoAnnotation';
@@ -62,7 +62,7 @@ export const PhotoField = ({ field, value, onChange, error }) => {
   const cameraRef = useRef(null);
   const [isDragging, setIsDragging] = useState(false);
   const [annotatingIdx, setAnnotatingIdx] = useState(null);
-  const photos = Array.isArray(value) ? value : value ? [value] : [];
+  const photos = useMemo(() => Array.isArray(value) ? value : value ? [value] : [], [value]);
   const maxPhotos = field.validation?.maxPhotos || 5;
 
   const addPhotos = useCallback(async (files) => {

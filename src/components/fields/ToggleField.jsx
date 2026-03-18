@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React from 'react';
 import { S } from '../../config/theme';
 
 export const ToggleField = React.memo(({ field, value, onChange, error }) => {

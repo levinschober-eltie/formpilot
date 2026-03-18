@@ -6,6 +6,7 @@ import { createFullBackup, exportAllData, importAllData, checkIntegrity, getVers
 import { getAISettings, saveAISettings, testAPIKey } from '../../lib/aiService';
 import { isSupabaseConfigured } from '../../lib/supabase';
 import { needsMigration, migrateLocalDataToSupabase } from '../../lib/dataMigration';
+import { useAuth } from '../../contexts/AuthContext';
 
 // ═══ Extracted Styles (P4) ═══
 const S_QUOTA_BAR = { height: '8px', background: S.colors.border, borderRadius: S.radius.full, overflow: 'hidden', marginTop: '8px' };
@@ -44,7 +45,8 @@ const estimateStorageUsage = () => {
   return total;
 };
 
-export const SettingsScreen = ({ user, onLogout, darkMode, onToggleDarkMode }) => {
+export const SettingsScreen = ({ darkMode, onToggleDarkMode }) => {
+  const { user, handleLogout } = useAuth();
   const [storageBytes, setStorageBytes] = useState(0);
   const [backupStatus, setBackupStatus] = useState(null);
   const [backupMeta, setBackupMeta] = useState(null);
@@ -185,7 +187,7 @@ export const SettingsScreen = ({ user, onLogout, darkMode, onToggleDarkMode }) =
             <span style={styles.badge(S.colors.primary)}>{user.role === 'admin' ? 'Administrator' : user.role === 'monteur' ? 'Monteur' : 'Büro'}</span>
           </div>
         </div>
-        <button onClick={onLogout} style={{ ...styles.btn('danger'), width: '100%' }}>Abmelden</button>
+        <button onClick={handleLogout} style={{ ...styles.btn('danger'), width: '100%' }}>Abmelden</button>
       </div>
 
       {/* ═══ Cloud-Status & Migration Banner ═══ */}

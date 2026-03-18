@@ -7,6 +7,7 @@ import { exportSubmissionPdf } from '../../lib/exportPdf';
 import { exportMultipleToExcel } from '../../lib/exportExcel';
 import { useDebounce } from '../../hooks/useDebounce';
 import { dialog } from '../../lib/dialogService';
+import { useData } from '../../contexts/DataContext';
 
 // ═══ FEATURE: Submissions List (Enhanced with Search, Filter, Export) ═══
 const S_TOOLBAR = { display: 'flex', gap: '8px', marginBottom: '16px', flexWrap: 'wrap', alignItems: 'center' };
@@ -15,8 +16,8 @@ const S_FILTER_SELECT = { padding: '10px 14px', borderRadius: S.radius.md, borde
 
 const PAGE_SIZE = 20;
 
-// eslint-disable-next-line no-unused-vars
-export const SubmissionsList = ({ submissions, user, allTemplates, onViewSubmission, onDeleteSubmission }) => {
+export const SubmissionsList = ({ onViewSubmission, onDeleteSubmission }) => {
+  const { submissions, allTemplates } = useData();
   const [search, setSearch] = useState('');
   const debouncedSearch = useDebounce(search);
   const [statusFilter, setStatusFilter] = useState('all');

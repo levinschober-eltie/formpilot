@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React from 'react';
 import { S } from '../../config/theme';
 import { styles } from '../../styles/shared';
 

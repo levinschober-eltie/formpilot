@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { S } from '../../config/theme';
 import { styles } from '../../styles/shared';
 import { useDebounce } from '../../hooks/useDebounce';
+import { useData } from '../../contexts/DataContext';
 
 // ═══ Extracted Styles (P4) ═══
 const S_SEARCH = { flex: '1 1 200px', padding: '10px 14px', borderRadius: S.radius.md, border: `1.5px solid ${S.colors.border}`, fontSize: '14px', fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box', background: S.colors.bgInput, minWidth: '150px' };
@@ -16,7 +17,8 @@ const S_EMPTY_ICON = { fontSize: '48px', marginBottom: '12px', opacity: 0.5 };
 const PAGE_SIZE = 20;
 
 // ═══ FEATURE: Kundenliste ═══
-export const CustomersScreen = ({ customers, submissions, allTemplates, onSelectCustomer }) => {
+export const CustomersScreen = ({ onSelectCustomer }) => {
+  const { customers, submissions, allTemplates } = useData();
   const [search, setSearch] = useState('');
   const debouncedSearch = useDebounce(search);
   const [page, setPage] = useState(0);

@@ -12,6 +12,7 @@ export const TextareaField = React.memo(({ field, value, onChange, error, id, ..
   }, [debouncedValue]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional: syncing local debounced state from external value changes
     setLocalValue(value || '');
   }, [value]);
 

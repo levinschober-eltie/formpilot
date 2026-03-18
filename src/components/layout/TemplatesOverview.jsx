@@ -9,12 +9,16 @@ import { ToastMessage } from '../common/ToastMessage';
 import { ConfirmDialog } from '../common/ConfirmDialog';
 import { useConfirm } from '../../hooks/useConfirm';
 import { ErrorBoundary } from '../common/ErrorBoundary';
+import { useAuth } from '../../contexts/AuthContext';
+import { useData } from '../../contexts/DataContext';
 const AIFormGenerator = lazy(() => import('../builder/AIFormGenerator').then(m => ({ default: m.AIFormGenerator })));
 
 // ═══ Extracted Styles (P4) ═══
 const S_TOOLBAR = { display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' };
 
-export const TemplatesOverview = ({ user, onOpenBuilder, onStartFilling, customTemplates, onDeleteTemplate }) => {
+export const TemplatesOverview = ({ onOpenBuilder, onStartFilling }) => {
+  const { user } = useAuth();
+  const { customTemplates, handleDeleteTemplate: onDeleteTemplate } = useData();
   const [toast, setToast] = useState(null);
   const [showAIGenerator, setShowAIGenerator] = useState(false);
   const { confirm, confirmState, handleConfirm, handleCancel } = useConfirm();
