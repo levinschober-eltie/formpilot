@@ -165,30 +165,29 @@ export const getVersionHistory = async (key) => {
  * Writes to both localStorage and IndexedDB kv store.
  */
 export const restoreVersion = async (historyId) => {
-  try {
-    const db = await openDB();
-    const entry = await new Promise((resolve, reject) => {
-      const tx = db.transaction(HISTORY_STORE, 'readonly');
-      const req = tx.objectStore(HISTORY_STORE).get(historyId);
-      req.onsuccess = () => resolve(req.result);
-      req.onerror = () => reject(req.error);
-    });
-    if (!entry) throw new Error('Version nicht gefunden');
+  const db = await openDB();
+  const entry = await new Promise((resolve, reject) => {
+    const tx = db.transaction(HISTORY_STORE, 'readonly');
+    const req = tx.objectStore(HISTORY_STORE).get(historyId);
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+  if (!entry) throw new Error('Version nicht gefunden');
 
-    // Verify checksum before restoring
-    const json = JSON.stringify(entry.value);
-    const checksum = fnv1a(json);
-    if (checksum !== entry.checksum) {
-      throw new Error('Checksum-Fehler: Version ist beschädigt');
-    }
-
-    // Write to both stores
-    localStorage.setItem(entry.key, json);
-    await idbSet(entry.key, entry.value);
-    return { key: entry.key, timestamp: entry.timestamp, checksum };
-  } catch (e) {
-    throw e;
+  // Verify checksum before restoring
+  const json = JSON.stringify(entry.value);
+  const checksum = fnv1a(json);
+  if (checksum !== entry.checksum) {
+    throw new Error('Checksum-Fehler: Version ist beschädigt');
   }
+
+  // Write to both stores + checksum
+  localStorage.setItem(entry.key, json);
+  if (CRITICAL_KEYS.includes(entry.key)) {
+    localStorage.setItem('_fpck_' + entry.key, checksum);
+  }
+  await idbSet(entry.key, entry.value);
+  return { key: entry.key, timestamp: entry.timestamp, checksum };
 };
 
 // ═══ Backup Operations ═══
@@ -239,7 +238,11 @@ export const restoreFromBackup = async () => {
   for (const [key, value] of Object.entries(all)) {
     if (!key.startsWith('fp_')) continue;
     try {
-      localStorage.setItem(key, JSON.stringify(value));
+      const json = JSON.stringify(value);
+      localStorage.setItem(key, json);
+      if (CRITICAL_KEYS.includes(key)) {
+        localStorage.setItem('_fpck_' + key, fnv1a(json));
+      }
       restored++;
     } catch { /* localStorage full or unavailable */ }
   }
@@ -303,7 +306,11 @@ export const importAllData = async (file) => {
   for (const [key, value] of Object.entries(data)) {
     if (!key.startsWith('fp_')) continue;
     try {
-      localStorage.setItem(key, JSON.stringify(value));
+      const json = JSON.stringify(value);
+      localStorage.setItem(key, json);
+      if (CRITICAL_KEYS.includes(key)) {
+        localStorage.setItem('_fpck_' + key, fnv1a(json));
+      }
       await idbSet(key, value);
       imported++;
     } catch { /* skip */ }

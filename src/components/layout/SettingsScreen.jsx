@@ -3,6 +3,7 @@ import { S } from '../../config/theme';
 import { styles } from '../../styles/shared';
 import { MiniToggle } from '../common/MiniToggle';
 import { createFullBackup, exportAllData, importAllData, checkIntegrity, getVersionHistory, restoreVersion } from '../../lib/storageBackup';
+import { getAISettings, saveAISettings, testAPIKey } from '../../lib/aiService';
 
 // ═══ Extracted Styles (P4) ═══
 const S_QUOTA_BAR = { height: '8px', background: S.colors.border, borderRadius: S.radius.full, overflow: 'hidden', marginTop: '8px' };
@@ -10,6 +11,25 @@ const S_QUOTA_FILL = (pct) => ({
   height: '100%', width: `${pct}%`, borderRadius: S.radius.full, transition: 'width 0.3s ease',
   background: pct > 80 ? S.colors.danger : pct > 60 ? S.colors.warning : S.colors.success,
 });
+
+const S_COMPANY_INPUT = { ...styles.input(false), fontSize: '14px', minHeight: '42px' };
+const S_COMPANY_LABEL = { ...styles.fieldLabel, fontSize: '13px' };
+const S_COMPANY_FIELD = { marginBottom: '12px' };
+const S_PREVIEW_HEADER = {
+  border: `1px solid ${S.colors.border}`, borderRadius: S.radius.md, padding: '16px',
+  marginTop: '16px', background: S.colors.bgInput,
+};
+
+const loadCompanySettings = () => {
+  try {
+    const raw = localStorage.getItem('fp_company_settings');
+    return raw ? JSON.parse(raw) : {};
+  } catch { return {}; }
+};
+
+const saveCompanySettings = (settings) => {
+  localStorage.setItem('fp_company_settings', JSON.stringify(settings));
+};
 
 const estimateStorageUsage = () => {
   let total = 0;
@@ -28,6 +48,11 @@ export const SettingsScreen = ({ user, onLogout, darkMode, onToggleDarkMode }) =
   const [backupMeta, setBackupMeta] = useState(null);
   const [versionHistory, setVersionHistory] = useState(null);
   const [restoreStatus, setRestoreStatus] = useState(null);
+  const [aiKey, setAiKey] = useState('');
+  const [aiTestStatus, setAiTestStatus] = useState(null); // null | 'testing' | 'success' | 'error'
+  const [aiTestMsg, setAiTestMsg] = useState('');
+  const [company, setCompany] = useState(() => loadCompanySettings());
+  const [companySaved, setCompanySaved] = useState(false);
   const importRef = useRef(null);
   const maxBytes = 5 * 1024 * 1024; // 5MB localStorage limit
 
@@ -36,6 +61,40 @@ export const SettingsScreen = ({ user, onLogout, darkMode, onToggleDarkMode }) =
   useEffect(() => {
     setStorageBytes(estimateStorageUsage());
     checkIntegrity().then(info => setBackupMeta(info)).catch(() => {});
+    const settings = getAISettings();
+    if (settings.apiKey) setAiKey(settings.apiKey);
+  }, []);
+
+  const handleAiKeySave = useCallback(() => {
+    saveAISettings({ apiKey: aiKey.trim() });
+    setAiTestStatus(null);
+    setAiTestMsg('Gespeichert');
+    setTimeout(() => setAiTestMsg(''), 2000);
+  }, [aiKey]);
+
+  const handleAiKeyTest = useCallback(async () => {
+    if (!aiKey.trim()) { setAiTestStatus('error'); setAiTestMsg('Bitte API-Key eingeben'); return; }
+    setAiTestStatus('testing');
+    setAiTestMsg('');
+    try {
+      await testAPIKey(aiKey.trim());
+      saveAISettings({ apiKey: aiKey.trim() });
+      setAiTestStatus('success');
+      setAiTestMsg('API-Key ist gültig!');
+    } catch (e) {
+      setAiTestStatus('error');
+      setAiTestMsg(e.message || 'Verbindung fehlgeschlagen');
+    }
+  }, [aiKey]);
+
+  const updateCompanyField = useCallback((field, value) => {
+    setCompany(prev => {
+      const next = { ...prev, [field]: value };
+      saveCompanySettings(next);
+      return next;
+    });
+    setCompanySaved(true);
+    setTimeout(() => setCompanySaved(false), 2000);
   }, []);
 
   const handleBackup = useCallback(async () => {
@@ -118,6 +177,85 @@ export const SettingsScreen = ({ user, onLogout, darkMode, onToggleDarkMode }) =
       </div>
 
       <div style={{ ...styles.card, marginTop: '12px' }}>
+        <h3 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '16px' }}>Firmeneinstellungen</h3>
+        <p style={{ fontSize: '12px', color: S.colors.textSecondary, marginBottom: '16px' }}>
+          Diese Daten erscheinen im PDF-Export als Kopfzeile. Logo wird auf max. 400x200px komprimiert.
+        </p>
+        {companySaved && <div style={{ fontSize: '13px', fontWeight: 600, color: S.colors.success, marginBottom: '10px' }}>Gespeichert</div>}
+        <div style={S_COMPANY_FIELD}>
+          <label style={S_COMPANY_LABEL}>Firmenlogo</label>
+          <LogoUpload value={company.companyLogo || ''} onChange={(val) => updateCompanyField('companyLogo', val)} />
+        </div>
+        <div style={S_COMPANY_FIELD}>
+          <label style={S_COMPANY_LABEL}>Firmenname</label>
+          <input value={company.companyName || ''} onChange={e => updateCompanyField('companyName', e.target.value)} placeholder="z.B. GF Elite PV GmbH" style={S_COMPANY_INPUT} />
+        </div>
+        <div style={S_COMPANY_FIELD}>
+          <label style={S_COMPANY_LABEL}>Adresse</label>
+          <textarea value={company.companyAddress || ''} onChange={e => updateCompanyField('companyAddress', e.target.value)} placeholder="Musterstr. 1&#10;12345 Musterstadt" rows={3} style={{ ...S_COMPANY_INPUT, minHeight: '72px', resize: 'vertical' }} />
+        </div>
+        <div style={{ display: 'flex', gap: '12px' }}>
+          <div style={{ ...S_COMPANY_FIELD, flex: 1 }}>
+            <label style={S_COMPANY_LABEL}>Telefon</label>
+            <input value={company.companyPhone || ''} onChange={e => updateCompanyField('companyPhone', e.target.value)} placeholder="089/12345678" style={S_COMPANY_INPUT} />
+          </div>
+          <div style={{ ...S_COMPANY_FIELD, flex: 1 }}>
+            <label style={S_COMPANY_LABEL}>E-Mail</label>
+            <input value={company.companyEmail || ''} onChange={e => updateCompanyField('companyEmail', e.target.value)} placeholder="info@firma.de" style={S_COMPANY_INPUT} />
+          </div>
+        </div>
+        <div style={S_COMPANY_FIELD}>
+          <label style={S_COMPANY_LABEL}>Akzentfarbe (PDF)</label>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <input type="color" value={company.accentColor || '#2563eb'} onChange={e => updateCompanyField('accentColor', e.target.value)} style={{ width: '48px', height: '36px', border: 'none', cursor: 'pointer', borderRadius: S.radius.sm }} />
+            <span style={{ fontSize: '13px', color: S.colors.textSecondary, fontFamily: S.font.mono }}>{company.accentColor || '#2563eb'}</span>
+          </div>
+        </div>
+        {(company.companyName || company.companyLogo) && (
+          <div style={S_PREVIEW_HEADER}>
+            <div style={{ fontSize: '11px', fontWeight: 600, color: S.colors.textMuted, marginBottom: '8px' }}>PDF-Kopfzeile Vorschau:</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', paddingBottom: '10px', borderBottom: `3px solid ${company.accentColor || '#2563eb'}` }}>
+              {company.companyLogo && <img src={company.companyLogo} alt="Logo" style={{ maxWidth: '120px', maxHeight: '60px', objectFit: 'contain' }} />}
+              <div>
+                {company.companyName && <div style={{ fontSize: '15px', fontWeight: 700, color: company.accentColor || '#2563eb' }}>{company.companyName}</div>}
+                {company.companyAddress && company.companyAddress.split('\n').map((line, i) => <div key={i} style={{ fontSize: '11px', color: S.colors.textSecondary }}>{line}</div>)}
+                {company.companyPhone && <div style={{ fontSize: '11px', color: S.colors.textSecondary }}>Tel: {company.companyPhone}</div>}
+                {company.companyEmail && <div style={{ fontSize: '11px', color: S.colors.textSecondary }}>{company.companyEmail}</div>}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div style={{ ...styles.card, marginTop: '12px' }}>
+        <h3 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '12px' }}>KI-Einstellungen</h3>
+        <p style={{ fontSize: '12px', color: S.colors.textSecondary, marginBottom: '12px' }}>
+          Anthropic API-Key für den KI-Formular-Generator. Dein Key wird nur lokal gespeichert und nie an Dritte weitergegeben.
+        </p>
+        <div style={{ marginBottom: '10px' }}>
+          <label style={{ ...styles.fieldLabel, fontSize: '13px' }}>API-Key</label>
+          <input
+            type="password"
+            value={aiKey}
+            onChange={e => setAiKey(e.target.value)}
+            placeholder="sk-ant-..."
+            style={{ ...styles.input(false), fontSize: '14px', minHeight: '42px' }}
+          />
+        </div>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <button onClick={handleAiKeySave} style={{ ...styles.btn('secondary'), flex: 1 }}>Speichern</button>
+          <button onClick={handleAiKeyTest} disabled={aiTestStatus === 'testing'} style={{ ...styles.btn('primary'), flex: 1, opacity: aiTestStatus === 'testing' ? 0.6 : 1 }}>
+            {aiTestStatus === 'testing' ? 'Teste...' : 'Testen'}
+          </button>
+        </div>
+        {aiTestMsg && (
+          <div style={{ fontSize: '13px', fontWeight: 600, marginTop: '8px', color: aiTestStatus === 'success' ? S.colors.success : aiTestStatus === 'error' ? S.colors.danger : S.colors.textSecondary }}>
+            {aiTestMsg}
+          </div>
+        )}
+      </div>
+
+      <div style={{ ...styles.card, marginTop: '12px' }}>
         <h3 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '8px' }}>Speicherverbrauch</h3>
         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
           <span style={{ color: S.colors.textSecondary }}>{storageMB} MB von 5 MB</span>
@@ -197,6 +335,9 @@ export const SettingsScreen = ({ user, onLogout, darkMode, onToggleDarkMode }) =
           <div><span style={{ color: S.colors.success }}>●</span> fp_crm: aktiv</div>
           <div><span style={{ color: S.colors.success }}>●</span> fp_template_import_export: aktiv</div>
           <div><span style={{ color: S.colors.success }}>●</span> fp_status_management: aktiv</div>
+          <div><span style={{ color: S.colors.success }}>●</span> fp_ai_generator: aktiv</div>
+          <div><span style={{ color: S.colors.success }}>●</span> fp_excel_export: aktiv</div>
+          <div><span style={{ color: S.colors.success }}>●</span> fp_company_branding: aktiv</div>
           <div><span style={{ color: S.colors.textMuted }}>○</span> fp_offline: geplant</div>
           <div><span style={{ color: S.colors.textMuted }}>○</span> fp_supabase: geplant</div>
         </div>
