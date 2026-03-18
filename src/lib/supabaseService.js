@@ -26,6 +26,7 @@ async function getOrgId() {
 }
 
 // ═══ AUTH ═══
+// eslint-disable-next-line no-unused-vars
 export async function signUp(email, password, name, role = 'admin') {
   const { data, error } = await supabase.auth.signUp({ email, password });
   if (error) throw error;
@@ -417,8 +418,9 @@ function mapTemplateFromDb(row) {
 function mapTemplateToDb(template, orgId, userId) {
   // Extract schema-specific fields from the template
   const { id, name, description, category, icon, version, pages, fields,
-    pdfSettings, emailTemplate, isDemo, isArchived, organizationId, createdBy,
-    createdAt, updatedAt, ...rest } = template;
+    pdfSettings, emailTemplate, isDemo, isArchived,
+    organizationId: _organizationId, createdBy: _createdBy,
+    createdAt: _createdAt, updatedAt: _updatedAt, ...rest } = template;
 
   return {
     id: id || undefined,

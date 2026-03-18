@@ -6,11 +6,11 @@ import { isSupabaseConfigured } from './supabase';
 import { storageGet, storageSet } from './storage';
 import * as supa from './supabaseService';
 import { STORAGE_KEYS } from '../config/constants';
-import { getOfflineDb, cacheTemplates, getCachedTemplates, cacheSubmissions, getCachedSubmissions, offlinePut, offlineGetAll } from './offlineDb';
+import { getOfflineDb, cacheTemplates, getCachedTemplates, cacheSubmissions, getCachedSubmissions } from './offlineDb';
 import { syncQueue } from './syncQueue';
 
 // ═══ Check mode ═══
-export const useSupabase = () => isSupabaseConfigured();
+export const isSupabaseMode = () => isSupabaseConfigured();
 
 // ═══ Helper: check if error is a network error ═══
 function isNetworkError(e) {
@@ -21,7 +21,7 @@ function isNetworkError(e) {
 
 // ═══ TEMPLATES ═══
 export async function loadTemplates() {
-  if (useSupabase()) {
+  if (isSupabaseMode()) {
     try {
       const templates = await supa.getTemplates();
       // Cache in IndexedDB for offline access
@@ -39,7 +39,7 @@ export async function loadTemplates() {
 }
 
 export async function saveTemplate(template) {
-  if (useSupabase()) {
+  if (isSupabaseMode()) {
     if (navigator.onLine) {
       try {
         return await supa.saveTemplate(template);
@@ -74,7 +74,7 @@ async function _saveTemplateOffline(template) {
 }
 
 export async function deleteTemplate(id) {
-  if (useSupabase()) {
+  if (isSupabaseMode()) {
     if (navigator.onLine) {
       try {
         return await supa.deleteTemplate(id);
@@ -101,7 +101,7 @@ export async function deleteTemplate(id) {
 
 // ═══ SUBMISSIONS ═══
 export async function loadSubmissions(filters = {}) {
-  if (useSupabase()) {
+  if (isSupabaseMode()) {
     try {
       const submissions = await supa.getSubmissions(filters);
       // Cache in IndexedDB for offline access
@@ -119,7 +119,7 @@ export async function loadSubmissions(filters = {}) {
 }
 
 export async function saveSubmission(submission) {
-  if (useSupabase()) {
+  if (isSupabaseMode()) {
     if (navigator.onLine) {
       try {
         const saved = await supa.saveSubmission(submission);
@@ -157,7 +157,7 @@ async function _saveSubmissionOffline(submission) {
 }
 
 export async function updateSubmissionStatus(id, status) {
-  if (useSupabase()) {
+  if (isSupabaseMode()) {
     if (navigator.onLine) {
       try {
         return await supa.updateSubmissionStatus(id, status);
@@ -194,7 +194,7 @@ export async function updateSubmissionStatus(id, status) {
 }
 
 export async function deleteSubmission(id) {
-  if (useSupabase()) {
+  if (isSupabaseMode()) {
     if (navigator.onLine) {
       try {
         return await supa.deleteSubmission(id);
@@ -221,7 +221,7 @@ export async function deleteSubmission(id) {
 
 // ═══ CUSTOMERS ═══
 export async function loadCustomers() {
-  if (useSupabase()) {
+  if (isSupabaseMode()) {
     try {
       const customers = await supa.getCustomers();
       // Cache in IndexedDB
@@ -243,7 +243,7 @@ export async function loadCustomers() {
 }
 
 export async function saveCustomer(customer) {
-  if (useSupabase()) {
+  if (isSupabaseMode()) {
     if (navigator.onLine) {
       try {
         return await supa.saveCustomer(customer);
@@ -277,7 +277,7 @@ async function _saveCustomerOffline(customer) {
 }
 
 export async function deleteCustomer(id) {
-  if (useSupabase()) {
+  if (isSupabaseMode()) {
     if (navigator.onLine) {
       try {
         return await supa.deleteCustomer(id);
@@ -304,7 +304,7 @@ export async function deleteCustomer(id) {
 
 // ═══ PROJECTS ═══
 export async function loadProjects() {
-  if (useSupabase()) {
+  if (isSupabaseMode()) {
     try {
       const projects = await supa.getProjects();
       // Cache in IndexedDB
@@ -326,7 +326,7 @@ export async function loadProjects() {
 }
 
 export async function saveProject(project) {
-  if (useSupabase()) {
+  if (isSupabaseMode()) {
     if (navigator.onLine) {
       try {
         return await supa.saveProject(project);
@@ -360,7 +360,7 @@ async function _saveProjectOffline(project) {
 }
 
 export async function deleteProject(id) {
-  if (useSupabase()) {
+  if (isSupabaseMode()) {
     if (navigator.onLine) {
       try {
         return await supa.deleteProject(id);
@@ -387,7 +387,7 @@ export async function deleteProject(id) {
 
 // ═══ FILE STORAGE ═══
 export async function uploadFileData(bucket, path, base64) {
-  if (useSupabase()) {
+  if (isSupabaseMode()) {
     if (navigator.onLine) {
       try {
         return await supa.uploadBase64(bucket, path, base64);
@@ -422,12 +422,12 @@ export async function getFileData(bucket, pathOrBase64) {
       const db = await getOfflineDb();
       const offlineFile = await db.get('offlineFiles', pathOrBase64);
       if (offlineFile && offlineFile.base64) return offlineFile.base64;
-    } catch (e) {
+    } catch {
       // Ignore IndexedDB errors
     }
   }
 
-  if (useSupabase() && pathOrBase64) {
+  if (isSupabaseMode() && pathOrBase64) {
     try {
       return await supa.downloadAsBase64(bucket, pathOrBase64);
     } catch (e) {
@@ -440,7 +440,7 @@ export async function getFileData(bucket, pathOrBase64) {
 
 // ═══ ACTIVITY LOG ═══
 export async function logActivity(action, entityType, entityId, details = {}) {
-  if (useSupabase()) {
+  if (isSupabaseMode()) {
     try {
       return await supa.logActivity(action, entityType, entityId, details);
     } catch (e) {

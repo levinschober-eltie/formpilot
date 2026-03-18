@@ -85,9 +85,10 @@ const formatValue = (field, value) => {
         return signed ? `[${signed} Unterschrift(en) vorhanden]` : '—';
       }
       return value ? '[Unterschrift vorhanden]' : '—';
-    case 'photo':
+    case 'photo': {
       const photos = Array.isArray(value) ? value : value ? [value] : [];
       return photos.length ? `[${photos.length} Foto(s)]` : '—';
+    }
     case 'repeater':
       if (!Array.isArray(value) || value.length === 0) return '—';
       return value.map((row, i) => {
@@ -112,8 +113,8 @@ export const exportSubmissionPdf = (submission, template) => {
   const watermarkText = settings.watermarkText || 'ENTWURF';
 
   const allFields = template.pages.flatMap(p => p.fields);
-  const signatureFields = allFields.filter(f => f.type === 'signature' && submission.data?.[f.id]);
-  const photoFields = allFields.filter(f => f.type === 'photo' && submission.data?.[f.id]);
+  const _signatureFields = allFields.filter(f => f.type === 'signature' && submission.data?.[f.id]);
+  const _photoFields = allFields.filter(f => f.type === 'photo' && submission.data?.[f.id]);
 
   let html = `<!DOCTYPE html><html><head><meta charset="utf-8">
 <style>
@@ -163,7 +164,7 @@ export const exportSubmissionPdf = (submission, template) => {
     if (template.pages.length > 1) {
       html += `<div class="page-title">${esc(page.title)}</div>`;
     }
-    const inputFields = page.fields.filter(f => !['heading', 'divider', 'info'].includes(f.type));
+    const _inputFields = page.fields.filter(f => !['heading', 'divider', 'info'].includes(f.type));
     page.fields.forEach(f => {
       if (f.type === 'heading') {
         html += `<div style="font-size:12pt;font-weight:700;margin:12px 0 6px;color:#333">${esc(f.label)}</div>`;

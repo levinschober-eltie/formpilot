@@ -1,5 +1,6 @@
 import { S } from '../../config/theme';
 
+// eslint-disable-next-line no-unused-vars
 export const RatingField = ({ field, value, onChange, error }) => {
   const max = field.maxStars || 5;
   const current = value || 0;

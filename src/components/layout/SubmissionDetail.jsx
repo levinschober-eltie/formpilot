@@ -49,14 +49,15 @@ const renderValue = (field, value) => {
         </div>;
       }
       return value ? <img src={value} alt="Unterschrift" style={{ maxWidth: '240px', maxHeight: '80px', border: `1px solid ${S.colors.border}`, borderRadius: S.radius.sm }} /> : '—';
-    case 'photo':
+    case 'photo': {
       const photos = Array.isArray(value) ? value : value ? [value] : [];
       return photos.length ? (
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
           {photos.map((src, i) => <img key={i} src={src} alt={`Foto ${i + 1}`} style={{ width: '80px', height: '60px', objectFit: 'cover', borderRadius: S.radius.sm, border: `1px solid ${S.colors.border}` }} />)}
         </div>
       ) : '—';
-    case 'repeater':
+    }
+    case 'repeater': {
       if (!Array.isArray(value) || value.length === 0) return <span style={{ color: S.colors.textMuted }}>—</span>;
       const subFields = field.subFields || [];
       return (
@@ -70,6 +71,7 @@ const renderValue = (field, value) => {
           ))}
         </div>
       );
+    }
     default:
       return String(value);
   }
@@ -109,7 +111,7 @@ export const SubmissionDetail = ({ submission, template, onBack, onStatusChange,
         )}
       </div>
 
-      {template.pages.map((page, pi) => (
+      {template.pages.map((page) => (
         <div key={page.id} style={{ ...styles.card, marginBottom: '12px' }}>
           {template.pages.length > 1 && <h3 style={{ fontSize: '15px', fontWeight: 700, color: S.colors.primary, marginBottom: '12px', paddingBottom: '8px', borderBottom: `2px solid ${S.colors.primary}15` }}>{page.title}</h3>}
           {page.fields.map(field => {

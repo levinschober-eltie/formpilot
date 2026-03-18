@@ -65,6 +65,7 @@ export const SettingsScreen = ({ user, onLogout, darkMode, onToggleDarkMode }) =
   const CRITICAL_LABELS = { fp_submissions: 'Verträge', fp_templates: 'Vorlagen', fp_customers: 'Kontakte', fp_projects: 'Projekte' };
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setStorageBytes(estimateStorageUsage());
     checkIntegrity().then(info => setBackupMeta(info)).catch(() => {});
     const settings = getAISettings();

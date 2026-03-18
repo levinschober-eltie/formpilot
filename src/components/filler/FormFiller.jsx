@@ -3,7 +3,7 @@ import { S } from '../../config/theme';
 import { styles } from '../../styles/shared';
 import { validatePage } from '../../lib/validation';
 import { storageSet } from '../../lib/storage';
-import { saveDraft, getDraft, deleteDraft } from '../../lib/offlineDb';
+import { saveDraft } from '../../lib/offlineDb';
 import { FormField } from '../fields/FormField';
 
 // ═══ Extracted Styles (P4) ═══
@@ -29,7 +29,9 @@ export const FormFiller = React.memo(({ template, onSubmit, onCancel, initialDat
   const [showErrors, setShowErrors] = useState(false);
   const formDataRef = useRef(formData);
   const pageIndexRef = useRef(pageIndex);
+  // eslint-disable-next-line react-hooks/refs
   formDataRef.current = formData;
+  // eslint-disable-next-line react-hooks/refs
   pageIndexRef.current = pageIndex;
   const pages = template.pages || [];
   const currentPage = pages[pageIndex];

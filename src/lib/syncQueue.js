@@ -20,7 +20,7 @@ class SyncQueueManager {
   _notify() {
     this.getQueueStatus().then(status => {
       this._listeners.forEach(fn => {
-        try { fn(status); } catch (e) { /* ignore */ }
+        try { fn(status); } catch { /* ignore */ }
       });
     });
   }
@@ -168,7 +168,7 @@ class SyncQueueManager {
       const failed = all.filter(e => e.status === 'failed').length;
       const processing = this._processing;
       return { pending, failed, processing, total: pending + failed };
-    } catch (e) {
+    } catch {
       return { pending: 0, failed: 0, processing: false, total: 0 };
     }
   }
@@ -211,7 +211,7 @@ class SyncQueueManager {
         }
       }
       await tx.done;
-    } catch (e) {
+    } catch {
       // Ignore cleanup errors
     }
   }

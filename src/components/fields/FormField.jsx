@@ -13,6 +13,7 @@ import {
 const widthMap = { full: '100%', half: 'calc(50% - 8px)', third: 'calc(33.33% - 11px)' };
 
 // ═══ FEATURE: Repeater Field ═══
+// eslint-disable-next-line no-unused-vars
 const RepeaterField = ({ field, value, onChange, formData }) => {
   const rows = Array.isArray(value) ? value : [];
   const subFields = field.subFields || [];

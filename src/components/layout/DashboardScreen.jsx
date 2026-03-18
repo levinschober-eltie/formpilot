@@ -36,6 +36,7 @@ const LOG_LABELS = {
 };
 const S_LOG_DOT = (color) => ({ width: 8, height: 8, borderRadius: '50%', background: color, flexShrink: 0, marginTop: '5px' });
 
+// eslint-disable-next-line no-unused-vars
 export const DashboardScreen = ({ submissions, allTemplates, user }) => {
   const [recentLog, setRecentLog] = useState([]);
   useEffect(() => { getActivityLog().then(log => setRecentLog(log.slice(0, 10))); }, []);

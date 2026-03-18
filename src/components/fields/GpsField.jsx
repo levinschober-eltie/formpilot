@@ -69,6 +69,7 @@ const injectPulseStyle = () => {
 };
 
 // ═══ GpsField Component ═══
+// eslint-disable-next-line no-unused-vars
 const GpsField = React.memo(({ field, value, onChange, error }) => {
   const [loading, setLoading] = useState(false);
   const [gpsError, setGpsError] = useState(null);
@@ -135,6 +136,7 @@ const GpsField = React.memo(({ field, value, onChange, error }) => {
   useEffect(() => {
     if (field.autoCapture && !autoCapturedRef.current && !value) {
       autoCapturedRef.current = true;
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       captureLocation();
     }
   }, [field.autoCapture, value, captureLocation]);

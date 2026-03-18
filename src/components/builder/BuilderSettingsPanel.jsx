@@ -45,10 +45,11 @@ const getOps = (refType) => {
 
 export const BuilderSettingsPanel = React.memo(({ field, allFields, onChange, onClose }) => {
   const [activeTab, setActiveTab] = useState('general');
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { if (field) setActiveTab('general'); }, [field?.id]);
   const upd = useCallback((key, value) => { if (field) onChange({ ...field, [key]: value }); }, [field, onChange]);
   const updV = useCallback((key, value) => { if (field) onChange({ ...field, validation: { ...(field.validation || {}), [key]: value } }); }, [field, onChange]);
-  const referenceFields = useMemo(() => field ? allFields.filter(f => f.id !== field.id && !['heading', 'divider', 'info'].includes(f.type)) : [], [allFields, field?.id]);
+  const referenceFields = useMemo(() => field ? allFields.filter(f => f.id !== field.id && !['heading', 'divider', 'info'].includes(f.type)) : [], [allFields, field]);
 
   if (!field) return null;
 

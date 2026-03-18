@@ -93,6 +93,7 @@ const AIFormGenerator = memo(function AIFormGenerator({ onClose, onOpenBuilder, 
       if (progressRef.current) clearInterval(progressRef.current);
       return;
     }
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setProgressIdx(0);
     progressRef.current = setInterval(() => {
       setProgressIdx(prev => (prev < PROGRESS_STEPS.length - 1 ? prev + 1 : prev));

@@ -38,7 +38,7 @@ export const extractCustomerData = (submission, template) => {
 export const findMatchingCustomer = (customers, extracted) => {
   if (!extracted) return null;
   const nameLower = (extracted.name || '').toLowerCase();
-  const projectLower = (extracted.project || '').toLowerCase();
+  const _projectLower = (extracted.project || '').toLowerCase();
 
   return customers.find(c => {
     if (nameLower && c.name.toLowerCase() === nameLower) return true;

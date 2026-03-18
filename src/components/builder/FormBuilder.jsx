@@ -56,6 +56,7 @@ export const FormBuilder = ({ template: initialTemplate, onSave, onClose }) => {
   }, [undo, redo]);
 
   // Refs updated every render (for stable closure in intervals/keyboard)
+  // eslint-disable-next-line react-hooks/refs
   hasChangesRef.current = hasChanges;
 
   useEffect(() => {
@@ -144,6 +145,7 @@ export const FormBuilder = ({ template: initialTemplate, onSave, onClose }) => {
       return true;
     } catch { if (!silent) setToast({ message: 'Speichern fehlgeschlagen', type: 'error' }); return false; }
   }, [template, onSave]);
+  // eslint-disable-next-line react-hooks/refs
   doSaveRef.current = doSave;
 
   const handleClose = useCallback(() => { if (hasChanges && !confirm('Ungespeicherte Änderungen verwerfen?')) return; onClose(); }, [hasChanges, onClose]);

@@ -14,6 +14,7 @@ const S_FILTER_SELECT = { padding: '10px 14px', borderRadius: S.radius.md, borde
 
 const PAGE_SIZE = 20;
 
+// eslint-disable-next-line no-unused-vars
 export const SubmissionsList = ({ submissions, user, allTemplates, onViewSubmission, onDeleteSubmission }) => {
   const [search, setSearch] = useState('');
   const debouncedSearch = useDebounce(search);

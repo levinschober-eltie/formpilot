@@ -44,7 +44,9 @@ export const useUndoRedo = (initialState, maxHistory = 50) => {
     setState(JSON.parse(historyRef.current[indexRef.current]));
   }, []);
 
+  // eslint-disable-next-line react-hooks/refs
   const canUndo = indexRef.current > 0;
+  // eslint-disable-next-line react-hooks/refs
   const canRedo = indexRef.current < historyRef.current.length - 1;
 
   return { state, push, undo, redo, canUndo, canRedo };

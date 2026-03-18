@@ -9,7 +9,7 @@ import { processCustomerFromSubmission, addActivityLog, getCustomers, removeSubm
 import { getProjects, saveProject, deleteProject, createProject, linkSubmissionToPhase, buildAutoFillData } from './lib/projectService';
 import { supabase, isSupabaseConfigured } from './lib/supabase';
 import { getCurrentUser, clearProfileCache, signOut as supabaseSignOut } from './lib/supabaseService';
-import { needsMigration } from './lib/dataMigration';
+// needsMigration removed — unused in App.jsx (used in SettingsScreen)
 import { LoginScreen } from './components/layout/LoginScreen';
 import { SettingsScreen } from './components/layout/SettingsScreen';
 import { SubmissionsList } from './components/layout/SubmissionsList';
@@ -69,6 +69,7 @@ export default function FormPilot() {
   // ═══ Supabase Auth State Listener ═══
   useEffect(() => {
     if (!isSupabaseConfigured()) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setAuthChecked(true);
       return;
     }
@@ -332,7 +333,7 @@ export default function FormPilot() {
     handleStartFilling(template, project, phaseId);
   }, [handleStartFilling]);
 
-  const visibleNav = useMemo(() => user ? NAV_ITEMS.filter(n => n.roles.includes(user.role)) : [], [user?.role]);
+  const visibleNav = useMemo(() => user ? NAV_ITEMS.filter(n => n.roles.includes(user.role)) : [], [user]);
 
   // ═══ Loading state — wait for both data and auth check ═══
   const isLoading = !loaded || (isSupabaseConfigured() && !authChecked);

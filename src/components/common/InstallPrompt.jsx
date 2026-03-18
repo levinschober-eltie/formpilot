@@ -85,6 +85,7 @@ export const InstallPrompt = React.memo(() => {
   useEffect(() => {
     // Don't show if already installed or dismissed
     if (window.matchMedia('(display-mode: standalone)').matches) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setInstalled(true);
       return;
     }

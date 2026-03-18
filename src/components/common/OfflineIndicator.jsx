@@ -76,6 +76,7 @@ export const OfflineIndicator = React.memo(() => {
   // Show success message briefly after sync completes
   useEffect(() => {
     if (prevPending > 0 && syncStatus.pending === 0 && !syncStatus.processing && syncStatus.failed === 0 && isOnline) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setShowSuccess(true);
       const timer = setTimeout(() => setShowSuccess(false), 3000);
       return () => clearTimeout(timer);

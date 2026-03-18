@@ -58,6 +58,7 @@ export const ProjectDetail = ({ project, submissions, allTemplates, onBack, onPr
 
   // Sync local state when project prop changes (e.g. after submission link)
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setName(project.name || '');
     setDescription(project.description || '');
     setPhases(project.phases || []);
