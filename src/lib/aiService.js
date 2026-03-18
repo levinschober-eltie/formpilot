@@ -1,6 +1,7 @@
 // ═══ FEATURE: AI Form Generator Service (Prompt 06) ═══
 import { validateAndFixAITemplate } from './aiTemplateValidator';
 import { supabase, isSupabaseConfigured } from './supabase';
+import { storageGet, storageSet } from './storage';
 
 const MODEL = 'claude-sonnet-4-6';
 const AI_SETTINGS_KEY = 'fp_ai_settings';
@@ -57,22 +58,18 @@ Für INFO: content: "Hinweistext"
 Für PHOTO: maxPhotos: 5`;
 
 /**
- * Get the stored API key from localStorage
+ * Get the stored API key
  */
-export function getAISettings() {
-  try {
-    const raw = localStorage.getItem(AI_SETTINGS_KEY);
-    return raw ? JSON.parse(raw) : { apiKey: '' };
-  } catch {
-    return { apiKey: '' };
-  }
+export async function getAISettings() {
+  const settings = await storageGet(AI_SETTINGS_KEY);
+  return settings || { apiKey: '' };
 }
 
 /**
- * Save AI settings to localStorage
+ * Save AI settings
  */
-export function saveAISettings(settings) {
-  localStorage.setItem(AI_SETTINGS_KEY, JSON.stringify(settings));
+export async function saveAISettings(settings) {
+  await storageSet(AI_SETTINGS_KEY, settings);
 }
 
 /**
@@ -168,7 +165,7 @@ export async function generateFormTemplate(userPrompt, language = 'de', retryCou
   }
 
   // Fallback: Direct API call (for dev/demo mode without Supabase Edge Functions)
-  const settings = getAISettings();
+  const settings = await getAISettings();
   const apiKey = settings.apiKey;
 
   if (!apiKey) {

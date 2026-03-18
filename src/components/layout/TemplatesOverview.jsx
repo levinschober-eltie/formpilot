@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo, useRef, Suspense, lazy } from 'react';
+import React, { useState, useCallback, useMemo, useRef, Suspense, lazy } from 'react';
 import { S, CATEGORY_COLORS } from '../../config/theme';
 import { styles } from '../../styles/shared';
 import { DEMO_TEMPLATES } from '../../config/templates';
@@ -44,7 +44,7 @@ const S_ACTIONS = { display: 'flex', gap: '6px', flexShrink: 0, flexWrap: 'wrap'
 
 const ALL_ROLES = ['admin', 'monteur', 'buero'];
 
-export const TemplatesOverview = ({ onOpenBuilder, onStartFilling }) => {
+export const TemplatesOverview = React.memo(({ onOpenBuilder, onStartFilling }) => {
   const { user } = useAuth();
   const { customTemplates, handleDeleteTemplate: onDeleteTemplate, updateTemplate } = useData();
   const [toast, setToast] = useState(null);
@@ -345,4 +345,5 @@ export const TemplatesOverview = ({ onOpenBuilder, onStartFilling }) => {
       )}
     </div>
   );
-};
+});
+TemplatesOverview.displayName = 'TemplatesOverview';

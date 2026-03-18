@@ -15,13 +15,14 @@ export const SettingsAI = memo(function SettingsAI() {
   const [aiTestMsg, setAiTestMsg] = useState('');
 
   useEffect(() => {
-    const settings = getAISettings();
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    if (settings.apiKey) setAiKey(settings.apiKey);
+    (async () => {
+      const settings = await getAISettings();
+      if (settings.apiKey) setAiKey(settings.apiKey);
+    })();
   }, []);
 
-  const handleAiKeySave = useCallback(() => {
-    saveAISettings({ apiKey: aiKey.trim() });
+  const handleAiKeySave = useCallback(async () => {
+    await saveAISettings({ apiKey: aiKey.trim() });
     setAiTestStatus(null);
     setAiTestMsg('Gespeichert');
     setTimeout(() => setAiTestMsg(''), 2000);
@@ -33,7 +34,7 @@ export const SettingsAI = memo(function SettingsAI() {
     setAiTestMsg('');
     try {
       await testAPIKey(aiKey.trim());
-      saveAISettings({ apiKey: aiKey.trim() });
+      await saveAISettings({ apiKey: aiKey.trim() });
       setAiTestStatus('success');
       setAiTestMsg('API-Key ist gültig!');
     } catch (e) {

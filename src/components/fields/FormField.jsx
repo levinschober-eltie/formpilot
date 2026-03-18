@@ -13,6 +13,20 @@ import {
 const widthMap = { full: '100%', half: 'calc(50% - 8px)', third: 'calc(33.33% - 11px)' };
 
 // ═══ FEATURE: Repeater Field ═══
+// P4: All style objects extracted outside render
+const S_REPEATER = { display: 'flex', flexDirection: 'column', gap: '8px' };
+const S_REPEATER_ROW = { padding: '12px', borderRadius: S.radius.md, border: `1px solid ${S.colors.border}`, background: S.colors.bgInput, position: 'relative' };
+const S_REPEATER_ROW_HEADER = { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' };
+const S_REPEATER_ROW_NUM = { fontSize: '12px', fontWeight: 600, color: S.colors.textMuted };
+const S_REPEATER_REMOVE = { background: 'none', border: 'none', cursor: 'pointer', color: S.colors.danger, fontSize: '14px' };
+const S_REPEATER_FIELDS = { display: 'flex', flexWrap: 'wrap', gap: '8px' };
+const S_REPEATER_INPUT = { width: '100%', padding: '8px 10px', borderRadius: S.radius.sm, border: `1px solid ${S.colors.border}`, fontSize: '13px', fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box' };
+const S_REPEATER_TOGGLE_LABEL = { display: 'flex', alignItems: 'center', gap: '6px', height: '36px', cursor: 'pointer' };
+const S_REPEATER_TOGGLE_TEXT = { fontSize: '12px', color: S.colors.textSecondary };
+const S_REPEATER_SUBFIELD = { flex: '1 1 200px', minWidth: 0 };
+const S_REPEATER_SUBFIELD_LABEL = { fontSize: '12px', fontWeight: 600, color: S.colors.textSecondary, display: 'block', marginBottom: '3px' };
+const S_REPEATER_ADD = { padding: '10px', borderRadius: S.radius.sm, border: `1.5px dashed ${S.colors.border}`, background: 'transparent', color: S.colors.textMuted, cursor: 'pointer', fontSize: '13px', fontFamily: 'inherit' };
+
 // eslint-disable-next-line no-unused-vars
 const RepeaterField = ({ field, value, onChange, formData }) => {
   const rows = Array.isArray(value) ? value : [];
@@ -36,22 +50,21 @@ const RepeaterField = ({ field, value, onChange, formData }) => {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+    <div style={S_REPEATER}>
       {rows.map((row, ri) => (
-        <div key={ri} style={{ padding: '12px', borderRadius: S.radius.md, border: `1px solid ${S.colors.border}`, background: S.colors.bgInput, position: 'relative' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-            <span style={{ fontSize: '12px', fontWeight: 600, color: S.colors.textMuted }}>#{ri + 1}</span>
-            <button type="button" onClick={() => removeRow(ri)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: S.colors.danger, fontSize: '14px' }}>✕</button>
+        <div key={ri} style={S_REPEATER_ROW}>
+          <div style={S_REPEATER_ROW_HEADER}>
+            <span style={S_REPEATER_ROW_NUM}>#{ri + 1}</span>
+            <button type="button" onClick={() => removeRow(ri)} style={S_REPEATER_REMOVE}>✕</button>
           </div>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+          <div style={S_REPEATER_FIELDS}>
             {subFields.map(sf => {
               const sfType = sf.type || 'text';
-              const inputStyle = { width: '100%', padding: '8px 10px', borderRadius: S.radius.sm, border: `1px solid ${S.colors.border}`, fontSize: '13px', fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box' };
               let input;
               if (sfType === 'select') {
                 const opts = typeof sf.options === 'string' ? sf.options.split(',').map(o => o.trim()).filter(Boolean) : (Array.isArray(sf.options) ? sf.options : []);
                 input = (
-                  <select value={row[sf.id] || ''} onChange={e => updateRow(ri, sf.id, e.target.value)} style={inputStyle}>
+                  <select value={row[sf.id] || ''} onChange={e => updateRow(ri, sf.id, e.target.value)} style={S_REPEATER_INPUT}>
                     <option value="">— Wählen —</option>
                     {opts.map(o => {
                       const val = typeof o === 'object' ? o.value : o;
@@ -62,21 +75,21 @@ const RepeaterField = ({ field, value, onChange, formData }) => {
                 );
               } else if (sfType === 'toggle') {
                 input = (
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '6px', height: '36px', cursor: 'pointer' }}>
+                  <label style={S_REPEATER_TOGGLE_LABEL}>
                     <input type="checkbox" checked={!!row[sf.id]} onChange={e => updateRow(ri, sf.id, e.target.checked)} />
-                    <span style={{ fontSize: '12px', color: S.colors.textSecondary }}>{row[sf.id] ? 'Ja' : 'Nein'}</span>
+                    <span style={S_REPEATER_TOGGLE_TEXT}>{row[sf.id] ? 'Ja' : 'Nein'}</span>
                   </label>
                 );
               } else {
                 input = (
                   <input type={sfType === 'number' ? 'number' : sfType === 'date' ? 'date' : 'text'}
                     value={row[sf.id] || ''} onChange={e => updateRow(ri, sf.id, sfType === 'number' ? (e.target.value === '' ? '' : Number(e.target.value)) : e.target.value)}
-                    style={inputStyle} placeholder={sf.placeholder || ''} />
+                    style={S_REPEATER_INPUT} placeholder={sf.placeholder || ''} />
                 );
               }
               return (
-                <div key={sf.id} style={{ flex: '1 1 200px', minWidth: 0 }}>
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: S.colors.textSecondary, display: 'block', marginBottom: '3px' }}>{sf.label}</label>
+                <div key={sf.id} style={S_REPEATER_SUBFIELD}>
+                  <label style={S_REPEATER_SUBFIELD_LABEL}>{sf.label}</label>
                   {input}
                 </div>
               );
@@ -85,8 +98,8 @@ const RepeaterField = ({ field, value, onChange, formData }) => {
         </div>
       ))}
       {rows.length < maxRows && (
-        <button type="button" onClick={addRow} style={{ padding: '10px', borderRadius: S.radius.sm, border: `1.5px dashed ${S.colors.border}`, background: 'transparent', color: S.colors.textMuted, cursor: 'pointer', fontSize: '13px', fontFamily: 'inherit' }}>
-          ＋ Eintrag hinzufügen {rows.length > 0 && `(${rows.length}/${maxRows})`}
+        <button type="button" onClick={addRow} style={S_REPEATER_ADD}>
+          + Eintrag hinzufügen {rows.length > 0 && `(${rows.length}/${maxRows})`}
         </button>
       )}
     </div>

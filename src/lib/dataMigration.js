@@ -6,6 +6,8 @@ import { STORAGE_KEYS } from '../config/constants';
 import * as supa from './supabaseService';
 import { isSupabaseConfigured } from './supabase';
 
+// NOTE: Migration metadata uses direct localStorage intentionally —
+// these are simple flags/progress tracking, not user data needing IndexedDB backup.
 const MIGRATION_KEY = 'fp_migration_completed';
 const MIGRATION_PROGRESS_KEY = 'fp_migration_progress';
 

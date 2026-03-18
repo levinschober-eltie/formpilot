@@ -103,7 +103,7 @@ const AIFormGenerator = memo(function AIFormGenerator({ onClose, onOpenBuilder, 
   }, [phase]);
 
   const handleGenerate = useCallback(async () => {
-    const settings = getAISettings();
+    const settings = await getAISettings();
     // Only require local API key if Supabase is not configured (Edge Function handles it server-side)
     if (!settings.apiKey && !isSupabaseConfigured()) {
       setError('NO_API_KEY');
