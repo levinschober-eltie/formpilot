@@ -258,40 +258,43 @@ function FormPilotInner() {
       </div>
       <div style={styles.main}>
         {fillingTemplate ? (
-          <FormFiller template={fillingTemplate} onSubmit={handleSubmitForm} onCancel={() => { setFillingTemplate(null); setDraftData(null); setFillingProjectContext(null); }} initialData={draftData} draftId={`fp_draft_${fillingTemplate.id}_current`} />
+          <ErrorBoundary>
+            <FormFiller template={fillingTemplate} onSubmit={handleSubmitForm} onCancel={() => { setFillingTemplate(null); setDraftData(null); setFillingProjectContext(null); }} initialData={draftData} draftId={`fp_draft_${fillingTemplate.id}_current`} />
+          </ErrorBoundary>
         ) : viewingSubmission ? (
-          <SubmissionDetail
-            submission={viewingSubmission}
-            template={allTemplates.find(t => t.id === viewingSubmission.templateId)}
-            onBack={() => setViewingSubmission(null)}
-            onStatusChange={handleStatusChange}
-            onDelete={handleDeleteSubmission}
-          />
+          <ErrorBoundary>
+            <SubmissionDetail
+              submission={viewingSubmission}
+              template={allTemplates.find(t => t.id === viewingSubmission.templateId)}
+              onBack={() => setViewingSubmission(null)}
+              onStatusChange={handleStatusChange}
+              onDelete={handleDeleteSubmission}
+            />
+          </ErrorBoundary>
         ) : viewingProject ? (
-          <ProjectDetail
-            project={viewingProject}
-            submissions={submissions}
-            allTemplates={allTemplates}
-            onBack={() => { setViewingProject(null); refreshProjects(); }}
-            onProjectChange={handleProjectChange}
-            onStartFilling={handleStartFillingFromProject}
-          />
+          <ErrorBoundary>
+            <ProjectDetail
+              project={viewingProject}
+              onBack={() => { setViewingProject(null); refreshProjects(); }}
+              onProjectChange={handleProjectChange}
+              onStartFilling={handleStartFillingFromProject}
+            />
+          </ErrorBoundary>
         ) : viewingCustomer ? (
-          <CustomerDetail
-            customer={viewingCustomer}
-            submissions={submissions}
-            allTemplates={allTemplates}
-            onBack={() => { setViewingCustomer(null); handleCustomersChange(); }}
-            onCustomersChange={handleCustomersChange}
-          />
+          <ErrorBoundary>
+            <CustomerDetail
+              customer={viewingCustomer}
+              onBack={() => { setViewingCustomer(null); handleCustomersChange(); }}
+            />
+          </ErrorBoundary>
         ) : (<>
-          {tab === 'dashboard' && <DashboardScreen />}
-          {tab === 'projects' && <ProjectsScreen onSelectProject={setViewingProject} onCreateProject={handleCreateProjectAndView} />}
-          {tab === 'templates' && <TemplatesOverview onOpenBuilder={setBuilderTemplate} onStartFilling={handleStartFilling} />}
-          {tab === 'fill' && <TemplateSelector onSelect={handleStartFilling} />}
-          {tab === 'submissions' && <SubmissionsList onViewSubmission={setViewingSubmission} onDeleteSubmission={handleDeleteSubmission} />}
-          {tab === 'customers' && <CustomersScreen onSelectCustomer={setViewingCustomer} />}
-          {tab === 'settings' && <SettingsScreen darkMode={darkMode} onToggleDarkMode={() => setDarkMode(p => !p)} />}
+          {tab === 'dashboard' && <ErrorBoundary><DashboardScreen /></ErrorBoundary>}
+          {tab === 'projects' && <ErrorBoundary><ProjectsScreen onSelectProject={setViewingProject} onCreateProject={handleCreateProjectAndView} /></ErrorBoundary>}
+          {tab === 'templates' && <ErrorBoundary><TemplatesOverview onOpenBuilder={setBuilderTemplate} onStartFilling={handleStartFilling} /></ErrorBoundary>}
+          {tab === 'fill' && <ErrorBoundary><TemplateSelector onSelect={handleStartFilling} /></ErrorBoundary>}
+          {tab === 'submissions' && <ErrorBoundary><SubmissionsList onViewSubmission={setViewingSubmission} onDeleteSubmission={handleDeleteSubmission} /></ErrorBoundary>}
+          {tab === 'customers' && <ErrorBoundary><CustomersScreen onSelectCustomer={setViewingCustomer} /></ErrorBoundary>}
+          {tab === 'settings' && <ErrorBoundary><SettingsScreen darkMode={darkMode} onToggleDarkMode={() => setDarkMode(p => !p)} /></ErrorBoundary>}
         </>)}
       </div>
       {!fillingTemplate && !viewingSubmission && !viewingCustomer && !viewingProject && (

@@ -4,6 +4,7 @@ import { styles } from '../../styles/shared';
 import { getActivityLog, updateCustomerNotes, updateCustomer, deleteCustomer, addActivityLog } from '../../lib/customerService';
 import { exportSubmissionPdf } from '../../lib/exportPdf';
 import { dialog } from '../../lib/dialogService';
+import { useData } from '../../contexts/DataContext';
 
 // ═══ Extracted Styles (P4) ═══
 const S_HEADER = { display: 'flex', alignItems: 'flex-start', gap: '16px', marginBottom: '24px' };
@@ -38,7 +39,8 @@ const LOG_LABELS = {
 const S_EDIT_INPUT = { width: '100%', padding: '8px 12px', borderRadius: S.radius.md, border: `1.5px solid ${S.colors.border}`, fontSize: '14px', fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box', background: S.colors.bgInput };
 const S_EDIT_LABEL = { fontSize: '12px', fontWeight: 600, color: S.colors.textMuted, marginBottom: '4px' };
 
-export const CustomerDetail = ({ customer, submissions, allTemplates, onBack, onCustomersChange }) => {
+export const CustomerDetail = ({ customer, onBack }) => {
+  const { submissions, allTemplates, handleCustomersChange } = useData();
   const [tab, setTab] = useState('contracts');
   const [activityLog, setActivityLog] = useState([]);
   const [notes, setNotes] = useState(customer.notes || '');
@@ -65,23 +67,23 @@ export const CustomerDetail = ({ customer, submissions, allTemplates, onBack, on
   const handleSaveNotes = useCallback(async () => {
     await updateCustomerNotes(customer.id, notes);
     setNotesSaved(true);
-    if (onCustomersChange) onCustomersChange();
-  }, [customer.id, notes, onCustomersChange]);
+    if (handleCustomersChange) handleCustomersChange();
+  }, [customer.id, notes, handleCustomersChange]);
 
   const handleSaveEdit = useCallback(async () => {
     if (!editData.name.trim()) return;
     await updateCustomer(customer.id, editData);
     await addActivityLog({ action: 'customer_updated', customerId: customer.id, details: `Kontaktdaten bearbeitet` });
     setEditing(false);
-    if (onCustomersChange) onCustomersChange();
-  }, [customer.id, editData, onCustomersChange]);
+    if (handleCustomersChange) handleCustomersChange();
+  }, [customer.id, editData, handleCustomersChange]);
 
   const handleDeleteCustomer = useCallback(async () => {
     if (!(await dialog.confirm({ title: 'Kontakt löschen?', message: `"${customer.name}" wird unwiderruflich gelöscht.`, confirmLabel: 'Löschen' }))) return;
     await deleteCustomer(customer.id);
-    if (onCustomersChange) onCustomersChange();
+    if (handleCustomersChange) handleCustomersChange();
     onBack();
-  }, [customer.id, customer.name, onCustomersChange, onBack]);
+  }, [customer.id, customer.name, handleCustomersChange, onBack]);
 
   const getInitials = (name) => name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
 

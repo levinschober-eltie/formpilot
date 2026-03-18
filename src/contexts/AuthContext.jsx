@@ -6,12 +6,13 @@ import { STORAGE_KEYS } from '../config/constants';
 
 const AuthContext = createContext(null);
 
-export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null);
-  const [authChecked, setAuthChecked] = useState(false);
+export function AuthProvider({ children, initialUser = null }) {
+  const [user, setUser] = useState(initialUser);
+  const [authChecked, setAuthChecked] = useState(!!initialUser);
 
   // ═══ Supabase Auth State Listener ═══
   useEffect(() => {
+    if (initialUser) return; // External auth (e.g. LagerPilot) — skip internal auth
     /* eslint-disable react-hooks/set-state-in-effect */
     if (!isSupabaseConfigured()) {
       setAuthChecked(true);
@@ -70,7 +71,7 @@ export function AuthProvider({ children }) {
 
     /* eslint-enable react-hooks/set-state-in-effect */
     return () => subscription?.unsubscribe();
-  }, []);
+  }, [initialUser]);
 
   // Demo mode: set user from stored session (called by DataContext during init)
   const loginFromStorage = useCallback((u) => {
