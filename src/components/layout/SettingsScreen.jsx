@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { S } from '../../config/theme';
 import { styles } from '../../styles/shared';
 import { MiniToggle } from '../common/MiniToggle';
+import { createFullBackup, exportAllData, importAllData, checkIntegrity } from '../../lib/storageBackup';
 
 // ═══ Extracted Styles (P4) ═══
 const S_QUOTA_BAR = { height: '8px', background: S.colors.border, borderRadius: S.radius.full, overflow: 'hidden', marginTop: '8px' };
@@ -23,9 +24,43 @@ const estimateStorageUsage = () => {
 
 export const SettingsScreen = ({ user, onLogout, darkMode, onToggleDarkMode }) => {
   const [storageBytes, setStorageBytes] = useState(0);
+  const [backupStatus, setBackupStatus] = useState(null);
+  const [backupMeta, setBackupMeta] = useState(null);
+  const importRef = useRef(null);
   const maxBytes = 5 * 1024 * 1024; // 5MB localStorage limit
 
-  useEffect(() => { setStorageBytes(estimateStorageUsage()); }, []);
+  useEffect(() => {
+    setStorageBytes(estimateStorageUsage());
+    checkIntegrity().then(info => setBackupMeta(info)).catch(() => {});
+  }, []);
+
+  const handleBackup = useCallback(async () => {
+    setBackupStatus('running');
+    try {
+      const count = await createFullBackup();
+      setBackupStatus(`${count} Keys gesichert`);
+      const info = await checkIntegrity();
+      setBackupMeta(info);
+    } catch { setBackupStatus('Fehler beim Backup'); }
+    setTimeout(() => setBackupStatus(null), 3000);
+  }, []);
+
+  const handleExport = useCallback(() => {
+    const count = exportAllData();
+    setBackupStatus(`${count} Keys exportiert`);
+    setTimeout(() => setBackupStatus(null), 3000);
+  }, []);
+
+  const handleImport = useCallback(async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const count = await importAllData(file);
+      setBackupStatus(`${count} Keys importiert — Seite neu laden`);
+      setStorageBytes(estimateStorageUsage());
+    } catch { setBackupStatus('Import fehlgeschlagen — ungültiges Format'); }
+    e.target.value = '';
+  }, []);
 
   const storageMB = (storageBytes / (1024 * 1024)).toFixed(2);
   const storagePct = Math.min(100, (storageBytes / maxBytes) * 100);
@@ -65,6 +100,27 @@ export const SettingsScreen = ({ user, onLogout, darkMode, onToggleDarkMode }) =
         </div>
         <div style={S_QUOTA_BAR}><div style={S_QUOTA_FILL(storagePct)} /></div>
         {storagePct > 80 && <p style={{ fontSize: '12px', color: S.colors.danger, marginTop: '8px' }}>Speicher fast voll! Alte Formulare löschen oder exportieren.</p>}
+      </div>
+
+      <div style={{ ...styles.card, marginTop: '12px' }}>
+        <h3 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '12px' }}>Datensicherung</h3>
+        <input ref={importRef} type="file" accept=".json" onChange={handleImport} style={{ display: 'none' }} />
+        {backupMeta && (
+          <div style={{ fontSize: '12px', color: S.colors.textSecondary, marginBottom: '12px', padding: '8px 12px', background: S.colors.bgInput, borderRadius: S.radius.sm }}>
+            <div>IndexedDB-Backup: <strong>{backupMeta.backupKeyCount}</strong> Keys</div>
+            <div>localStorage: <strong>{backupMeta.localKeyCount}</strong> Keys</div>
+            {backupMeta.backupMeta?.lastBackup && <div>Letztes Backup: {new Date(backupMeta.backupMeta.lastBackup).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</div>}
+          </div>
+        )}
+        {backupStatus && <div style={{ fontSize: '13px', fontWeight: 600, color: S.colors.success, marginBottom: '10px' }}>{backupStatus}</div>}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          <button onClick={handleBackup} style={{ ...styles.btn('secondary'), width: '100%' }}>IndexedDB-Backup erstellen</button>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button onClick={handleExport} style={{ ...styles.btn('secondary'), flex: 1 }}>JSON exportieren</button>
+            <button onClick={() => importRef.current?.click()} style={{ ...styles.btn('secondary'), flex: 1 }}>JSON importieren</button>
+          </div>
+        </div>
+        <p style={{ fontSize: '11px', color: S.colors.textMuted, marginTop: '8px' }}>Daten werden automatisch in IndexedDB gespiegelt. Bei Datenverlust wird das Backup automatisch wiederhergestellt.</p>
       </div>
 
       <div style={{ ...styles.card, marginTop: '12px' }}>

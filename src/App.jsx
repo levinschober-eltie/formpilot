@@ -4,6 +4,7 @@ import { styles } from './styles/shared';
 import { STORAGE_KEYS, USERS } from './config/constants';
 import { DEMO_TEMPLATES } from './config/templates';
 import { storageGet, storageSet } from './lib/storage';
+import { checkIntegrity, restoreFromBackup, createFullBackup } from './lib/storageBackup';
 import { processCustomerFromSubmission, addActivityLog, getCustomers, removeSubmissionFromCustomer } from './lib/customerService';
 import { getProjects, saveProject, deleteProject, createProject, linkSubmissionToPhase, buildAutoFillData } from './lib/projectService';
 import { LoginScreen } from './components/layout/LoginScreen';
@@ -57,12 +58,22 @@ export default function FormPilot() {
   useEffect(() => {
     (async () => {
       try {
+        // ═══ Integrity Check: Auto-Recovery from IndexedDB if localStorage wiped ═══
+        const integrity = await checkIntegrity();
+        if (integrity.needsRestore) {
+          console.warn(`[FormPilot] localStorage leer, stelle ${integrity.backupKeyCount} Keys aus Backup wieder her...`);
+          await restoreFromBackup();
+        }
+
         const session = await storageGet(STORAGE_KEYS.session);
         if (session) { const u = USERS.find(u => u.id === session.userId); if (u) { setUser(u); setTab(getDefaultTab(u.role)); } }
         const subs = await storageGet(STORAGE_KEYS.submissions); if (subs) setSubmissions(subs);
         const tpls = await storageGet(STORAGE_KEYS.templates); if (tpls) setCustomTemplates(tpls);
         const custs = await getCustomers(); setCustomers(custs);
         const projs = await getProjects(); setProjects(projs);
+
+        // Create full backup after successful load
+        createFullBackup().catch(() => {});
       } catch (e) {
         console.error('Init load failed:', e);
       }
