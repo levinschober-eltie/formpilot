@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { S } from '../../config/theme';
 import { styles } from '../../styles/shared';
 import { MiniToggle } from '../common/MiniToggle';
-import { createFullBackup, exportAllData, importAllData, checkIntegrity } from '../../lib/storageBackup';
+import { createFullBackup, exportAllData, importAllData, checkIntegrity, getVersionHistory, restoreVersion } from '../../lib/storageBackup';
 
 // ═══ Extracted Styles (P4) ═══
 const S_QUOTA_BAR = { height: '8px', background: S.colors.border, borderRadius: S.radius.full, overflow: 'hidden', marginTop: '8px' };
@@ -26,8 +26,12 @@ export const SettingsScreen = ({ user, onLogout, darkMode, onToggleDarkMode }) =
   const [storageBytes, setStorageBytes] = useState(0);
   const [backupStatus, setBackupStatus] = useState(null);
   const [backupMeta, setBackupMeta] = useState(null);
+  const [versionHistory, setVersionHistory] = useState(null);
+  const [restoreStatus, setRestoreStatus] = useState(null);
   const importRef = useRef(null);
   const maxBytes = 5 * 1024 * 1024; // 5MB localStorage limit
+
+  const CRITICAL_LABELS = { fp_submissions: 'Verträge', fp_templates: 'Vorlagen', fp_customers: 'Kontakte', fp_projects: 'Projekte' };
 
   useEffect(() => {
     setStorageBytes(estimateStorageUsage());
@@ -61,6 +65,27 @@ export const SettingsScreen = ({ user, onLogout, darkMode, onToggleDarkMode }) =
     } catch { setBackupStatus('Import fehlgeschlagen — ungültiges Format'); }
     e.target.value = '';
   }, []);
+
+  const loadVersionHistory = useCallback(async () => {
+    const keys = ['fp_submissions', 'fp_templates', 'fp_customers', 'fp_projects'];
+    const history = {};
+    for (const key of keys) {
+      history[key] = await getVersionHistory(key);
+    }
+    setVersionHistory(history);
+  }, []);
+
+  const handleRestore = useCallback(async (historyId, label) => {
+    try {
+      const result = await restoreVersion(historyId);
+      setRestoreStatus(`${label} wiederhergestellt (${new Date(result.timestamp).toLocaleString('de-DE')})`);
+      setTimeout(() => setRestoreStatus(null), 4000);
+      await loadVersionHistory();
+    } catch (e) {
+      setRestoreStatus(`Fehler: ${e.message}`);
+      setTimeout(() => setRestoreStatus(null), 4000);
+    }
+  }, [loadVersionHistory]);
 
   const storageMB = (storageBytes / (1024 * 1024)).toFixed(2);
   const storagePct = Math.min(100, (storageBytes / maxBytes) * 100);
@@ -121,6 +146,34 @@ export const SettingsScreen = ({ user, onLogout, darkMode, onToggleDarkMode }) =
           </div>
         </div>
         <p style={{ fontSize: '11px', color: S.colors.textMuted, marginTop: '8px' }}>Daten werden automatisch in IndexedDB gespiegelt. Bei Datenverlust wird das Backup automatisch wiederhergestellt.</p>
+      </div>
+
+      <div style={{ ...styles.card, marginTop: '12px' }}>
+        <h3 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '12px' }}>Versionsverlauf</h3>
+        <p style={{ fontSize: '12px', color: S.colors.textSecondary, marginBottom: '10px' }}>Kritische Daten werden versioniert. Bei Problemen kannst du auf eine frühere Version zurücksetzen.</p>
+        {restoreStatus && <div style={{ fontSize: '13px', fontWeight: 600, color: S.colors.success, marginBottom: '10px' }}>{restoreStatus}</div>}
+        {!versionHistory ? (
+          <button onClick={loadVersionHistory} style={{ ...styles.btn('secondary'), width: '100%' }}>Versionsverlauf laden</button>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            {Object.entries(CRITICAL_LABELS).map(([key, label]) => {
+              const versions = versionHistory[key] || [];
+              return (
+                <div key={key} style={{ padding: '8px 12px', background: S.colors.bgInput, borderRadius: S.radius.sm }}>
+                  <div style={{ fontSize: '13px', fontWeight: 600, marginBottom: '4px' }}>{label} <span style={{ fontWeight: 400, color: S.colors.textMuted }}>({versions.length} Versionen)</span></div>
+                  {versions.length === 0 && <div style={{ fontSize: '11px', color: S.colors.textMuted }}>Noch keine Versionen gespeichert</div>}
+                  {versions.slice(0, 3).map((v) => (
+                    <div key={v.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '11px', padding: '3px 0', borderTop: `1px solid ${S.colors.border}` }}>
+                      <span style={{ color: S.colors.textSecondary }}>{new Date(v.timestamp).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })} — {(v.size / 1024).toFixed(1)} KB</span>
+                      <button onClick={() => handleRestore(v.id, label)} style={{ fontSize: '11px', padding: '2px 8px', borderRadius: S.radius.sm, border: `1px solid ${S.colors.border}`, background: 'transparent', color: S.colors.primary, cursor: 'pointer', fontFamily: 'inherit' }}>Wiederherstellen</button>
+                    </div>
+                  ))}
+                </div>
+              );
+            })}
+            <button onClick={loadVersionHistory} style={{ ...styles.btn('secondary'), width: '100%', fontSize: '12px' }}>Aktualisieren</button>
+          </div>
+        )}
       </div>
 
       <div style={{ ...styles.card, marginTop: '12px' }}>
