@@ -4,6 +4,8 @@ import { styles } from '../../styles/shared';
 import { MiniToggle } from '../common/MiniToggle';
 import { createFullBackup, exportAllData, importAllData, checkIntegrity, getVersionHistory, restoreVersion } from '../../lib/storageBackup';
 import { getAISettings, saveAISettings, testAPIKey } from '../../lib/aiService';
+import { isSupabaseConfigured } from '../../lib/supabase';
+import { needsMigration, migrateLocalDataToSupabase } from '../../lib/dataMigration';
 
 // ═══ Extracted Styles (P4) ═══
 const S_QUOTA_BAR = { height: '8px', background: S.colors.border, borderRadius: S.radius.full, overflow: 'hidden', marginTop: '8px' };
@@ -53,6 +55,10 @@ export const SettingsScreen = ({ user, onLogout, darkMode, onToggleDarkMode }) =
   const [aiTestMsg, setAiTestMsg] = useState('');
   const [company, setCompany] = useState(() => loadCompanySettings());
   const [companySaved, setCompanySaved] = useState(false);
+  const [migrationNeeded, setMigrationNeeded] = useState(false);
+  const [migrationRunning, setMigrationRunning] = useState(false);
+  const [migrationProgress, setMigrationProgress] = useState(null);
+  const [migrationResult, setMigrationResult] = useState(null);
   const importRef = useRef(null);
   const maxBytes = 5 * 1024 * 1024; // 5MB localStorage limit
 
@@ -63,6 +69,22 @@ export const SettingsScreen = ({ user, onLogout, darkMode, onToggleDarkMode }) =
     checkIntegrity().then(info => setBackupMeta(info)).catch(() => {});
     const settings = getAISettings();
     if (settings.apiKey) setAiKey(settings.apiKey);
+    setMigrationNeeded(needsMigration());
+  }, []);
+
+  const handleMigration = useCallback(async () => {
+    setMigrationRunning(true);
+    setMigrationResult(null);
+    try {
+      const result = await migrateLocalDataToSupabase((progress) => {
+        setMigrationProgress(progress);
+      });
+      setMigrationResult(result);
+      setMigrationNeeded(needsMigration());
+    } catch (e) {
+      setMigrationResult({ errors: [e.message], migrated: {} });
+    }
+    setMigrationRunning(false);
   }, []);
 
   const handleAiKeySave = useCallback(() => {
@@ -164,6 +186,58 @@ export const SettingsScreen = ({ user, onLogout, darkMode, onToggleDarkMode }) =
         </div>
         <button onClick={onLogout} style={{ ...styles.btn('danger'), width: '100%' }}>Abmelden</button>
       </div>
+
+      {/* ═══ Cloud-Status & Migration Banner ═══ */}
+      {isSupabaseConfigured() && (
+        <div style={{ ...styles.card, marginTop: '12px', border: `1px solid ${S.colors.primary}40` }}>
+          <h3 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '12px' }}>Cloud-Sync</h3>
+          <div style={{ fontSize: '13px', color: S.colors.success, fontWeight: 600, marginBottom: '8px' }}>
+            Supabase verbunden
+          </div>
+          <p style={{ fontSize: '12px', color: S.colors.textSecondary, marginBottom: '12px' }}>
+            Deine Daten werden in der Cloud gespeichert und sind auf allen Geraeten verfuegbar.
+          </p>
+          {migrationNeeded && !migrationResult && (
+            <div style={{ padding: '12px', background: `${S.colors.warning}15`, border: `1px solid ${S.colors.warning}40`, borderRadius: S.radius.md, marginBottom: '12px' }}>
+              <div style={{ fontSize: '13px', fontWeight: 600, color: S.colors.warning, marginBottom: '6px' }}>Lokale Daten gefunden</div>
+              <p style={{ fontSize: '12px', color: S.colors.textSecondary, marginBottom: '10px' }}>
+                Du hast Daten im lokalen Speicher. Moechtest du sie in die Cloud migrieren?
+              </p>
+              <button
+                onClick={handleMigration}
+                disabled={migrationRunning}
+                style={{ ...styles.btn('primary'), width: '100%', opacity: migrationRunning ? 0.6 : 1 }}
+              >
+                {migrationRunning ? 'Migration laeuft...' : 'Daten in Cloud migrieren'}
+              </button>
+            </div>
+          )}
+          {migrationRunning && migrationProgress && (
+            <div style={{ padding: '12px', background: S.colors.bgInput, borderRadius: S.radius.md, marginBottom: '12px' }}>
+              <div style={{ fontSize: '12px', fontWeight: 600, marginBottom: '6px' }}>
+                Phase: {migrationProgress.phase} ({migrationProgress.processed || 0}/{migrationProgress.total || 0})
+              </div>
+              <div style={{ height: '6px', background: S.colors.border, borderRadius: S.radius.full, overflow: 'hidden' }}>
+                <div style={{ height: '100%', width: `${migrationProgress.total ? (migrationProgress.processed / migrationProgress.total * 100) : 0}%`, background: S.colors.primary, borderRadius: S.radius.full, transition: 'width 0.3s ease' }} />
+              </div>
+            </div>
+          )}
+          {migrationResult && (
+            <div style={{ padding: '12px', background: migrationResult.errors?.length ? `${S.colors.warning}15` : `${S.colors.success}15`, borderRadius: S.radius.md }}>
+              <div style={{ fontSize: '13px', fontWeight: 600, color: migrationResult.errors?.length ? S.colors.warning : S.colors.success, marginBottom: '6px' }}>
+                Migration {migrationResult.errors?.length ? 'mit Warnungen' : 'erfolgreich'}
+              </div>
+              <div style={{ fontSize: '12px', color: S.colors.textSecondary }}>
+                {migrationResult.migrated?.templates > 0 && <div>Vorlagen: {migrationResult.migrated.templates}</div>}
+                {migrationResult.migrated?.submissions > 0 && <div>Formulare: {migrationResult.migrated.submissions}</div>}
+                {migrationResult.migrated?.customers > 0 && <div>Kontakte: {migrationResult.migrated.customers}</div>}
+                {migrationResult.migrated?.projects > 0 && <div>Projekte: {migrationResult.migrated.projects}</div>}
+                {migrationResult.errors?.map((err, i) => <div key={i} style={{ color: S.colors.danger, marginTop: '4px' }}>{err}</div>)}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       <div style={{ ...styles.card, marginTop: '12px' }}>
         <h3 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '16px' }}>Darstellung</h3>
@@ -339,7 +413,7 @@ export const SettingsScreen = ({ user, onLogout, darkMode, onToggleDarkMode }) =
           <div><span style={{ color: S.colors.success }}>●</span> fp_excel_export: aktiv</div>
           <div><span style={{ color: S.colors.success }}>●</span> fp_company_branding: aktiv</div>
           <div><span style={{ color: S.colors.textMuted }}>○</span> fp_offline: geplant</div>
-          <div><span style={{ color: S.colors.textMuted }}>○</span> fp_supabase: geplant</div>
+          <div><span style={{ color: isSupabaseConfigured() ? S.colors.success : S.colors.textMuted }}>{isSupabaseConfigured() ? '●' : '○'}</span> fp_supabase: {isSupabaseConfigured() ? 'aktiv' : 'bereit (URL nicht gesetzt)'}</div>
         </div>
       </div>
     </div>

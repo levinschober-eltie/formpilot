@@ -7,6 +7,9 @@ import { storageGet, storageSet } from './lib/storage';
 import { checkIntegrity, restoreFromBackup, createFullBackup } from './lib/storageBackup';
 import { processCustomerFromSubmission, addActivityLog, getCustomers, removeSubmissionFromCustomer } from './lib/customerService';
 import { getProjects, saveProject, deleteProject, createProject, linkSubmissionToPhase, buildAutoFillData } from './lib/projectService';
+import { supabase, isSupabaseConfigured } from './lib/supabase';
+import { getCurrentUser, clearProfileCache, signOut as supabaseSignOut } from './lib/supabaseService';
+import { needsMigration } from './lib/dataMigration';
 import { LoginScreen } from './components/layout/LoginScreen';
 import { SettingsScreen } from './components/layout/SettingsScreen';
 import { SubmissionsList } from './components/layout/SubmissionsList';
@@ -37,6 +40,11 @@ const getDefaultTab = (role) => {
   return first?.id || 'fill';
 };
 
+// ═══ Loading Screen (P4) ═══
+const S_LOADING = { textAlign: 'center' };
+const S_LOADING_ICON = { fontSize: '48px', marginBottom: '12px' };
+const S_LOADING_TEXT = { color: 'var(--fp-text-secondary)' };
+
 // ═══ FormPilot Main App ═══
 export default function FormPilot() {
   const [user, setUser] = useState(null);
@@ -53,8 +61,72 @@ export default function FormPilot() {
   const [viewingProject, setViewingProject] = useState(null);
   const [fillingProjectContext, setFillingProjectContext] = useState(null);
   const [loaded, setLoaded] = useState(false);
+  const [authChecked, setAuthChecked] = useState(false);
   const [darkMode, setDarkMode] = useState(() => localStorage.getItem('fp_darkMode') === 'true');
 
+  // ═══ Supabase Auth State Listener ═══
+  useEffect(() => {
+    if (!isSupabaseConfigured()) {
+      setAuthChecked(true);
+      return;
+    }
+
+    // Check current session
+    const checkSession = async () => {
+      try {
+        const supaUser = await getCurrentUser();
+        if (supaUser?.profile) {
+          const profile = supaUser.profile;
+          setUser({
+            id: profile.id,
+            name: profile.name,
+            email: profile.email,
+            role: profile.role,
+            organizationId: profile.organization_id,
+            profile,
+          });
+          setTab(getDefaultTab(profile.role));
+        }
+      } catch (e) {
+        console.error('[FormPilot] Auth check failed:', e);
+      }
+      setAuthChecked(true);
+    };
+
+    checkSession();
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'SIGNED_OUT' || !session) {
+        clearProfileCache();
+        setUser(null);
+      } else if (event === 'SIGNED_IN' && session) {
+        // Refresh profile
+        try {
+          clearProfileCache();
+          const supaUser = await getCurrentUser();
+          if (supaUser?.profile) {
+            const profile = supaUser.profile;
+            setUser({
+              id: profile.id,
+              name: profile.name,
+              email: profile.email,
+              role: profile.role,
+              organizationId: profile.organization_id,
+              profile,
+            });
+            setTab(getDefaultTab(profile.role));
+          }
+        } catch (e) {
+          console.error('[FormPilot] Auth state change error:', e);
+        }
+      }
+    });
+
+    return () => subscription?.unsubscribe();
+  }, []);
+
+  // ═══ Load data on mount ═══
   useEffect(() => {
     (async () => {
       try {
@@ -65,8 +137,12 @@ export default function FormPilot() {
           await restoreFromBackup();
         }
 
-        const session = await storageGet(STORAGE_KEYS.session);
-        if (session) { const u = USERS.find(u => u.id === session.userId); if (u) { setUser(u); setTab(getDefaultTab(u.role)); } }
+        // If not using Supabase, load session from localStorage
+        if (!isSupabaseConfigured()) {
+          const session = await storageGet(STORAGE_KEYS.session);
+          if (session) { const u = USERS.find(u => u.id === session.userId); if (u) { setUser(u); setTab(getDefaultTab(u.role)); } }
+        }
+
         const subs = await storageGet(STORAGE_KEYS.submissions); if (subs) setSubmissions(subs);
         const tpls = await storageGet(STORAGE_KEYS.templates); if (tpls) setCustomTemplates(tpls);
         const custs = await getCustomers(); setCustomers(custs);
@@ -88,8 +164,27 @@ export default function FormPilot() {
     document.documentElement.setAttribute('data-theme', darkMode ? 'dark' : 'light');
   }, [darkMode]);
 
-  const handleLogin = async (u) => { setUser(u); setTab(getDefaultTab(u.role)); await storageSet(STORAGE_KEYS.session, { userId: u.id }); };
-  const handleLogout = async () => { setUser(null); await storageSet(STORAGE_KEYS.session, null); };
+  const handleLogin = async (u) => {
+    setUser(u);
+    setTab(getDefaultTab(u.role));
+    // Only store session in localStorage for demo mode
+    if (!isSupabaseConfigured()) {
+      await storageSet(STORAGE_KEYS.session, { userId: u.id });
+    }
+  };
+
+  const handleLogout = async () => {
+    if (isSupabaseConfigured()) {
+      try {
+        await supabaseSignOut();
+      } catch (e) {
+        console.error('Supabase signout error:', e);
+      }
+    }
+    clearProfileCache();
+    setUser(null);
+    await storageSet(STORAGE_KEYS.session, null);
+  };
 
   const handleStartFilling = useCallback(async (template, projectContext = null, phaseId = null) => {
     const dk = `fp_draft_${template.id}_current`;
@@ -115,7 +210,7 @@ export default function FormPilot() {
     await storageSet(STORAGE_KEYS.submissions, updated);
     await storageSet(`fp_draft_${fillingTemplate.id}_current`, null);
 
-    // ═══ Auto-Kundenerstellung + Aktivitätslog ═══
+    // ═══ Auto-Kundenerstellung + Aktivitaetslog ═══
     const template = allTemplates.find(t => t.id === fillingTemplate.id);
     if (template) {
       const result = await processCustomerFromSubmission(newSub, template);
@@ -127,7 +222,7 @@ export default function FormPilot() {
           submissionId: newSub.id,
           templateName: template.name,
           userName: user.name,
-          details: `${template.name} ausgefüllt für ${result.customer.name}`,
+          details: `${template.name} ausgefuellt fuer ${result.customer.name}`,
         });
         await addActivityLog({
           action: result.isNew ? 'customer_created' : 'customer_updated',
@@ -136,12 +231,12 @@ export default function FormPilot() {
           userName: user.name,
           details: result.isNew
             ? `Neuer Kontakt "${result.customer.name}" automatisch angelegt`
-            : `Kontakt "${result.customer.name}" mit neuem Vertrag verknüpft`,
+            : `Kontakt "${result.customer.name}" mit neuem Vertrag verknuepft`,
         });
       }
     }
 
-    // ═══ Projekt-Verknüpfung (wenn aus Projekt heraus erstellt) ═══
+    // ═══ Projekt-Verknuepfung (wenn aus Projekt heraus erstellt) ═══
     const projCtx = fillingProjectContext;
     if (projCtx) {
       // Use stored phaseId if available, else fallback to first matching
@@ -177,7 +272,7 @@ export default function FormPilot() {
       storageSet(STORAGE_KEYS.submissions, updated);
       return updated;
     });
-    // Kunde-Verknüpfung bereinigen + Log
+    // Kunde-Verknuepfung bereinigen + Log
     const result = await removeSubmissionFromCustomer(subId);
     if (result) {
       setCustomers(result.customers);
@@ -186,7 +281,7 @@ export default function FormPilot() {
         customerId: result.customerId,
         submissionId: subId,
         userName: user?.name,
-        details: `Vertrag ${subId} gelöscht`,
+        details: `Vertrag ${subId} geloescht`,
       });
     }
     // Clean up dangling project phase references
@@ -237,7 +332,9 @@ export default function FormPilot() {
 
   const visibleNav = useMemo(() => user ? NAV_ITEMS.filter(n => n.roles.includes(user.role)) : [], [user?.role]);
 
-  if (!loaded) return <div style={{ ...styles.app, alignItems: 'center', justifyContent: 'center' }}><div style={{ textAlign: 'center' }}><div style={{ fontSize: '48px', marginBottom: '12px' }}>📋</div><div style={{ color: S.colors.textSecondary }}>Laden...</div></div></div>;
+  // ═══ Loading state — wait for both data and auth check ═══
+  const isLoading = !loaded || (isSupabaseConfigured() && !authChecked);
+  if (isLoading) return <div style={{ ...styles.app, alignItems: 'center', justifyContent: 'center' }}><div style={S_LOADING}><div style={S_LOADING_ICON}>📋</div><div style={S_LOADING_TEXT}>Laden...</div></div></div>;
   if (!user) return <LoginScreen onLogin={handleLogin} />;
   if (builderTemplate) return <FormBuilder template={builderTemplate} onSave={handleBuilderSave} onClose={() => setBuilderTemplate(null)} />;
 
