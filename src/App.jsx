@@ -220,11 +220,11 @@ export default function FormPilot() {
     handleStartFilling(template, project, phaseId);
   }, [handleStartFilling]);
 
+  const visibleNav = useMemo(() => user ? NAV_ITEMS.filter(n => n.roles.includes(user.role)) : [], [user?.role]);
+
   if (!loaded) return <div style={{ ...styles.app, alignItems: 'center', justifyContent: 'center' }}><div style={{ textAlign: 'center' }}><div style={{ fontSize: '48px', marginBottom: '12px' }}>📋</div><div style={{ color: S.colors.textSecondary }}>Laden...</div></div></div>;
   if (!user) return <LoginScreen onLogin={handleLogin} />;
   if (builderTemplate) return <FormBuilder template={builderTemplate} onSave={handleBuilderSave} onClose={() => setBuilderTemplate(null)} />;
-
-  const visibleNav = useMemo(() => NAV_ITEMS.filter(n => n.roles.includes(user.role)), [user.role]);
 
   return (
     <div style={styles.app}>
