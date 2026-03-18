@@ -2,6 +2,7 @@ import { S, STATUS_COLORS, STATUS_LABELS } from '../../config/theme';
 import { styles } from '../../styles/shared';
 import { exportSubmissionPdf } from '../../lib/exportPdf';
 import { exportSubmissionToExcel } from '../../lib/exportExcel';
+import { dialog } from '../../lib/dialogService';
 
 // ═══ FEATURE: Submission Detail View ═══
 const S_HEADER = { display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' };
@@ -107,7 +108,7 @@ export const SubmissionDetail = ({ submission, template, onBack, onStatusChange,
           <button onClick={() => onStatusChange(submission.id, 'completed')} style={styles.btn('secondary', 'sm')}>↩ Wiederherstellen</button>
         )}
         {onDelete && (
-          <button onClick={() => { if (confirm('Eintrag unwiderruflich löschen?')) onDelete(submission.id); }} style={{ ...styles.btn('ghost', 'sm'), color: S.colors.danger }}>🗑 Löschen</button>
+          <button onClick={async () => { if (await dialog.confirm({ title: 'Eintrag löschen?', message: 'Dieser Eintrag wird unwiderruflich gelöscht.', confirmLabel: 'Löschen' })) onDelete(submission.id); }} style={{ ...styles.btn('ghost', 'sm'), color: S.colors.danger }}>🗑 Löschen</button>
         )}
       </div>
 

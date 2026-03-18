@@ -17,27 +17,51 @@ const evalConditionResults = (conditions, conditionLogic, formData) => {
   return logic === 'AND' ? results.every(Boolean) : results.some(Boolean);
 };
 
+// Group conditions by action and evaluate each group
+const groupConditionsByAction = (conditions) => {
+  const groups = {};
+  conditions.forEach(c => {
+    const action = c.action || 'show';
+    if (!groups[action]) groups[action] = [];
+    groups[action].push(c);
+  });
+  return groups;
+};
+
 export const evaluateConditions = (conditions, conditionLogic, formData) => {
   if (!conditions || conditions.length === 0) return true;
-  const passes = evalConditionResults(conditions, conditionLogic, formData);
-  const action = conditions[0]?.action || 'show';
-  if (action === 'show') return passes;
-  if (action === 'hide') return !passes;
+  const groups = groupConditionsByAction(conditions);
+  // If any "hide" condition is met, field is hidden
+  if (groups.hide) {
+    const hidePasses = evalConditionResults(groups.hide, conditionLogic, formData);
+    if (hidePasses) return false;
+  }
+  // If "show" conditions exist and are not met, field is hidden
+  if (groups.show) {
+    const showPasses = evalConditionResults(groups.show, conditionLogic, formData);
+    if (!showPasses) return false;
+  }
   return true;
 };
 
 export const isConditionallyRequired = (field, formData) => {
   if (!field.conditions || field.conditions.length === 0) return false;
-  const action = field.conditions[0]?.action;
-  if (action !== 'require') return false;
-  return evalConditionResults(field.conditions, field.conditionLogic, formData);
+  const groups = groupConditionsByAction(field.conditions);
+  if (!groups.require) return false;
+  return evalConditionResults(groups.require, field.conditionLogic, formData);
 };
 
 export const isConditionallyDisabled = (field, formData) => {
   if (!field.conditions || field.conditions.length === 0) return false;
-  const action = field.conditions[0]?.action;
-  if (action !== 'disable') return false;
-  return evalConditionResults(field.conditions, field.conditionLogic, formData);
+  const groups = groupConditionsByAction(field.conditions);
+  if (!groups.disable) return false;
+  return evalConditionResults(groups.disable, field.conditionLogic, formData);
+};
+
+// Helper: blank canvas PNG data URLs are typically <2000 chars; real signatures are >3000
+const isBlankSignature = (dataUrl) => {
+  if (!dataUrl || typeof dataUrl !== 'string') return true;
+  return dataUrl.length < 2000;
 };
 
 // ═══ FEATURE: Validation Engine (Chat F.1) ═══
@@ -74,14 +98,14 @@ export const validateField = (field, value, formData) => {
     if (field.multiSignature && Array.isArray(field.signatureSlots) && field.signatureSlots.length > 0) {
       const multiVal = (typeof value === 'object' && value !== null && !Array.isArray(value)) ? value : {};
       for (const slot of field.signatureSlots) {
-        if (slot.required && !multiVal[slot.id]) {
+        if (slot.required && isBlankSignature(multiVal[slot.id])) {
           return `Unterschrift '${slot.label}' fehlt`;
         }
       }
       return null;
     }
     // Single mode (backward compatible)
-    if (required && !value) {
+    if (required && isBlankSignature(value)) {
       return 'Unterschrift ist erforderlich';
     }
   }

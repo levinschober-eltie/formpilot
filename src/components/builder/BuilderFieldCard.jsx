@@ -1,6 +1,7 @@
 import React, { useCallback } from 'react';
 import { S } from '../../config/theme';
 import { FIELD_TYPE_ICONS } from '../../config/constants';
+import { dialog } from '../../lib/dialogService';
 
 // ═══ Extracted Styles (P4) ═══
 const S_GRAB = { cursor: 'grab', fontSize: '14px', color: S.colors.textMuted, flexShrink: 0, userSelect: 'none' };
@@ -30,7 +31,7 @@ export const BuilderFieldCard = React.memo(({ field, isSelected, onSelect, onDel
 
   const handleClick = useCallback(() => onSelect(field.id), [onSelect, field.id]);
   const handleDuplicate = useCallback((e) => { e.stopPropagation(); if (onDuplicate) onDuplicate(field.id); }, [onDuplicate, field.id]);
-  const handleDelete = useCallback((e) => { e.stopPropagation(); if (confirm('Feld löschen?')) onDelete(field.id); }, [onDelete, field.id]);
+  const handleDelete = useCallback(async (e) => { e.stopPropagation(); if (await dialog.confirm({ title: 'Feld löschen?', message: `"${field.label || 'Dieses Feld'}" wirklich löschen?`, confirmLabel: 'Löschen' })) onDelete(field.id); }, [onDelete, field.id, field.label]);
   const handleWidthChange = useCallback((e) => { e.stopPropagation(); onWidthChange(field.id, e.target.value); }, [onWidthChange, field.id]);
   const handleWidthClick = useCallback((e) => e.stopPropagation(), []);
 

@@ -25,6 +25,7 @@ import { FormFiller } from './components/filler/FormFiller';
 import { FormBuilder } from './components/builder/FormBuilder';
 import { OfflineIndicator } from './components/common/OfflineIndicator';
 import { InstallPrompt } from './components/common/InstallPrompt';
+import { GlobalDialog } from './components/common/GlobalDialog';
 
 // ═══ Nav Items (P4: outside render) ═══
 const NAV_ITEMS = [
@@ -338,8 +339,8 @@ export default function FormPilot() {
   // ═══ Loading state — wait for both data and auth check ═══
   const isLoading = !loaded || (isSupabaseConfigured() && !authChecked);
   if (isLoading) return <div style={{ ...styles.app, alignItems: 'center', justifyContent: 'center' }}><div style={S_LOADING}><div style={S_LOADING_ICON}>📋</div><div style={S_LOADING_TEXT}>Laden...</div></div></div>;
-  if (!user) return <LoginScreen onLogin={handleLogin} />;
-  if (builderTemplate) return <FormBuilder template={builderTemplate} onSave={handleBuilderSave} onClose={() => setBuilderTemplate(null)} />;
+  if (!user) return <><LoginScreen onLogin={handleLogin} /><GlobalDialog /></>;
+  if (builderTemplate) return <><FormBuilder template={builderTemplate} onSave={handleBuilderSave} onClose={() => setBuilderTemplate(null)} /><GlobalDialog /></>;
 
   return (
     <div style={styles.app}>
@@ -395,6 +396,7 @@ export default function FormPilot() {
         </div>
       )}
       <InstallPrompt />
+      <GlobalDialog />
     </div>
   );
 }

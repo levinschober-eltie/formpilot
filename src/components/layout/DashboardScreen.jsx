@@ -86,7 +86,8 @@ export const DashboardScreen = ({ submissions, allTemplates, user }) => {
         count: byDay[key] || 0,
       });
     }
-    const maxDay = Math.max(...last7Days.map(d => d.count), 1);
+    const dayCounts = last7Days.map(d => d.count);
+    const maxDay = dayCounts.length > 0 ? Math.max(...dayCounts, 1) : 1;
 
     return { total: submissions.length, todayCount, weekCount, monthCount, byStatus, templateRanking, userRanking, last7Days, maxDay };
   }, [submissions, allTemplates]);

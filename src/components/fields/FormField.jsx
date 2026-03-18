@@ -82,11 +82,11 @@ export const FormField = React.memo(({ field, value, onChange, error, formData }
       case 'date': return <DateField field={field} value={value} onChange={onChange} error={error} id={fieldInputId} aria-describedby={errorId} />;
       case 'time': return <TimeField field={field} value={value} onChange={onChange} error={error} id={fieldInputId} aria-describedby={errorId} />;
       case 'select': return <SelectField field={field} value={value} onChange={onChange} error={error} id={fieldInputId} aria-describedby={errorId} />;
-      case 'radio': return <RadioField field={field} value={value} onChange={onChange} error={error} />;
-      case 'checkbox': return <CheckboxField field={field} value={value} onChange={onChange} error={error} />;
-      case 'toggle': return <ToggleField field={field} value={value} onChange={onChange} error={error} />;
-      case 'checklist': return <ChecklistField field={field} value={value} onChange={onChange} error={error} />;
-      case 'rating': return <RatingField field={field} value={value} onChange={onChange} error={error} />;
+      case 'radio': return <RadioField field={field} value={value} onChange={onChange} error={error} aria-describedby={errorId} />;
+      case 'checkbox': return <CheckboxField field={field} value={value} onChange={onChange} error={error} aria-describedby={errorId} />;
+      case 'toggle': return <ToggleField field={field} value={value} onChange={onChange} error={error} aria-describedby={errorId} />;
+      case 'checklist': return <ChecklistField field={field} value={value} onChange={onChange} error={error} aria-describedby={errorId} />;
+      case 'rating': return <RatingField field={field} value={value} onChange={onChange} error={error} aria-describedby={errorId} />;
       case 'signature': return <SignatureField field={field} value={value} onChange={onChange} error={error} />;
       case 'photo': return <PhotoField field={field} value={value} onChange={onChange} error={error} />;
       case 'repeater': return <RepeaterField field={field} value={value} onChange={onChange} formData={formData} />;

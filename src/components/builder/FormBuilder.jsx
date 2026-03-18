@@ -11,6 +11,8 @@ import { BuilderSettingsPanel } from './BuilderSettingsPanel';
 import { BuilderMetaPanel } from './BuilderMetaPanel';
 import { useUndoRedo } from '../../hooks/useUndoRedo';
 import { useMediaQuery } from '../../hooks/useMediaQuery';
+import { useDebounce } from '../../hooks/useDebounce';
+import { dialog } from '../../lib/dialogService';
 
 // ═══ Extracted Styles (P4) ═══
 const S_HEADER = { background: S.glass.background, backdropFilter: S.glass.backdropFilter, borderBottom: `1px solid ${S.colors.border}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: '12px', position: 'sticky', top: 0, zIndex: 100 };
@@ -44,6 +46,10 @@ export const FormBuilder = ({ template: initialTemplate, onSave, onClose }) => {
   const doSaveRef = useRef(null);
   const isDesktop = useMediaQuery('(min-width: 1024px)');
 
+  // ─── Debounced template name (P6) ───
+  const [localName, setLocalName] = useState(template.name || '');
+  const debouncedName = useDebounce(localName, 300);
+
   // Keyboard shortcuts: Ctrl+Z / Ctrl+Shift+Z
   useEffect(() => {
     const handler = (e) => {
@@ -70,6 +76,10 @@ export const FormBuilder = ({ template: initialTemplate, onSave, onClose }) => {
   const selectedField = useMemo(() => allFields.find(f => f.id === selectedFieldId), [allFields, selectedFieldId]);
 
   const upd = useCallback((next) => { setTemplateWithHistory(next); setHasChanges(true); }, [setTemplateWithHistory]);
+
+  // ─── Debounced name effects (P6) ───
+  useEffect(() => { if (debouncedName !== template.name) upd({ ...template, name: debouncedName }); }, [debouncedName]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { setLocalName(template.name || ''); }, [template.name]);
 
   const addPage = useCallback(() => {
     const np = { id: `page-${Date.now()}`, title: `Seite ${template.pages.length + 1}`, fields: [] };
@@ -148,7 +158,7 @@ export const FormBuilder = ({ template: initialTemplate, onSave, onClose }) => {
   // eslint-disable-next-line react-hooks/refs
   doSaveRef.current = doSave;
 
-  const handleClose = useCallback(() => { if (hasChanges && !confirm('Ungespeicherte Änderungen verwerfen?')) return; onClose(); }, [hasChanges, onClose]);
+  const handleClose = useCallback(async () => { if (hasChanges && !(await dialog.confirm({ title: 'Änderungen verwerfen?', message: 'Ungespeicherte Änderungen gehen verloren.', confirmLabel: 'Verwerfen', variant: 'danger' }))) return; onClose(); }, [hasChanges, onClose]);
 
   const handleSelectField = useCallback((id) => { setSelectedFieldId(id); if (!isDesktop) setShowSettingsDrawer(true); }, [isDesktop]);
   const handleCloseSettings = useCallback(() => { setSelectedFieldId(null); setShowSettingsDrawer(false); }, []);
@@ -168,7 +178,7 @@ export const FormBuilder = ({ template: initialTemplate, onSave, onClose }) => {
       <div style={S_HEADER}>
         <button onClick={handleClose} style={{ ...styles.btn('ghost'), padding: '8px', fontSize: '14px' }}>← Zurück</button>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <input value={template.name} onChange={e => upd({ ...template, name: e.target.value })} placeholder="Formularname eingeben..."
+          <input value={localName} onChange={e => setLocalName(e.target.value)} placeholder="Formularname eingeben..."
             style={S_NAME_INPUT} onFocus={handleNameFocus} onBlur={handleNameBlur} />
         </div>
         <button onClick={undo} disabled={!canUndo} style={S_UNDO_BTN(canUndo)} title="Rückgängig (Ctrl+Z)">↩</button>

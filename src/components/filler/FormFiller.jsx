@@ -10,7 +10,7 @@ import { FormField } from '../fields/FormField';
 const S_HEADER = { display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' };
 const S_TITLE = { fontSize: '18px', fontWeight: 700, margin: 0 };
 const S_PAGE_INFO = { fontSize: '13px', color: S.colors.textSecondary };
-const S_PAGES_WRAP = { display: 'flex', gap: '8px', marginBottom: '20px', flexWrap: 'wrap' };
+const S_PAGES_WRAP = { display: 'flex', gap: '8px', marginBottom: '20px', flexWrap: 'wrap', position: 'sticky', top: 0, zIndex: 10, background: S.colors.bg, paddingTop: '8px', paddingBottom: '8px' };
 const S_FIELDS_WRAP = { display: 'flex', flexWrap: 'wrap', gap: '16px' };
 const S_FOOTER = { display: 'flex', gap: '12px', marginTop: '16px', justifyContent: 'space-between' };
 const pageBtnStyle = (i, pageIndex) => ({
@@ -58,12 +58,19 @@ export const FormFiller = React.memo(({ template, onSubmit, onCancel, initialDat
     if (showErrors) setErrors(prev => { const next = { ...prev }; delete next[fieldId]; return next; });
   }, [showErrors]);
 
+  const navigatingRef = useRef(false);
   const goNext = useCallback(() => {
-    if (!currentPage) { if (isLastPage) onSubmit(formData); return; }
-    const pageErrors = validatePage(currentPage, formData);
-    if (Object.keys(pageErrors).length > 0) { setErrors(pageErrors); setShowErrors(true); return; }
-    setShowErrors(false); setErrors({});
-    if (isLastPage) onSubmit(formData); else { setPageIndex(prev => prev + 1); window.scrollTo(0, 0); }
+    if (navigatingRef.current) return;
+    navigatingRef.current = true;
+    try {
+      if (!currentPage) { if (isLastPage) onSubmit(formData); return; }
+      const pageErrors = validatePage(currentPage, formData);
+      if (Object.keys(pageErrors).length > 0) { setErrors(pageErrors); setShowErrors(true); return; }
+      setShowErrors(false); setErrors({});
+      if (isLastPage) onSubmit(formData); else { setPageIndex(prev => prev + 1); window.scrollTo(0, 0); }
+    } finally {
+      setTimeout(() => { navigatingRef.current = false; }, 300);
+    }
   }, [currentPage, formData, isLastPage, onSubmit]);
 
   const goBack = useCallback(() => {

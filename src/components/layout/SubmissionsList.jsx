@@ -6,6 +6,7 @@ import { exportSubmissionsCsv } from '../../lib/exportCsv';
 import { exportSubmissionPdf } from '../../lib/exportPdf';
 import { exportMultipleToExcel } from '../../lib/exportExcel';
 import { useDebounce } from '../../hooks/useDebounce';
+import { dialog } from '../../lib/dialogService';
 
 // ═══ FEATURE: Submissions List (Enhanced with Search, Filter, Export) ═══
 const S_TOOLBAR = { display: 'flex', gap: '8px', marginBottom: '16px', flexWrap: 'wrap', alignItems: 'center' };
@@ -144,7 +145,7 @@ export const SubmissionsList = ({ submissions, user, allTemplates, onViewSubmiss
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
                       <span style={styles.badge(STATUS_COLORS[sub.status] || S.colors.textMuted)}>{STATUS_LABELS[sub.status] || sub.status}</span>
                       <button onClick={(e) => { e.stopPropagation(); if (tpl) exportSubmissionPdf(sub, tpl); }} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '16px', padding: '4px', opacity: tpl ? 1 : 0.3 }} title="PDF Export" aria-label="Als PDF exportieren">📄</button>
-                      {onDeleteSubmission && <button onClick={(e) => { e.stopPropagation(); if (confirm('Eintrag löschen?')) onDeleteSubmission(sub.id); }} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '16px', padding: '4px', color: S.colors.textMuted }} title="Löschen" aria-label="Eintrag löschen">🗑</button>}
+                      {onDeleteSubmission && <button onClick={async (e) => { e.stopPropagation(); if (await dialog.confirm({ title: 'Eintrag löschen?', message: 'Dieser Eintrag wird unwiderruflich gelöscht.', confirmLabel: 'Löschen' })) onDeleteSubmission(sub.id); }} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '16px', padding: '4px', color: S.colors.textMuted }} title="Löschen" aria-label="Eintrag löschen">🗑</button>}
                     </div>
                   </div>
                   {sub.data && Object.keys(sub.data).length > 0 && (() => {

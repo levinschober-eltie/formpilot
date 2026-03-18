@@ -1,7 +1,8 @@
+import React, { useCallback } from 'react';
 import { S } from '../../config/theme';
 import { styles } from '../../styles/shared';
 
-export const ChecklistField = ({ field, value, onChange, error }) => {
+export const ChecklistField = React.memo(({ field, value, onChange, error }) => {
   const data = value || {};
   const update = (itemId, key, val) => onChange({ ...data, [itemId]: { ...(data[itemId] || {}), [key]: val } });
   return (
@@ -25,4 +26,5 @@ export const ChecklistField = ({ field, value, onChange, error }) => {
       })}
     </div>
   );
-};
+});
+ChecklistField.displayName = 'ChecklistField';

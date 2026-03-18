@@ -5,6 +5,7 @@
 // Critical keys are validated via checksum to detect corruption.
 
 import { mirrorToBackup, idbGet } from './storageBackup';
+import { dialog } from './dialogService';
 
 // ═══ Lightweight checksum (must match storageBackup.js) ═══
 const fnv1a = (str) => {
@@ -79,6 +80,12 @@ export const storageSet = async (key, value) => {
     }
   } catch (e) {
     console.error('Storage error:', e);
+    if (e?.name === 'QuotaExceededError' || e?.code === 22) {
+      dialog.alert({
+        title: 'Speicher voll',
+        message: 'Speicher voll — Daten konnten nicht gespeichert werden. Bitte alte Einträge löschen.',
+      });
+    }
   }
   // Mirror to IndexedDB backup (fire-and-forget, non-blocking)
   mirrorToBackup(key, value);

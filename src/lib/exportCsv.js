@@ -90,7 +90,11 @@ export const exportSubmissionsCsv = (submissions, allTemplates) => {
   });
 
   const escape = (v) => {
-    const s = String(v).replace(/"/g, '""');
+    let s = String(v).replace(/"/g, '""');
+    // Prevent CSV formula injection: prepend single quote for values starting with formula chars
+    if (/^[=+\-@\t\r]/.test(s)) {
+      s = "'" + s;
+    }
     return s.includes(',') || s.includes('"') || s.includes('\n') ? `"${s}"` : s;
   };
 

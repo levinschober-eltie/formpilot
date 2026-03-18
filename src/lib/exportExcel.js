@@ -1,16 +1,23 @@
 // ═══ FEATURE: Excel Export (SheetJS) ═══
 import * as XLSX from 'xlsx';
 
+const sanitizeFormulaInjection = (val) => {
+  if (typeof val === 'string' && /^[=+\-@\t\r]/.test(val)) {
+    return "'" + val;
+  }
+  return val;
+};
+
 const formatExcelValue = (field, value) => {
   if (value === null || value === undefined || value === '') return '';
   switch (field.type) {
     case 'toggle':
       return value ? (field.labelOn || 'Ja') : (field.labelOff || 'Nein');
     case 'checkbox':
-      return Array.isArray(value) ? value.join(', ') : String(value);
+      return Array.isArray(value) ? sanitizeFormulaInjection(value.join(', ')) : sanitizeFormulaInjection(String(value));
     case 'radio':
     case 'select':
-      return String(value);
+      return sanitizeFormulaInjection(String(value));
     case 'rating':
       if (field.ratingType === 'traffic') {
         const labels = { 1: 'Gut', 2: 'Mittel', 3: 'Schlecht' };
@@ -34,15 +41,17 @@ const formatExcelValue = (field, value) => {
     case 'number':
       return typeof value === 'number' ? value : Number(value) || String(value);
     case 'date':
-      return value;
+      return sanitizeFormulaInjection(value);
     case 'repeater':
       if (!Array.isArray(value) || value.length === 0) return '';
       return value.map((row, i) => {
         const cols = Object.entries(row).map(([, v]) => String(v || '')).join(' | ');
         return `#${i + 1}: ${cols}`;
       }).join('\n');
-    default:
-      return String(value);
+    default: {
+      const result = String(value);
+      return sanitizeFormulaInjection(result);
+    }
   }
 };
 

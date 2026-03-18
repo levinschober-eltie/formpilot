@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback, memo } from 'react';
 import { S } from '../../config/theme';
 import { styles } from '../../styles/shared';
+import { dialog } from '../../lib/dialogService';
 
 // ═══ FEATURE: Logo Upload Component ═══
 const S_CONTAINER = { display: 'flex', flexDirection: 'column', gap: '12px' };
@@ -49,7 +50,7 @@ export const LogoUpload = memo(({ value, onChange }) => {
     const file = e.target.files?.[0];
     if (!file) return;
     if (!file.type.startsWith('image/')) {
-      alert('Bitte ein Bild auswählen (PNG, JPG, SVG).');
+      dialog.alert({ title: 'Ungültiges Format', message: 'Bitte ein Bild auswählen (PNG, JPG, SVG).' });
       return;
     }
     setUploading(true);
@@ -57,7 +58,7 @@ export const LogoUpload = memo(({ value, onChange }) => {
       const base64 = await compressImage(file);
       onChange(base64);
     } catch {
-      alert('Fehler beim Laden des Bildes.');
+      dialog.alert({ title: 'Fehler', message: 'Fehler beim Laden des Bildes.' });
     }
     setUploading(false);
     e.target.value = '';

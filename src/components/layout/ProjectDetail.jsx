@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { S } from '../../config/theme';
 import { styles } from '../../styles/shared';
 import { linkSubmissionToPhase } from '../../lib/projectService';
+import { dialog } from '../../lib/dialogService';
 
 // ═══ Extracted Styles (P4) ═══
 const S_BACK_ROW = { display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' };
@@ -103,8 +104,8 @@ export const ProjectDetail = ({ project, submissions, allTemplates, onBack, onPr
     saveProject({ phases: next });
   }, [phases, saveProject]);
 
-  const handleDelete = useCallback(() => {
-    if (!confirm(`Projekt "${project.name}" unwiderruflich löschen?`)) return;
+  const handleDelete = useCallback(async () => {
+    if (!(await dialog.confirm({ title: 'Projekt löschen?', message: `"${project.name}" wird unwiderruflich gelöscht.`, confirmLabel: 'Löschen' }))) return;
     saveProject({ _deleted: true });
     onBack();
   }, [project.name, saveProject, onBack]);
@@ -200,7 +201,7 @@ export const ProjectDetail = ({ project, submissions, allTemplates, onBack, onPr
                     style={{ ...S_PHASE_TITLE_INPUT, flex: 1 }}
                     placeholder="Phasenname..."
                   />
-                  <button onClick={() => { if (confirm(`Phase "${phase.title}" entfernen?`)) removePhase(phase.id); }} style={{ ...styles.btn('ghost', 'sm'), padding: '4px 8px', color: S.colors.danger, fontSize: '12px', flexShrink: 0 }} title="Phase entfernen">✕</button>
+                  <button onClick={async () => { if (await dialog.confirm({ title: 'Phase entfernen?', message: `"${phase.title}" wirklich entfernen?`, confirmLabel: 'Entfernen' })) removePhase(phase.id); }} style={{ ...styles.btn('ghost', 'sm'), padding: '4px 8px', color: S.colors.danger, fontSize: '12px', flexShrink: 0 }} title="Phase entfernen">✕</button>
                 </div>
 
                 {/* Template selector */}

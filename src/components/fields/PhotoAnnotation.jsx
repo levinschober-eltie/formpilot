@@ -1,6 +1,7 @@
 import { useRef, useEffect, useCallback, memo } from 'react';
 import { S } from '../../config/theme';
 import { useAnnotation, TOOLS, COLORS, WIDTHS } from '../../hooks/useAnnotation';
+import { dialog } from '../../lib/dialogService';
 
 // ═══ FEATURE: Photo Annotation Overlay ═══
 
@@ -132,8 +133,8 @@ const PhotoAnnotation = memo(function PhotoAnnotation({ imageSrc, onSave, onCanc
     if (merged) onSave(merged);
   }, [mergeResult, onSave]);
 
-  const handleClearAll = useCallback(() => {
-    if (window.confirm('Alle Annotationen löschen?')) {
+  const handleClearAll = useCallback(async () => {
+    if (await dialog.confirm({ title: 'Alles löschen?', message: 'Alle Annotationen werden gelöscht.', confirmLabel: 'Löschen' })) {
       clearAll();
     }
   }, [clearAll]);

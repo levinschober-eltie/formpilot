@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback } from 'react';
+import { dialog } from '../lib/dialogService';
 
 // ═══ HOOK: Canvas Annotation Logic ═══
 
@@ -110,18 +111,19 @@ export function useAnnotation(canvasRef, bgImageRef) {
 
     if (tool === TOOLS.TEXT) {
       isDrawingRef.current = false;
-      const text = window.prompt('Text eingeben:');
-      if (text) {
-        pushUndo();
-        const scaledSize = Math.max(16, strokeWidth * 6);
-        ctx.font = `bold ${scaledSize}px ${`'DM Sans', sans-serif`}`;
-        ctx.fillStyle = color;
-        ctx.strokeStyle = '#000';
-        ctx.lineWidth = Math.max(1, scaledSize / 8);
-        ctx.lineJoin = 'round';
-        ctx.strokeText(text, pos.x, pos.y);
-        ctx.fillText(text, pos.x, pos.y);
-      }
+      dialog.prompt({ title: 'Text eingeben', placeholder: 'Text...' }).then((text) => {
+        if (text) {
+          pushUndo();
+          const scaledSize = Math.max(16, strokeWidth * 6);
+          ctx.font = `bold ${scaledSize}px ${"'DM Sans', sans-serif"}`;
+          ctx.fillStyle = color;
+          ctx.strokeStyle = '#000';
+          ctx.lineWidth = Math.max(1, scaledSize / 8);
+          ctx.lineJoin = 'round';
+          ctx.strokeText(text, pos.x, pos.y);
+          ctx.fillText(text, pos.x, pos.y);
+        }
+      });
       return;
     }
 

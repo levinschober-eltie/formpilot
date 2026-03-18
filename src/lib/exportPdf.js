@@ -1,3 +1,4 @@
+import { dialog } from './dialogService';
 // ═══ FEATURE: PDF Export (Print-based) with Company Branding ═══
 
 const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -18,7 +19,11 @@ const buildCompanyHeader = (company, accent, headerLayout) => {
 
   let logoHtml = '';
   if (company.companyLogo) {
-    logoHtml = `<img src="${company.companyLogo}" style="max-width:180px;max-height:80px;object-fit:contain;" alt="Logo" />`;
+    const logoUrl = String(company.companyLogo);
+    // Only allow data:image/ and https: URLs to prevent javascript:/vbscript: injection
+    if (/^data:image\//i.test(logoUrl) || /^https:\/\//i.test(logoUrl)) {
+      logoHtml = `<img src="${logoUrl}" style="max-width:180px;max-height:80px;object-fit:contain;" alt="Logo" />`;
+    }
   }
 
   const contactLines = [];
@@ -223,7 +228,7 @@ export const exportSubmissionPdf = (submission, template) => {
   html += `</body></html>`;
 
   const printWindow = window.open('', '_blank', 'width=800,height=600');
-  if (!printWindow) { alert('Pop-up wurde blockiert. Bitte Pop-ups für diese Seite erlauben.'); return; }
+  if (!printWindow) { dialog.alert({ title: 'Pop-up blockiert', message: 'Bitte Pop-ups für diese Seite erlauben.' }); return; }
   printWindow.document.write(html);
   printWindow.document.close();
   printWindow.onload = () => {

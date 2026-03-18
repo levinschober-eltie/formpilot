@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useRef } from 'react';
 import { S } from '../../config/theme';
 import { BuilderFieldCard } from './BuilderFieldCard';
+import { dialog } from '../../lib/dialogService';
 
 // ═══ Extracted Styles (P4) ═══
 const S_CONTAINER = { display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0 };
@@ -59,7 +60,7 @@ export const BuilderCanvas = React.memo(({ pages, activePageIndex, onPageChange,
                 style={S_PAGE_INPUT(S.colors)} />
             ) : (
               <button onClick={() => onPageChange(i)} onDoubleClick={() => { setEditingPageId(p.id); setEditPageName(p.title); }}
-                onContextMenu={e => { e.preventDefault(); if (pages.length > 1 && confirm(`Seite "${p.title}" löschen?`)) onDeletePage(i); }}
+                onContextMenu={async e => { e.preventDefault(); if (pages.length > 1 && await dialog.confirm({ title: 'Seite löschen?', message: `"${p.title}" wirklich löschen?`, confirmLabel: 'Löschen' })) onDeletePage(i); }}
                 style={S_PAGE_BTN(i === activePageIndex)}>{p.title}</button>
             )}
           </div>

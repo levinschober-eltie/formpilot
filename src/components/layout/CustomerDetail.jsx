@@ -3,6 +3,7 @@ import { S, STATUS_COLORS, STATUS_LABELS } from '../../config/theme';
 import { styles } from '../../styles/shared';
 import { getActivityLog, updateCustomerNotes, updateCustomer, deleteCustomer, addActivityLog } from '../../lib/customerService';
 import { exportSubmissionPdf } from '../../lib/exportPdf';
+import { dialog } from '../../lib/dialogService';
 
 // ═══ Extracted Styles (P4) ═══
 const S_HEADER = { display: 'flex', alignItems: 'flex-start', gap: '16px', marginBottom: '24px' };
@@ -76,7 +77,7 @@ export const CustomerDetail = ({ customer, submissions, allTemplates, onBack, on
   }, [customer.id, editData, onCustomersChange]);
 
   const handleDeleteCustomer = useCallback(async () => {
-    if (!confirm(`"${customer.name}" unwiderruflich löschen?`)) return;
+    if (!(await dialog.confirm({ title: 'Kontakt löschen?', message: `"${customer.name}" wird unwiderruflich gelöscht.`, confirmLabel: 'Löschen' }))) return;
     await deleteCustomer(customer.id);
     if (onCustomersChange) onCustomersChange();
     onBack();

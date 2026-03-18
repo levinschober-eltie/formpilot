@@ -4,6 +4,16 @@ import { FIELD_TYPE_ICONS } from '../../config/constants';
 import { MiniToggle } from '../common/MiniToggle';
 import { OptionsEditor } from './OptionsEditor';
 import { ChecklistItemsEditor } from './ChecklistItemsEditor';
+import { useDebounce } from '../../hooks/useDebounce';
+
+// ═══ Debounced Input wrapper (P6) ═══
+const DebouncedInput = ({ value, onChange, component: Comp = 'input', ...props }) => {
+  const [local, setLocal] = useState(value);
+  const debounced = useDebounce(local, 300);
+  useEffect(() => { if (debounced !== value) onChange(debounced); }, [debounced]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { setLocal(value); }, [value]);
+  return <Comp {...props} value={local} onChange={e => setLocal(e.target.value)} />;
+};
 
 // ═══ Extracted Styles (P4) ═══
 const S_HEADER = { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' };
@@ -70,14 +80,14 @@ export const BuilderSettingsPanel = React.memo(({ field, allFields, onChange, on
       <div style={{ flex: 1, overflowY: 'auto', paddingBottom: '16px' }}>
 
         {activeTab === 'general' && <>
-          {field.type !== 'divider' && <><label style={S_LABEL}>Label</label><input value={field.label || ''} onChange={e => upd('label', e.target.value)} style={S_INPUT} autoFocus placeholder="Feldname" /></>}
+          {field.type !== 'divider' && <><label style={S_LABEL}>Label</label><DebouncedInput value={field.label || ''} onChange={v => upd('label', v)} style={S_INPUT} autoFocus placeholder="Feldname" /></>}
           {!isDisplay && <><label style={S_LABEL}>Breite</label><div style={{ display: 'flex', gap: '4px' }}>{['full', 'half', 'third'].map(w => <button key={w} onClick={() => upd('width', w)} style={widthBtn(field.width, w)}>{w === 'full' ? 'Voll' : w === 'half' ? 'Halb' : 'Drittel'}</button>)}</div></>}
           {!isDisplay && <><label style={S_LABEL}>Pflichtfeld</label><MiniToggle value={field.required} onChange={v => upd('required', v)} /></>}
-          {(field.type === 'text' || field.type === 'textarea' || field.type === 'number') && <><label style={S_LABEL}>Placeholder</label><input value={field.placeholder || ''} onChange={e => upd('placeholder', e.target.value)} style={S_INPUT} placeholder="Platzhaltertext..." /></>}
-          {field.type === 'number' && <><label style={S_LABEL}>Einheit</label><input value={field.validation?.unit || ''} onChange={e => updV('unit', e.target.value)} style={S_INPUT} placeholder="z.B. kW, m²" /></>}
-          {field.type === 'toggle' && <><label style={S_LABEL}>Label An</label><input value={field.labelOn || 'Ja'} onChange={e => upd('labelOn', e.target.value)} style={S_INPUT} /><label style={S_LABEL}>Label Aus</label><input value={field.labelOff || 'Nein'} onChange={e => upd('labelOff', e.target.value)} style={S_INPUT} /></>}
+          {(field.type === 'text' || field.type === 'textarea' || field.type === 'number') && <><label style={S_LABEL}>Placeholder</label><DebouncedInput value={field.placeholder || ''} onChange={v => upd('placeholder', v)} style={S_INPUT} placeholder="Platzhaltertext..." /></>}
+          {field.type === 'number' && <><label style={S_LABEL}>Einheit</label><DebouncedInput value={field.validation?.unit || ''} onChange={v => updV('unit', v)} style={S_INPUT} placeholder="z.B. kW, m²" /></>}
+          {field.type === 'toggle' && <><label style={S_LABEL}>Label An</label><DebouncedInput value={field.labelOn || 'Ja'} onChange={v => upd('labelOn', v)} style={S_INPUT} /><label style={S_LABEL}>Label Aus</label><DebouncedInput value={field.labelOff || 'Nein'} onChange={v => upd('labelOff', v)} style={S_INPUT} /></>}
           {field.type === 'heading' && <><label style={S_LABEL}>Ebene</label><div style={{ display: 'flex', gap: '4px' }}>{['h2', 'h3', 'h4'].map(lv => <button key={lv} onClick={() => upd('level', lv)} style={widthBtn(field.level, lv)}>{lv.toUpperCase()}</button>)}</div></>}
-          {field.type === 'info' && <><label style={S_LABEL}>Inhalt</label><textarea value={field.content || ''} onChange={e => upd('content', e.target.value)} style={{ ...S_INPUT, minHeight: '80px', resize: 'vertical' }} /></>}
+          {field.type === 'info' && <><label style={S_LABEL}>Inhalt</label><DebouncedInput component="textarea" value={field.content || ''} onChange={v => upd('content', v)} style={{ ...S_INPUT, minHeight: '80px', resize: 'vertical' }} /></>}
           {hasOptions && <><label style={S_LABEL}>Optionen (min. 2)</label><OptionsEditor options={field.options || []} onChange={o => upd('options', o)} /></>}
           {field.type === 'checklist' && <><label style={S_LABEL}>Prüfpunkte</label><ChecklistItemsEditor items={field.items || []} onChange={i => upd('items', i)} /><label style={S_LABEL}>Notizen erlauben</label><MiniToggle value={field.allowNotes} onChange={v => upd('allowNotes', v)} /></>}
           {field.type === 'rating' && <>
@@ -136,7 +146,7 @@ export const BuilderSettingsPanel = React.memo(({ field, allFields, onChange, on
           </>}
           {field.type === 'barcode' && <>
             <label style={S_LABEL}>Placeholder</label>
-            <input value={field.placeholder || ''} onChange={e => upd('placeholder', e.target.value)} style={S_INPUT} placeholder="Manuell eingeben oder scannen" />
+            <DebouncedInput value={field.placeholder || ''} onChange={v => upd('placeholder', v)} style={S_INPUT} placeholder="Manuell eingeben oder scannen" />
             <label style={S_LABEL}>Erlaubte Formate</label>
             {[
               { value: 'qr_code', label: 'QR-Code' },
@@ -192,7 +202,7 @@ export const BuilderSettingsPanel = React.memo(({ field, allFields, onChange, on
           {(field.type === 'text' || field.type === 'textarea') && <>
             <label style={S_LABEL}>Min. Zeichen</label><input type="number" min={0} value={field.validation?.minLength || ''} onChange={e => updV('minLength', e.target.value ? Number(e.target.value) : undefined)} style={S_INPUT} />
             <label style={S_LABEL}>Max. Zeichen</label><input type="number" min={0} value={field.validation?.maxLength || ''} onChange={e => updV('maxLength', e.target.value ? Number(e.target.value) : undefined)} style={S_INPUT} />
-            <label style={S_LABEL}>Regex-Pattern</label><input value={field.validation?.pattern || ''} onChange={e => updV('pattern', e.target.value)} style={S_INPUT} placeholder="z.B. ^[A-Z].*" />
+            <label style={S_LABEL}>Regex-Pattern</label><DebouncedInput value={field.validation?.pattern || ''} onChange={v => updV('pattern', v)} style={S_INPUT} placeholder="z.B. ^[A-Z].*" />
           </>}
           {field.type === 'number' && <>
             <label style={S_LABEL}>Minimum</label><input type="number" value={field.validation?.min ?? ''} onChange={e => updV('min', e.target.value === '' ? undefined : Number(e.target.value))} style={S_INPUT} />

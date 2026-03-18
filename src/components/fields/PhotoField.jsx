@@ -1,5 +1,6 @@
 import { useRef, useState, useCallback } from 'react';
 import { S } from '../../config/theme';
+import { dialog } from '../../lib/dialogService';
 import PhotoAnnotation from './PhotoAnnotation';
 
 // ═══ FEATURE: Photo Capture & Upload ═══
@@ -72,7 +73,7 @@ export const PhotoField = ({ field, value, onChange, error }) => {
       const updated = [...photos, ...compressed];
       onChange(updated.length === 1 ? updated[0] : updated);
     } catch {
-      // Silently skip corrupt images
+      dialog.alert({ title: 'Fehler', message: 'Bild konnte nicht geladen werden' });
     }
   }, [photos, maxPhotos, onChange]);
 
