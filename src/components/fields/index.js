@@ -12,3 +12,5 @@ export { RatingField } from './RatingField';
 export { HeadingField, DividerField, InfoField } from './LayoutFields';
 export { SignatureField } from './SignatureField';
 export { PhotoField } from './PhotoField';
+export { BarcodeField } from './BarcodeField';
+export { GpsField } from './GpsField';

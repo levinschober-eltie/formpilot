@@ -1,6 +1,7 @@
 import { S, STATUS_COLORS, STATUS_LABELS } from '../../config/theme';
 import { styles } from '../../styles/shared';
 import { exportSubmissionPdf } from '../../lib/exportPdf';
+import { exportSubmissionToExcel } from '../../lib/exportExcel';
 
 // ═══ FEATURE: Submission Detail View ═══
 const S_HEADER = { display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' };
@@ -39,6 +40,14 @@ const renderValue = (field, value) => {
       }
       return String(value);
     case 'signature':
+      if (field.multiSignature && Array.isArray(field.signatureSlots) && typeof value === 'object' && value !== null && !Array.isArray(value)) {
+        return <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
+          {field.signatureSlots.map(slot => <div key={slot.id} style={{ textAlign: 'center' }}>
+            {value[slot.id] ? <img src={value[slot.id]} alt={slot.label} style={{ maxWidth: '200px', maxHeight: '70px', border: `1px solid ${S.colors.border}`, borderRadius: S.radius.sm, display: 'block', marginBottom: '4px' }} /> : <div style={{ width: '200px', height: '50px', border: `1px dashed ${S.colors.border}`, borderRadius: S.radius.sm, display: 'flex', alignItems: 'center', justifyContent: 'center', color: S.colors.textMuted, fontSize: '11px', marginBottom: '4px' }}>—</div>}
+            <span style={{ fontSize: '11px', fontWeight: 600, color: S.colors.textSecondary }}>{slot.label}</span>
+          </div>)}
+        </div>;
+      }
       return value ? <img src={value} alt="Unterschrift" style={{ maxWidth: '240px', maxHeight: '80px', border: `1px solid ${S.colors.border}`, borderRadius: S.radius.sm }} /> : '—';
     case 'photo':
       const photos = Array.isArray(value) ? value : value ? [value] : [];

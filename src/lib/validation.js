@@ -69,8 +69,21 @@ export const validateField = (field, value, formData) => {
     const checked = Object.values(value || {}).filter(v => v?.checked).length;
     if (checked === 0) return 'Mindestens ein Punkt muss geprüft werden';
   }
-  if (field.type === 'signature' && field.required && !value) {
-    return 'Unterschrift ist erforderlich';
+  if (field.type === 'signature') {
+    // Multi-Signatur mode
+    if (field.multiSignature && Array.isArray(field.signatureSlots) && field.signatureSlots.length > 0) {
+      const multiVal = (typeof value === 'object' && value !== null && !Array.isArray(value)) ? value : {};
+      for (const slot of field.signatureSlots) {
+        if (slot.required && !multiVal[slot.id]) {
+          return `Unterschrift '${slot.label}' fehlt`;
+        }
+      }
+      return null;
+    }
+    // Single mode (backward compatible)
+    if (required && !value) {
+      return 'Unterschrift ist erforderlich';
+    }
   }
   if (field.type === 'photo' && field.required) {
     const photos = Array.isArray(value) ? value : value ? [value] : [];

@@ -7,18 +7,40 @@ export const exportSubmissionsCsv = (submissions, allTemplates) => {
   allTemplates.forEach(t => { templateMap[t.id] = t; });
 
   // Collect all unique field IDs across all submissions
-  const fieldMap = new Map();
+  // For multi-signature fields, create separate columns per slot
+  const fieldMap = new Map(); // id -> label
+  const multiSigSlots = new Map(); // fieldId -> [{id, label, fieldLabel}]
   submissions.forEach(sub => {
     const tpl = templateMap[sub.templateId];
     if (!tpl) return;
     tpl.pages.flatMap(p => p.fields).forEach(f => {
-      if (!['heading', 'divider', 'info'].includes(f.type)) {
+      if (['heading', 'divider', 'info'].includes(f.type)) return;
+      if (f.type === 'signature' && f.multiSignature && Array.isArray(f.signatureSlots) && f.signatureSlots.length > 0) {
+        // Multi-signature: one column per slot
+        if (!multiSigSlots.has(f.id)) {
+          multiSigSlots.set(f.id, f.signatureSlots.map(slot => ({
+            id: slot.id,
+            label: slot.label,
+            fieldLabel: f.label || f.type,
+          })));
+        }
+      } else {
         fieldMap.set(f.id, f.label || f.type);
       }
     });
   });
 
-  const headers = ['ID', 'Formular', 'Status', 'Ausgefüllt von', 'Erstellt am', 'Abgeschlossen am', ...fieldMap.values()];
+  // Build header columns: base fields + multi-sig slot columns
+  const multiSigHeaders = [];
+  const multiSigAccessors = []; // { fieldId, slotId }
+  multiSigSlots.forEach((slots, fieldId) => {
+    slots.forEach(slot => {
+      multiSigHeaders.push(`${slot.fieldLabel} - ${slot.label}`);
+      multiSigAccessors.push({ fieldId, slotId: slot.id });
+    });
+  });
+
+  const headers = ['ID', 'Formular', 'Status', 'Ausgefüllt von', 'Erstellt am', 'Abgeschlossen am', ...fieldMap.values(), ...multiSigHeaders];
   const fieldIds = [...fieldMap.keys()];
 
   // Feld-Typ-Map für lesbare Formatierung
@@ -53,7 +75,14 @@ export const exportSubmissionsCsv = (submissions, allTemplates) => {
       sub.completedAt || '',
     ];
     const fieldValues = fieldIds.map(fid => formatCsvValue(sub.data?.[fid], fieldTypeMap[fid]));
-    return [...base, ...fieldValues];
+    const multiSigValues = multiSigAccessors.map(({ fieldId, slotId }) => {
+      const val = sub.data?.[fieldId];
+      if (typeof val === 'object' && val !== null && !Array.isArray(val)) {
+        return val[slotId] ? '[Unterschrift vorhanden]' : '';
+      }
+      return '';
+    });
+    return [...base, ...fieldValues, ...multiSigValues];
   });
 
   const escape = (v) => {

@@ -17,6 +17,9 @@ const S_COND_HEADER = { display: 'flex', justifyContent: 'space-between', margin
 const S_COND_REMOVE = { background: 'none', border: 'none', cursor: 'pointer', fontSize: '12px', color: S.colors.textMuted };
 const S_COND_SELECT = { width: '100%', padding: '6px 8px', borderRadius: S.radius.sm, border: `1px solid ${S.colors.border}`, fontSize: '12px', fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box', marginBottom: '4px' };
 const S_ADD_COND = { padding: '8px 12px', borderRadius: S.radius.sm, border: `1px dashed ${S.colors.border}`, background: 'transparent', color: S.colors.textMuted, cursor: 'pointer', fontSize: '12px', fontFamily: 'inherit', width: '100%' };
+const S_SLOT_CARD = { padding: '8px 10px', borderRadius: S.radius.sm, border: `1px solid ${S.colors.border}`, marginBottom: '6px', background: S.colors.bgInput };
+const S_SLOT_ROW = { display: 'flex', gap: '6px', alignItems: 'center' };
+const S_SLOT_REMOVE = { background: 'none', border: 'none', cursor: 'pointer', fontSize: '14px', color: S.colors.textMuted, flexShrink: 0 };
 
 const tabStyle = (id, activeTab) => ({
   flex: 1, padding: '8px', textAlign: 'center', fontSize: '12px', fontWeight: activeTab === id ? 700 : 500,
@@ -84,6 +87,84 @@ export const BuilderSettingsPanel = React.memo(({ field, allFields, onChange, on
           {field.type === 'photo' && <>
             <label style={S_LABEL}>Max Fotos: {field.validation?.maxPhotos || 5}</label>
             <input type="range" min={1} max={10} value={field.validation?.maxPhotos || 5} onChange={e => updV('maxPhotos', Number(e.target.value))} style={{ width: '100%' }} />
+          </>}
+          {field.type === 'signature' && <>
+            <label style={S_LABEL}>Multi-Signatur</label>
+            <MiniToggle value={!!field.multiSignature} onChange={v => {
+              const updates = { ...field, multiSignature: v };
+              if (v && (!field.signatureSlots || field.signatureSlots.length === 0)) {
+                updates.signatureSlots = [
+                  { id: `sig-${Date.now()}-1`, label: 'Auftragnehmer', required: true },
+                  { id: `sig-${Date.now()}-2`, label: 'Auftraggeber', required: true },
+                ];
+              }
+              onChange(updates);
+            }} />
+            {field.multiSignature && <>
+              <label style={S_LABEL}>Signatur-Slots</label>
+              {(field.signatureSlots || []).map((slot, si) => (
+                <div key={slot.id} style={S_SLOT_CARD}>
+                  <div style={S_SLOT_ROW}>
+                    <input value={slot.label || ''} onChange={e => {
+                      const slots = [...(field.signatureSlots || [])];
+                      slots[si] = { ...slots[si], label: e.target.value };
+                      upd('signatureSlots', slots);
+                    }} style={{ ...S_INPUT, flex: 1, marginBottom: 0 }} placeholder="Slot-Label" />
+                    <button onClick={() => {
+                      if ((field.signatureSlots || []).length <= 1) return;
+                      upd('signatureSlots', (field.signatureSlots || []).filter((_, i) => i !== si));
+                    }} style={{ ...S_SLOT_REMOVE, color: (field.signatureSlots || []).length <= 1 ? S.colors.border : S.colors.textMuted }}>✕</button>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '6px' }}>
+                    <span style={{ fontSize: '11px', color: S.colors.textSecondary }}>Pflicht</span>
+                    <MiniToggle value={!!slot.required} onChange={v => {
+                      const slots = [...(field.signatureSlots || [])];
+                      slots[si] = { ...slots[si], required: v };
+                      upd('signatureSlots', slots);
+                    }} />
+                  </div>
+                </div>
+              ))}
+              {(field.signatureSlots || []).length < 5 && (
+                <button onClick={() => {
+                  const id = `sig-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+                  upd('signatureSlots', [...(field.signatureSlots || []), { id, label: `Unterschrift ${(field.signatureSlots || []).length + 1}`, required: false }]);
+                }} style={S_ADD_COND}>＋ Slot hinzufügen</button>
+              )}
+            </>}
+          </>}
+          {field.type === 'barcode' && <>
+            <label style={S_LABEL}>Placeholder</label>
+            <input value={field.placeholder || ''} onChange={e => upd('placeholder', e.target.value)} style={S_INPUT} placeholder="Manuell eingeben oder scannen" />
+            <label style={S_LABEL}>Erlaubte Formate</label>
+            {[
+              { value: 'qr_code', label: 'QR-Code' },
+              { value: 'code_128', label: 'Code 128' },
+              { value: 'code_39', label: 'Code 39' },
+              { value: 'ean_13', label: 'EAN-13' },
+              { value: 'ean_8', label: 'EAN-8' },
+              { value: 'upc_a', label: 'UPC-A' },
+            ].map(fmt => {
+              const formats = field.barcodeFormats || ['qr_code', 'code_128', 'ean_13'];
+              const checked = formats.includes(fmt.value);
+              return (
+                <label key={fmt.value} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', marginBottom: '4px', cursor: 'pointer' }}>
+                  <input type="checkbox" checked={checked} onChange={() => {
+                    const next = checked ? formats.filter(f => f !== fmt.value) : [...formats, fmt.value];
+                    upd('barcodeFormats', next.length ? next : ['qr_code']);
+                  }} />
+                  {fmt.label}
+                </label>
+              );
+            })}
+          </>}
+          {field.type === 'gps' && <>
+            <label style={S_LABEL}>Automatisch erfassen</label>
+            <MiniToggle value={field.autoCapture || false} onChange={v => upd('autoCapture', v)} />
+            <label style={S_LABEL}>Karten-Link anzeigen</label>
+            <MiniToggle value={field.showMap !== false} onChange={v => upd('showMap', v)} />
+            <label style={S_LABEL}>Hohe Genauigkeit (GPS)</label>
+            <MiniToggle value={field.highAccuracy !== false} onChange={v => upd('highAccuracy', v)} />
           </>}
           {field.type === 'repeater' && <>
             <label style={S_LABEL}>Max Einträge: {field.validation?.maxRows || 10}</label>

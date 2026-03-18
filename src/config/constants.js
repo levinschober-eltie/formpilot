@@ -28,6 +28,7 @@ export const FIELD_TYPE_ICONS = {
   select: '🔽', radio: '⭕', checkbox: '☑️', toggle: '🔘',
   checklist: '✅', rating: '⭐', heading: '📌', divider: '➖',
   info: 'ℹ️', signature: '✍️', photo: '📷', repeater: '🔁',
+  barcode: '📷', gps: '📍',
 };
 
 export const CATEGORY_OPTIONS = [
@@ -70,5 +71,7 @@ export const FIELD_PALETTE = [
     { type: 'signature', icon: '✍️', label: 'Unterschrift', desc: 'Digitale Unterschrift' },
     { type: 'photo', icon: '📷', label: 'Foto', desc: 'Kamera / Upload' },
     { type: 'repeater', icon: '🔁', label: 'Wiederholung', desc: 'Dynamische Feldgruppe' },
+    { type: 'barcode', icon: '📷', label: 'Barcode / QR', desc: 'Barcode oder QR-Code scannen' },
+    { type: 'gps', icon: '📍', label: 'GPS-Standort', desc: 'Aktuellen Standort erfassen' },
   ]},
 ];

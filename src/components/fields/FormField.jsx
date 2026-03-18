@@ -6,7 +6,7 @@ import {
   TextField, TextareaField, NumberField, DateField, TimeField,
   SelectField, RadioField, CheckboxField, ToggleField,
   ChecklistField, RatingField, HeadingField, DividerField, InfoField,
-  SignatureField, PhotoField,
+  SignatureField, PhotoField, BarcodeField, GpsField,
 } from './index';
 
 // P4: widthMap outside render
@@ -89,6 +89,8 @@ export const FormField = React.memo(({ field, value, onChange, error, formData }
       case 'signature': return <SignatureField field={field} value={value} onChange={onChange} error={error} />;
       case 'photo': return <PhotoField field={field} value={value} onChange={onChange} error={error} />;
       case 'repeater': return <RepeaterField field={field} value={value} onChange={onChange} formData={formData} />;
+      case 'barcode': return <BarcodeField field={field} value={value} onChange={onChange} error={error} />;
+      case 'gps': return <GpsField field={field} value={value} onChange={onChange} error={error} />;
       default: return <InfoField field={{ content: `Unbekannter Feldtyp: ${field.type}` }} />;
     }
   };

@@ -1,6 +1,5 @@
-import { useRef, useState, useEffect, useCallback } from 'react';
+import { useRef, useState, useEffect, useCallback, memo } from 'react';
 import { S } from '../../config/theme';
-import { styles } from '../../styles/shared';
 
 // ═══ FEATURE: Signature Capture (Canvas-based) ═══
 const S_CANVAS_WRAP = {
@@ -23,11 +22,24 @@ const S_PLACEHOLDER = {
   justifyContent: 'center', pointerEvents: 'none', color: S.colors.textMuted,
   fontSize: '14px', gap: '8px',
 };
+const S_SLOT_LABEL = {
+  fontSize: '13px', fontWeight: 600, color: S.colors.textPrimary,
+  marginBottom: '6px',
+};
+const S_SLOT_DIVIDER = {
+  borderTop: `1px dashed ${S.colors.border}`,
+  margin: '12px 0',
+};
+const S_REQUIRED_MARK = {
+  color: S.colors.danger || '#dc2626',
+  marginLeft: '4px',
+};
 
-export const SignatureField = ({ field, value, onChange, error }) => {
+// ═══ Single Canvas Component (reused for each slot) ═══
+const SingleCanvas = memo(({ slotValue, onSlotChange, error, placeholder }) => {
   const canvasRef = useRef(null);
   const [isDrawing, setIsDrawing] = useState(false);
-  const [hasContent, setHasContent] = useState(!!value);
+  const [hasContent, setHasContent] = useState(!!slotValue);
   const lastPoint = useRef(null);
 
   const getPoint = useCallback((e) => {
@@ -52,14 +64,14 @@ export const SignatureField = ({ field, value, onChange, error }) => {
     ctx.lineJoin = 'round';
     ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--fp-canvas-stroke').trim() || '#1a1a1a';
     ctx.lineWidth = 2;
-    if (value) {
+    if (slotValue) {
       const img = new Image();
       img.onload = () => {
         ctx.drawImage(img, 0, 0, canvas.width / 2, canvas.height / 2);
         setHasContent(true);
       };
       img.onerror = () => { setHasContent(false); };
-      img.src = value;
+      img.src = slotValue;
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps -- canvas init only on mount
 
@@ -92,8 +104,8 @@ export const SignatureField = ({ field, value, onChange, error }) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const dataUrl = canvas.toDataURL('image/png');
-    onChange(dataUrl);
-  }, [isDrawing, onChange]);
+    onSlotChange(dataUrl);
+  }, [isDrawing, onSlotChange]);
 
   const clearCanvas = useCallback(() => {
     const canvas = canvasRef.current;
@@ -102,13 +114,13 @@ export const SignatureField = ({ field, value, onChange, error }) => {
     if (!ctx) return;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     setHasContent(false);
-    onChange(null);
-  }, [onChange]);
+    onSlotChange(null);
+  }, [onSlotChange]);
 
   return (
     <div>
-      <div style={{ ...S_CANVAS_WRAP, borderColor: error ? S.colors.danger : S.colors.border }}>
-        {!hasContent && <div style={S_PLACEHOLDER}>✍️ Hier unterschreiben</div>}
+      <div style={{ ...S_CANVAS_WRAP, borderColor: error ? (S.colors.danger || '#dc2626') : S.colors.border }}>
+        {!hasContent && <div style={S_PLACEHOLDER}>{placeholder || '✍️ Hier unterschreiben'}</div>}
         <canvas ref={canvasRef} style={{ ...S_CANVAS, height: '100px' }}
           onMouseDown={startDraw} onMouseMove={draw} onMouseUp={endDraw} onMouseLeave={endDraw}
           onTouchStart={startDraw} onTouchMove={draw} onTouchEnd={endDraw} />
@@ -121,4 +133,57 @@ export const SignatureField = ({ field, value, onChange, error }) => {
       </div>
     </div>
   );
-};
+});
+SingleCanvas.displayName = 'SingleCanvas';
+
+// ═══ Main SignatureField (supports single + multi mode) ═══
+export const SignatureField = memo(({ field, value, onChange, error }) => {
+  const isMulti = field.multiSignature && Array.isArray(field.signatureSlots) && field.signatureSlots.length > 0;
+
+  // Single mode: unchanged behavior (backward compatible)
+  const handleSingleChange = useCallback((dataUrl) => {
+    onChange(dataUrl);
+  }, [onChange]);
+
+  // Multi mode: update the specific slot in the object
+  const handleSlotChange = useCallback((slotId, dataUrl) => {
+    const current = (typeof value === 'object' && value !== null && !Array.isArray(value)) ? value : {};
+    onChange({ ...current, [slotId]: dataUrl });
+  }, [value, onChange]);
+
+  if (!isMulti) {
+    // ═══ Single signature mode (backward compatible) ═══
+    return (
+      <SingleCanvas
+        slotValue={value}
+        onSlotChange={handleSingleChange}
+        error={error}
+        placeholder="✍️ Hier unterschreiben"
+      />
+    );
+  }
+
+  // ═══ Multi signature mode ═══
+  const multiValue = (typeof value === 'object' && value !== null && !Array.isArray(value)) ? value : {};
+
+  return (
+    <div>
+      {field.signatureSlots.map((slot, index) => (
+        <div key={slot.id}>
+          {index > 0 && <div style={S_SLOT_DIVIDER} />}
+          <div style={S_SLOT_LABEL}>
+            {slot.label || `Unterschrift ${index + 1}`}
+            {slot.required && <span style={S_REQUIRED_MARK}>*</span>}
+          </div>
+          <SingleCanvas
+            slotValue={multiValue[slot.id] || null}
+            onSlotChange={(dataUrl) => handleSlotChange(slot.id, dataUrl)}
+            error={error && typeof error === 'string' && error.includes(slot.label)}
+            placeholder={`✍️ ${slot.label || 'Hier unterschreiben'}`}
+          />
+        </div>
+      ))}
+    </div>
+  );
+});
+SignatureField.displayName = 'SignatureField';

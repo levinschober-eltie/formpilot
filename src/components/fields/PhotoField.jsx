@@ -1,5 +1,6 @@
 import { useRef, useState, useCallback } from 'react';
 import { S } from '../../config/theme';
+import PhotoAnnotation from './PhotoAnnotation';
 
 // ═══ FEATURE: Photo Capture & Upload ═══
 const S_WRAP = { display: 'flex', flexDirection: 'column', gap: '8px' };
@@ -24,6 +25,11 @@ const S_PREVIEW_ITEM = {
 const S_PREVIEW_IMG = { width: '100%', height: '100%', objectFit: 'cover' };
 const S_REMOVE = {
   position: 'absolute', top: 2, right: 2, width: 20, height: 20, borderRadius: '50%',
+  background: 'rgba(0,0,0,0.6)', color: '#fff', border: 'none', cursor: 'pointer',
+  fontSize: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+};
+const S_EDIT = {
+  position: 'absolute', bottom: 2, right: 2, width: 24, height: 24, borderRadius: '50%',
   background: 'rgba(0,0,0,0.6)', color: '#fff', border: 'none', cursor: 'pointer',
   fontSize: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center',
 };
@@ -54,6 +60,7 @@ export const PhotoField = ({ field, value, onChange, error }) => {
   const fileRef = useRef(null);
   const cameraRef = useRef(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [annotatingIdx, setAnnotatingIdx] = useState(null);
   const photos = Array.isArray(value) ? value : value ? [value] : [];
   const maxPhotos = field.validation?.maxPhotos || 5;
 
@@ -74,6 +81,15 @@ export const PhotoField = ({ field, value, onChange, error }) => {
     onChange(updated.length === 0 ? null : updated.length === 1 ? updated[0] : updated);
   }, [photos, onChange]);
 
+  const handleAnnotationSave = useCallback((mergedBase64) => {
+    const idx = annotatingIdx;
+    setAnnotatingIdx(null);
+    if (idx == null) return;
+    const updated = [...photos];
+    updated[idx] = mergedBase64;
+    onChange(updated.length === 1 ? updated[0] : updated);
+  }, [annotatingIdx, photos, onChange]);
+
   const handleDrop = useCallback((e) => {
     e.preventDefault(); setIsDragging(false);
     const files = [...e.dataTransfer.files].filter(f => f.type.startsWith('image/'));
@@ -88,6 +104,7 @@ export const PhotoField = ({ field, value, onChange, error }) => {
             <div key={i} style={S_PREVIEW_ITEM}>
               <img src={src} alt={`Foto ${i + 1}`} style={S_PREVIEW_IMG} />
               <button type="button" onClick={() => removePhoto(i)} style={S_REMOVE} aria-label={`Foto ${i + 1} entfernen`}>✕</button>
+              <button type="button" onClick={() => setAnnotatingIdx(i)} style={S_EDIT} aria-label={`Foto ${i + 1} bearbeiten`}>✏️</button>
             </div>
           ))}
         </div>
@@ -119,6 +136,13 @@ export const PhotoField = ({ field, value, onChange, error }) => {
         onChange={(e) => { if (e.target.files.length) addPhotos(e.target.files); e.target.value = ''; }} />
       <input ref={cameraRef} type="file" accept="image/*" capture="environment" hidden
         onChange={(e) => { if (e.target.files.length) addPhotos(e.target.files); e.target.value = ''; }} />
+      {annotatingIdx != null && photos[annotatingIdx] && (
+        <PhotoAnnotation
+          imageSrc={photos[annotatingIdx]}
+          onSave={handleAnnotationSave}
+          onCancel={() => setAnnotatingIdx(null)}
+        />
+      )}
     </div>
   );
 };
