@@ -1,15 +1,13 @@
 import { useState, useEffect, useCallback, useMemo, Suspense, lazy } from 'react';
 import { S } from './config/theme';
 import { styles } from './styles/shared';
-import { STORAGE_KEYS, USERS } from './config/constants';
-import { DEMO_TEMPLATES } from './config/templates';
+import { STORAGE_KEYS } from './config/constants';
 import { storageGet, storageSet } from './lib/storage';
-import { checkIntegrity, restoreFromBackup, createFullBackup } from './lib/storageBackup';
-import { processCustomerFromSubmission, addActivityLog, getCustomers, removeSubmissionFromCustomer } from './lib/customerService';
-import { getProjects, saveProject, deleteProject, createProject, linkSubmissionToPhase, buildAutoFillData } from './lib/projectService';
-import { supabase, isSupabaseConfigured } from './lib/supabase';
-import { getCurrentUser, clearProfileCache, signOut as supabaseSignOut } from './lib/supabaseService';
-// needsMigration removed — unused in App.jsx (used in SettingsScreen)
+import { processCustomerFromSubmission, addActivityLog, removeSubmissionFromCustomer } from './lib/customerService';
+import { linkSubmissionToPhase, buildAutoFillData } from './lib/projectService';
+import { isSupabaseConfigured } from './lib/supabase';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { DataProvider, useData } from './contexts/DataContext';
 import { LoginScreen } from './components/layout/LoginScreen';
 import { SettingsScreen } from './components/layout/SettingsScreen';
 import { SubmissionsList } from './components/layout/SubmissionsList';
@@ -56,147 +54,60 @@ const LoadingFallback = () => (
   </div>
 );
 
-// ═══ FormPilot Main App ═══
-export default function FormPilot() {
-  const [user, setUser] = useState(null);
+// ═══ FormPilot Inner (uses Contexts) ═══
+function FormPilotInner() {
+  const { user, authChecked, handleLogin, handleLogout } = useAuth();
+  const {
+    submissions, setSubmissions,
+    customTemplates, allTemplates,
+    customers, setCustomers,
+    projects,
+    loaded,
+    refreshTemplates, handleDeleteTemplate,
+    handleCustomersChange,
+    refreshProjects, handleCreateProject,
+    saveProject, deleteProject,
+  } = useData();
+
+  // ═══ UI / Navigation State ═══
   const [tab, setTab] = useState('fill');
-  const [submissions, setSubmissions] = useState([]);
-  const [customTemplates, setCustomTemplates] = useState([]);
-  const [customers, setCustomers] = useState([]);
   const [fillingTemplate, setFillingTemplate] = useState(null);
   const [draftData, setDraftData] = useState(null);
   const [builderTemplate, setBuilderTemplate] = useState(null);
   const [viewingSubmission, setViewingSubmission] = useState(null);
   const [viewingCustomer, setViewingCustomer] = useState(null);
-  const [projects, setProjects] = useState([]);
   const [viewingProject, setViewingProject] = useState(null);
   const [fillingProjectContext, setFillingProjectContext] = useState(null);
-  const [loaded, setLoaded] = useState(false);
-  const [authChecked, setAuthChecked] = useState(false);
   const [darkMode, setDarkMode] = useState(() => localStorage.getItem('fp_darkMode') === 'true');
 
-  // ═══ Supabase Auth State Listener ═══
+  // ═══ Set default tab when user changes ═══
   useEffect(() => {
-    if (!isSupabaseConfigured()) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setAuthChecked(true);
-      return;
-    }
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (user) setTab(getDefaultTab(user.role));
+  }, [user]);
 
-    // Check current session
-    const checkSession = async () => {
-      try {
-        const supaUser = await getCurrentUser();
-        if (supaUser?.profile) {
-          const profile = supaUser.profile;
-          setUser({
-            id: profile.id,
-            name: profile.name,
-            email: profile.email,
-            role: profile.role,
-            organizationId: profile.organization_id,
-            profile,
-          });
-          setTab(getDefaultTab(profile.role));
-        }
-      } catch (e) {
-        console.error('[FormPilot] Auth check failed:', e);
-      }
-      setAuthChecked(true);
-    };
-
-    checkSession();
-
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === 'SIGNED_OUT' || !session) {
-        clearProfileCache();
-        setUser(null);
-      } else if (event === 'SIGNED_IN' && session) {
-        // Refresh profile
-        try {
-          clearProfileCache();
-          const supaUser = await getCurrentUser();
-          if (supaUser?.profile) {
-            const profile = supaUser.profile;
-            setUser({
-              id: profile.id,
-              name: profile.name,
-              email: profile.email,
-              role: profile.role,
-              organizationId: profile.organization_id,
-              profile,
-            });
-            setTab(getDefaultTab(profile.role));
-          }
-        } catch (e) {
-          console.error('[FormPilot] Auth state change error:', e);
-        }
-      }
-    });
-
-    return () => subscription?.unsubscribe();
-  }, []);
-
-  // ═══ Load data on mount ═══
-  useEffect(() => {
-    (async () => {
-      try {
-        // ═══ Integrity Check: Auto-Recovery from IndexedDB if localStorage wiped ═══
-        const integrity = await checkIntegrity();
-        if (integrity.needsRestore) {
-          console.warn(`[FormPilot] localStorage leer, stelle ${integrity.backupKeyCount} Keys aus Backup wieder her...`);
-          await restoreFromBackup();
-        }
-
-        // If not using Supabase, load session from localStorage
-        if (!isSupabaseConfigured()) {
-          const session = await storageGet(STORAGE_KEYS.session);
-          if (session) { const u = USERS.find(u => u.id === session.userId); if (u) { setUser(u); setTab(getDefaultTab(u.role)); } }
-        }
-
-        const subs = await storageGet(STORAGE_KEYS.submissions); if (subs) setSubmissions(subs);
-        const tpls = await storageGet(STORAGE_KEYS.templates); if (tpls) setCustomTemplates(tpls);
-        const custs = await getCustomers(); setCustomers(custs);
-        const projs = await getProjects(); setProjects(projs);
-
-        // Create full backup after successful load
-        createFullBackup().catch(() => {});
-      } catch (e) {
-        console.error('Init load failed:', e);
-      }
-      setLoaded(true);
-    })();
-  }, []);
-
-  useEffect(() => { if (loaded) storageSet(STORAGE_KEYS.submissions, submissions); }, [submissions, loaded]);
-
+  // ═══ Dark mode persistence ═══
   useEffect(() => {
     localStorage.setItem('fp_darkMode', darkMode);
     document.documentElement.setAttribute('data-theme', darkMode ? 'dark' : 'light');
   }, [darkMode]);
 
-  const handleLogin = async (u) => {
-    setUser(u);
-    setTab(getDefaultTab(u.role));
-    // Only store session in localStorage for demo mode
-    if (!isSupabaseConfigured()) {
-      await storageSet(STORAGE_KEYS.session, { userId: u.id });
+  // ═══ Sync viewingCustomer when customers list refreshes ═══
+  useEffect(() => {
+    if (viewingCustomer) {
+      const updated = customers.find(c => c.id === viewingCustomer.id);
+      /* eslint-disable react-hooks/set-state-in-effect */
+      if (!updated) setViewingCustomer(null);
+      else if (updated !== viewingCustomer) setViewingCustomer(updated);
+      /* eslint-enable react-hooks/set-state-in-effect */
     }
-  };
+  }, [customers, viewingCustomer]);
 
-  const handleLogout = async () => {
-    if (isSupabaseConfigured()) {
-      try {
-        await supabaseSignOut();
-      } catch (e) {
-        console.error('Supabase signout error:', e);
-      }
-    }
-    clearProfileCache();
-    setUser(null);
-    await storageSet(STORAGE_KEYS.session, null);
-  };
+  // ═══ Login wrapper (sets tab after auth context login) ═══
+  const onLogin = useCallback(async (u) => {
+    await handleLogin(u);
+    setTab(getDefaultTab(u.role));
+  }, [handleLogin]);
 
   const handleStartFilling = useCallback(async (template, projectContext = null, phaseId = null) => {
     const dk = `fp_draft_${template.id}_current`;
@@ -213,8 +124,6 @@ export default function FormPilot() {
     setDraftData(initial);
     setFillingTemplate(template);
   }, []);
-
-  const allTemplates = useMemo(() => [...DEMO_TEMPLATES, ...customTemplates], [customTemplates]);
 
   const handleSubmitForm = useCallback(async (data) => {
     const newSub = { id: 'sub-' + Date.now(), templateId: fillingTemplate.id, templateVersion: fillingTemplate.version, status: 'completed', data, filledBy: user.id, filledByName: user.name, createdAt: new Date().toISOString(), completedAt: new Date().toISOString() };
@@ -251,7 +160,6 @@ export default function FormPilot() {
     // ═══ Projekt-Verknuepfung (wenn aus Projekt heraus erstellt) ═══
     const projCtx = fillingProjectContext;
     if (projCtx) {
-      // Use stored phaseId if available, else fallback to first matching
       const phaseId = projCtx._targetPhaseId;
       const phase = phaseId
         ? projCtx.phases.find(p => p.id === phaseId)
@@ -259,7 +167,7 @@ export default function FormPilot() {
       if (phase) {
         const updatedProj = await linkSubmissionToPhase(projCtx.id, phase.id, newSub.id, template);
         if (updatedProj) {
-          const projs = await getProjects(); setProjects(projs);
+          await refreshProjects();
           setViewingProject(updatedProj);
         }
       }
@@ -267,7 +175,7 @@ export default function FormPilot() {
 
     setFillingTemplate(null); setDraftData(null); setFillingProjectContext(null);
     if (projCtx) { setTab('projects'); } else { setTab('submissions'); }
-  }, [fillingTemplate, fillingProjectContext, submissions, allTemplates, user]);
+  }, [fillingTemplate, fillingProjectContext, submissions, allTemplates, user, setSubmissions, setCustomers, refreshProjects]);
 
   const handleStatusChange = useCallback(async (subId, newStatus) => {
     setSubmissions(prev => {
@@ -276,7 +184,7 @@ export default function FormPilot() {
       return updated;
     });
     setViewingSubmission(prev => prev?.id === subId ? { ...prev, status: newStatus } : prev);
-  }, []);
+  }, [setSubmissions]);
 
   const handleDeleteSubmission = useCallback(async (subId) => {
     setSubmissions(prev => {
@@ -297,9 +205,8 @@ export default function FormPilot() {
       });
     }
     // Clean up dangling project phase references
-    const projs = await getProjects();
     let projChanged = false;
-    for (const proj of projs) {
+    for (const proj of projects) {
       const phase = proj.phases?.find(p => p.submissionId === subId);
       if (phase) {
         phase.submissionId = null;
@@ -308,36 +215,25 @@ export default function FormPilot() {
         projChanged = true;
       }
     }
-    if (projChanged) setProjects(await getProjects());
+    if (projChanged) await refreshProjects();
     setViewingSubmission(null);
-  }, [user]);
+  }, [user, projects, setSubmissions, setCustomers, saveProject, refreshProjects]);
 
-  const handleBuilderSave = async () => { const tpls = await storageGet(STORAGE_KEYS.templates) || []; setCustomTemplates(tpls); };
-  const refreshTemplates = useCallback(async () => { const tpls = await storageGet(STORAGE_KEYS.templates) || []; setCustomTemplates(tpls); }, []);
-  const handleDeleteTemplate = async (id) => {
-    if (!id) { await refreshTemplates(); return; }
-    const tpls = (await storageGet(STORAGE_KEYS.templates) || []).filter(t => t.id !== id); await storageSet(STORAGE_KEYS.templates, tpls); setCustomTemplates(tpls);
-  };
-
-  const handleCustomersChange = useCallback(async () => {
-    const custs = await getCustomers();
-    setCustomers(custs);
-    setViewingCustomer(prev => prev ? custs.find(c => c.id === prev.id) || null : null);
-  }, []);
+  const handleBuilderSave = useCallback(async () => { await refreshTemplates(); }, [refreshTemplates]);
 
   // ═══ Projekt-Handler ═══
-  const refreshProjects = useCallback(async () => { const projs = await getProjects(); setProjects(projs); }, []);
-  const handleCreateProject = useCallback(async (name) => {
-    const proj = await createProject(name);
-    await refreshProjects();
+  const handleCreateProjectAndView = useCallback(async (name) => {
+    const proj = await handleCreateProject(name);
     setViewingProject(proj);
-  }, [refreshProjects]);
+  }, [handleCreateProject]);
+
   const handleProjectChange = useCallback(async (updated) => {
     if (updated._deleted) { await deleteProject(updated.id); setViewingProject(null); await refreshProjects(); return; }
     await saveProject(updated);
     setViewingProject(updated);
     await refreshProjects();
-  }, [refreshProjects]);
+  }, [saveProject, deleteProject, refreshProjects]);
+
   const handleStartFillingFromProject = useCallback((template, project, phaseId) => {
     handleStartFilling(template, project, phaseId);
   }, [handleStartFilling]);
@@ -347,7 +243,7 @@ export default function FormPilot() {
   // ═══ Loading state — wait for both data and auth check ═══
   const isLoading = !loaded || (isSupabaseConfigured() && !authChecked);
   if (isLoading) return <div style={{ ...styles.app, alignItems: 'center', justifyContent: 'center' }}><div style={S_LOADING}><div style={S_LOADING_ICON}>📋</div><div style={S_LOADING_TEXT}>Laden...</div></div></div>;
-  if (!user) return <><LoginScreen onLogin={handleLogin} /><GlobalDialog /></>;
+  if (!user) return <><LoginScreen onLogin={onLogin} /><GlobalDialog /></>;
   if (builderTemplate) return <><ErrorBoundary><Suspense fallback={<LoadingFallback />}><FormBuilder template={builderTemplate} onSave={handleBuilderSave} onClose={() => setBuilderTemplate(null)} /></Suspense></ErrorBoundary><GlobalDialog /></>;
 
   return (
@@ -390,7 +286,7 @@ export default function FormPilot() {
           />
         ) : (<>
           {tab === 'dashboard' && <DashboardScreen submissions={submissions} allTemplates={allTemplates} user={user} />}
-          {tab === 'projects' && <ProjectsScreen projects={projects} onSelectProject={setViewingProject} onCreateProject={handleCreateProject} />}
+          {tab === 'projects' && <ProjectsScreen projects={projects} onSelectProject={setViewingProject} onCreateProject={handleCreateProjectAndView} />}
           {tab === 'templates' && <TemplatesOverview user={user} onOpenBuilder={setBuilderTemplate} onStartFilling={handleStartFilling} customTemplates={customTemplates} onDeleteTemplate={handleDeleteTemplate} />}
           {tab === 'fill' && <TemplateSelector onSelect={handleStartFilling} customTemplates={customTemplates} />}
           {tab === 'submissions' && <SubmissionsList submissions={submissions} user={user} allTemplates={allTemplates} onViewSubmission={setViewingSubmission} onDeleteSubmission={handleDeleteSubmission} />}
@@ -406,5 +302,16 @@ export default function FormPilot() {
       <InstallPrompt />
       <GlobalDialog />
     </div>
+  );
+}
+
+// ═══ FormPilot Root (Provider Shell) ═══
+export default function FormPilot() {
+  return (
+    <AuthProvider>
+      <DataProvider>
+        <FormPilotInner />
+      </DataProvider>
+    </AuthProvider>
   );
 }
