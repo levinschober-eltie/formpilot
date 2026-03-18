@@ -330,6 +330,12 @@ export const SettingsScreen = ({ darkMode, onToggleDarkMode }) => {
             {aiTestMsg}
           </div>
         )}
+        {isSupabaseConfigured() && (
+          <div style={{ fontSize: '11px', color: S.colors.textMuted, marginTop: '8px', padding: '8px 12px', background: S.colors.bgInput, borderRadius: S.radius.sm, display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <span style={{ color: S.colors.success, fontSize: '14px' }}>&#9679;</span>
+            Im Produktivmodus wird der API-Key serverseitig verwaltet. Der lokale Key dient nur als Fallback.
+          </div>
+        )}
       </div>
 
       <div style={{ ...styles.card, marginTop: '12px' }}>

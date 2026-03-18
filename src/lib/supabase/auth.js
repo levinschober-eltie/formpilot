@@ -47,19 +47,17 @@ export async function signInWithEmail(email, password) {
 }
 
 export async function signInWithPin(pin) {
-  // PIN-Login: Query profiles table for matching pin, then sign in with stored email
-  // Note: This requires a server function or a special lookup. For now, we use a simple approach:
-  // The PIN is stored hashed in profiles. We look up the profile by pin and use their email.
-  // In production, this should be a Supabase Edge Function for security.
   clearProfileCache();
-  const { data: profiles, error } = await supabase
-    .from('profiles')
-    .select('id, email, pin')
-    .eq('pin', pin)
-    .limit(1);
-  if (error) throw error;
-  if (!profiles || profiles.length === 0) throw new Error('Ungueltige PIN');
-  return profiles[0];
+
+  // Call Edge Function for secure PIN verification (PIN never compared client-side)
+  const { data, error } = await supabase.functions.invoke('verify-pin', {
+    body: { pin },
+  });
+
+  if (error) throw new Error(error.message || 'PIN-Verifizierung fehlgeschlagen');
+  if (!data?.profile) throw new Error('Ungueltige PIN');
+
+  return data.profile;
 }
 
 export async function signOut() {
