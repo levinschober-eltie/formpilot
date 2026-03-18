@@ -29,25 +29,35 @@ src/
 ├── index.js             # Barrel Export (Public API für Embedding)
 ├── App.jsx              # Haupt-App (Provider Shell + UI/Navigation)
 ├── main.jsx             # SPA Entry Point
-├── config/              # Theme, Konstanten, Demo-Templates
-├── contexts/            # AuthContext (initialUser), DataContext
+├── config/              # Theme, Konstanten (ROLES, CATEGORIES), Demo-Templates
+├── contexts/            # AuthContext (initialUser), DataContext (activeTemplates)
 ├── lib/                 # Storage, Validation, Helpers
 │   ├── supabase/        # 9 modulare Service-Dateien (auth, templates, etc.)
 │   ├── supabaseService.js  # Backwards-compat Barrel Re-Export
+│   ├── storageAdapter.js   # Barrel + File/Activity
+│   ├── storageAdapter*.js  # Entity-Module (Shared, Templates, Submissions, Customers, Projects)
 │   ├── aiService.js     # AI Form Generation (Edge Function + Fallback)
 │   └── dialogService.js # Global In-App Dialoge
 ├── styles/              # Shared Styles + CSS Variables (--fp-*)
 ├── hooks/               # useDebounce, useUndoRedo, useOnlineStatus, etc.
 ├── components/
-│   ├── fields/          # Alle Feldtyp-Komponenten (14 Typen)
-│   ├── filler/          # FormFiller + TemplateSelector
-│   ├── builder/         # FormBuilder + Palette + Canvas + Settings
-│   ├── layout/          # Login, Settings, Submissions, TemplatesOverview
-│   └── common/          # ErrorBoundary, GlobalDialog, Toast, MiniToggle
+│   ├── fields/          # Alle Feldtyp-Komponenten (17 Typen inkl. Repeater, Barcode, GPS)
+│   ├── filler/          # FormFiller + TemplateSelector (nur aktive Formulare)
+│   ├── builder/         # FormBuilder + Palette + Canvas + Settings + AIFormGenerator
+│   ├── layout/          # Login, Settings (4 Sub-Module), Submissions, TemplatesOverview
+│   │                    # DashboardScreen, CustomersScreen, CustomerDetail
+│   │                    # ProjectsScreen, ProjectDetail
+│   └── common/          # ErrorBoundary, GlobalDialog, Toast, MiniToggle, OfflineIndicator
 supabase/
 ├── migrations/          # SQL-Migrationen (001-005)
 └── functions/           # Edge Functions (verify-pin, generate-form)
 ```
+
+## Formulare-Konzept
+- **Vorlagen** = Demo-Templates (23 Stück) + Builder-Erstellte Blueprints
+- **Formulare** = Vom Admin aktivierte Vorlagen, sichtbar im "Ausfüllen"-Tab
+- Template-Felder: `isActive`, `visibleForRoles: string[]`, `isArchived`
+- TemplateSelector filtert: isActive !== false && !isArchived && visibleForRoles.includes(user.role)
 
 ## Builds
 - SPA: `npm run build` (PWA mit Service Worker)
