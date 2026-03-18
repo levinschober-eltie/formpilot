@@ -1,5 +1,7 @@
 // ═══ FEATURE: Demo Templates (Chat F.1) ═══
-export const DEMO_TEMPLATES = [
+import { INDUSTRY_TEMPLATES } from './industryTemplates';
+
+const _DEMO_TEMPLATES = [
   {
     id: 'tpl-service',
     name: 'Servicebericht',
@@ -146,3 +148,6 @@ export const DEMO_TEMPLATES = [
     pdfSettings: { orientation: 'portrait', showLogo: true, accentColor: '#dc2626' },
   }
 ];
+
+// Kombinierter Export: 3 Demo-Templates + 20 Branchenvorlagen
+export const DEMO_TEMPLATES = [..._DEMO_TEMPLATES, ...INDUSTRY_TEMPLATES];

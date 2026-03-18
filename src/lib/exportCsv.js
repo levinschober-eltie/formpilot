@@ -52,6 +52,10 @@ export const exportSubmissionsCsv = (submissions, allTemplates) => {
     if (typeof val === 'boolean') return val ? 'Ja' : 'Nein';
     if (Array.isArray(val)) return val.join('; ');
     if (typeof val === 'object') {
+      // GPS: {lat, lng, accuracy, timestamp}
+      if (field?.type === 'gps' && val.lat != null) {
+        return `${val.lat},${val.lng}`;
+      }
       // Checklist: {id: {checked, note}}
       if (field?.type === 'checklist') {
         return Object.entries(val).map(([key, v]) => {

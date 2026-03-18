@@ -94,6 +94,7 @@ export const SubmissionDetail = ({ submission, template, onBack, onStatusChange,
 
       <div style={S_ACTIONS}>
         <button onClick={() => exportSubmissionPdf(submission, template)} style={styles.btn('primary', 'sm')}>📄 PDF Export</button>
+        <button onClick={() => exportSubmissionToExcel(submission, template)} style={styles.btn('secondary', 'sm')}>📊 Excel Export</button>
         {onStatusChange && submission.status === 'completed' && (
           <button onClick={() => onStatusChange(submission.id, 'sent')} style={styles.btn('secondary', 'sm')}>📤 Als versendet markieren</button>
         )}

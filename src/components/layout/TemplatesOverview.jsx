@@ -8,14 +8,34 @@ import { storageGet, storageSet } from '../../lib/storage';
 import { ToastMessage } from '../common/ToastMessage';
 import { ConfirmDialog } from '../common/ConfirmDialog';
 import { useConfirm } from '../../hooks/useConfirm';
+import { AIFormGenerator } from '../builder/AIFormGenerator';
 
 // ═══ Extracted Styles (P4) ═══
 const S_TOOLBAR = { display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' };
 
 export const TemplatesOverview = ({ user, onOpenBuilder, onStartFilling, customTemplates, onDeleteTemplate }) => {
   const [toast, setToast] = useState(null);
+  const [showAIGenerator, setShowAIGenerator] = useState(false);
   const { confirm, confirmState, handleConfirm, handleCancel } = useConfirm();
   const fileInputRef = useRef(null);
+
+  const handleAISaveAndOpen = useCallback(async (template) => {
+    const existing = await storageGet(STORAGE_KEYS.templates) || [];
+    existing.push(template);
+    await storageSet(STORAGE_KEYS.templates, existing);
+    if (onDeleteTemplate) onDeleteTemplate(null); // triggers refresh
+    setShowAIGenerator(false);
+    onOpenBuilder(template);
+  }, [onOpenBuilder, onDeleteTemplate]);
+
+  const handleAIDirectUse = useCallback(async (template) => {
+    const existing = await storageGet(STORAGE_KEYS.templates) || [];
+    existing.push(template);
+    await storageSet(STORAGE_KEYS.templates, existing);
+    if (onDeleteTemplate) onDeleteTemplate(null); // triggers refresh
+    setShowAIGenerator(false);
+    if (onStartFilling) onStartFilling(template);
+  }, [onStartFilling, onDeleteTemplate]);
 
   const handleDuplicate = useCallback(async (t) => {
     const copy = JSON.parse(JSON.stringify(t));
@@ -74,6 +94,7 @@ export const TemplatesOverview = ({ user, onOpenBuilder, onStartFilling, customT
     <div>
       {toast && <ToastMessage message={toast.message} type={toast.type} onDone={() => setToast(null)} />}
       {confirmState && <ConfirmDialog {...confirmState} onConfirm={handleConfirm} onCancel={handleCancel} />}
+      {showAIGenerator && <AIFormGenerator onClose={() => setShowAIGenerator(false)} onOpenBuilder={handleAISaveAndOpen} onDirectUse={handleAIDirectUse} />}
       <input ref={fileInputRef} type="file" accept=".json" onChange={handleImport} style={{ display: 'none' }} />
 
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
@@ -81,7 +102,8 @@ export const TemplatesOverview = ({ user, onOpenBuilder, onStartFilling, customT
         {user.role === 'admin' && (
           <div style={S_TOOLBAR}>
             <button onClick={() => fileInputRef.current?.click()} style={styles.btn('secondary', 'sm')}>📥 Importieren</button>
-            <button onClick={() => onOpenBuilder(createEmptyTemplate())} style={styles.btn('primary')}>＋ Neues Formular</button>
+            <button onClick={() => setShowAIGenerator(true)} style={styles.btn('secondary', 'sm')}>KI-Generator</button>
+            <button onClick={() => onOpenBuilder(createEmptyTemplate())} style={styles.btn('primary')}>+ Neues Formular</button>
           </div>
         )}
       </div>

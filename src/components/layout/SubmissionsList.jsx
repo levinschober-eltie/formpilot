@@ -1,9 +1,10 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { S, STATUS_COLORS, STATUS_LABELS } from '../../config/theme';
 import { styles } from '../../styles/shared';
 import { DEMO_TEMPLATES } from '../../config/templates';
 import { exportSubmissionsCsv } from '../../lib/exportCsv';
 import { exportSubmissionPdf } from '../../lib/exportPdf';
+import { exportMultipleToExcel } from '../../lib/exportExcel';
 import { useDebounce } from '../../hooks/useDebounce';
 
 // ═══ FEATURE: Submissions List (Enhanced with Search, Filter, Export) ═══
@@ -21,6 +22,7 @@ export const SubmissionsList = ({ submissions, user, allTemplates, onViewSubmiss
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
   const [page, setPage] = useState(0);
+  const [excelExporting, setExcelExporting] = useState(false);
 
   const templateMap = useMemo(() => {
     const map = {};
@@ -54,6 +56,33 @@ export const SubmissionsList = ({ submissions, user, allTemplates, onViewSubmiss
     return ids.map(id => ({ id, name: templateMap[id]?.name || id }));
   }, [submissions, templateMap]);
 
+  const handleBulkExcelExport = useCallback(() => {
+    if (filtered.length === 0) return;
+    setExcelExporting(true);
+    try {
+      // Group by template for proper export
+      const byTemplate = {};
+      filtered.forEach(sub => {
+        if (!byTemplate[sub.templateId]) byTemplate[sub.templateId] = [];
+        byTemplate[sub.templateId].push(sub);
+      });
+      // If all same template, export as single file; otherwise export largest group
+      const entries = Object.entries(byTemplate);
+      if (entries.length === 1) {
+        const [tplId, subs] = entries[0];
+        const tpl = templateMap[tplId];
+        if (tpl) exportMultipleToExcel(subs, tpl);
+      } else {
+        // Export each template group
+        entries.forEach(([tplId, subs]) => {
+          const tpl = templateMap[tplId];
+          if (tpl) exportMultipleToExcel(subs, tpl);
+        });
+      }
+    } catch { /* export error */ }
+    setExcelExporting(false);
+  }, [filtered, templateMap]);
+
   if (submissions.length === 0) return (
     <div>
       <h2 style={{ fontSize: '22px', fontWeight: 700, marginBottom: '20px' }}>Eingereichte Formulare</h2>
@@ -66,9 +95,11 @@ export const SubmissionsList = ({ submissions, user, allTemplates, onViewSubmiss
 
   return (
     <div>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px', gap: '8px', flexWrap: 'wrap' }}>
         <h2 style={{ fontSize: '22px', fontWeight: 700 }}>Eingereichte Formulare</h2>
-        <button onClick={() => exportSubmissionsCsv(submissions, allTemplates || DEMO_TEMPLATES)} style={styles.btn('secondary', 'sm')}>📊 CSV Export</button>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <button onClick={() => exportSubmissionsCsv(submissions, allTemplates || DEMO_TEMPLATES)} style={styles.btn('secondary', 'sm')}>📋 CSV Export</button>
+        </div>
       </div>
       <p style={{ color: S.colors.textSecondary, marginBottom: '16px', fontSize: '14px' }}>{filtered.length} von {submissions.length} Formular{submissions.length !== 1 ? 'en' : ''}</p>
 
@@ -139,6 +170,13 @@ export const SubmissionsList = ({ submissions, user, allTemplates, onViewSubmiss
               <button onClick={() => setPage(p => Math.max(0, p - 1))} disabled={currentPage === 0} style={styles.btn('ghost', 'sm')} aria-label="Vorherige Seite">← Zurück</button>
               <span style={{ fontSize: '13px', color: S.colors.textSecondary }}>Seite {currentPage + 1} von {totalPages}</span>
               <button onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))} disabled={currentPage >= totalPages - 1} style={styles.btn('ghost', 'sm')} aria-label="Nächste Seite">Weiter →</button>
+            </div>
+          )}
+          {filtered.length > 0 && (
+            <div style={{ display: 'flex', justifyContent: 'center', marginTop: '16px' }}>
+              <button onClick={handleBulkExcelExport} disabled={excelExporting} style={styles.btn('secondary', 'sm')}>
+                {excelExporting ? 'Exportiere...' : `📊 Alle exportieren (Excel) — ${filtered.length} Einträge`}
+              </button>
             </div>
           )}
         </>);
