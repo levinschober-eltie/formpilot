@@ -56,12 +56,16 @@ export default function FormPilot() {
 
   useEffect(() => {
     (async () => {
-      const session = await storageGet(STORAGE_KEYS.session);
-      if (session) { const u = USERS.find(u => u.id === session.userId); if (u) { setUser(u); setTab(getDefaultTab(u.role)); } }
-      const subs = await storageGet(STORAGE_KEYS.submissions); if (subs) setSubmissions(subs);
-      const tpls = await storageGet(STORAGE_KEYS.templates); if (tpls) setCustomTemplates(tpls);
-      const custs = await getCustomers(); setCustomers(custs);
-      const projs = await getProjects(); setProjects(projs);
+      try {
+        const session = await storageGet(STORAGE_KEYS.session);
+        if (session) { const u = USERS.find(u => u.id === session.userId); if (u) { setUser(u); setTab(getDefaultTab(u.role)); } }
+        const subs = await storageGet(STORAGE_KEYS.submissions); if (subs) setSubmissions(subs);
+        const tpls = await storageGet(STORAGE_KEYS.templates); if (tpls) setCustomTemplates(tpls);
+        const custs = await getCustomers(); setCustomers(custs);
+        const projs = await getProjects(); setProjects(projs);
+      } catch (e) {
+        console.error('Init load failed:', e);
+      }
       setLoaded(true);
     })();
   }, []);

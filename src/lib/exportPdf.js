@@ -117,6 +117,6 @@ export const exportSubmissionPdf = (submission, template) => {
   printWindow.document.write(html);
   printWindow.document.close();
   printWindow.onload = () => {
-    setTimeout(() => { printWindow.print(); }, 300);
+    setTimeout(() => { try { printWindow.print(); } catch { /* print dialog cancelled or blocked */ } }, 300);
   };
 };

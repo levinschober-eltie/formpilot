@@ -29,7 +29,7 @@ export const CustomersScreen = ({ customers, submissions, allTemplates, onSelect
 
   const enriched = useMemo(() => {
     return customers.map(c => {
-      const subs = submissions.filter(s => c.submissionIds?.includes(s.id));
+      const subs = c.submissionIds ? submissions.filter(s => c.submissionIds.includes(s.id)) : [];
       const lastSub = subs.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))[0];
       return { ...c, submissionCount: subs.length, lastSubmission: lastSub };
     }).sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));

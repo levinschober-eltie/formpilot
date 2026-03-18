@@ -71,8 +71,9 @@ export const processCustomerFromSubmission = async (submission, template) => {
       updated = true;
     }
     // Submission verknüpfen
-    if (!existing.submissionIds?.includes(submission.id)) {
-      existing.submissionIds = [...(existing.submissionIds || []), submission.id];
+    existing.submissionIds = existing.submissionIds || [];
+    if (!existing.submissionIds.includes(submission.id)) {
+      existing.submissionIds = [...existing.submissionIds, submission.id];
       updated = true;
     }
     if (updated) {

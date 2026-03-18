@@ -32,6 +32,7 @@ export const SignatureField = ({ field, value, onChange, error }) => {
 
   const getPoint = useCallback((e) => {
     const canvas = canvasRef.current;
+    if (!canvas) return { x: 0, y: 0 };
     const rect = canvas.getBoundingClientRect();
     const touch = e.touches ? e.touches[0] : e;
     return {
@@ -57,9 +58,10 @@ export const SignatureField = ({ field, value, onChange, error }) => {
         ctx.drawImage(img, 0, 0, canvas.width / 2, canvas.height / 2);
         setHasContent(true);
       };
+      img.onerror = () => { setHasContent(false); };
       img.src = value;
     }
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps -- canvas init only on mount
 
   const startDraw = useCallback((e) => {
     e.preventDefault();
@@ -70,7 +72,10 @@ export const SignatureField = ({ field, value, onChange, error }) => {
   const draw = useCallback((e) => {
     if (!isDrawing) return;
     e.preventDefault();
-    const ctx = canvasRef.current.getContext('2d');
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
     const point = getPoint(e);
     ctx.beginPath();
     ctx.moveTo(lastPoint.current.x / 2, lastPoint.current.y / 2);
@@ -84,13 +89,17 @@ export const SignatureField = ({ field, value, onChange, error }) => {
     if (!isDrawing) return;
     setIsDrawing(false);
     lastPoint.current = null;
-    const dataUrl = canvasRef.current.toDataURL('image/png');
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const dataUrl = canvas.toDataURL('image/png');
     onChange(dataUrl);
   }, [isDrawing, onChange]);
 
   const clearCanvas = useCallback(() => {
     const canvas = canvasRef.current;
+    if (!canvas) return;
     const ctx = canvas.getContext('2d');
+    if (!ctx) return;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     setHasContent(false);
     onChange(null);
