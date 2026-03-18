@@ -44,14 +44,43 @@ const RepeaterField = ({ field, value, onChange, formData }) => {
             <button type="button" onClick={() => removeRow(ri)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: S.colors.danger, fontSize: '14px' }}>✕</button>
           </div>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-            {subFields.map(sf => (
-              <div key={sf.id} style={{ flex: '1 1 200px', minWidth: 0 }}>
-                <label style={{ fontSize: '12px', fontWeight: 600, color: S.colors.textSecondary, display: 'block', marginBottom: '3px' }}>{sf.label}</label>
-                <input value={row[sf.id] || ''} onChange={e => updateRow(ri, sf.id, e.target.value)}
-                  style={{ width: '100%', padding: '8px 10px', borderRadius: S.radius.sm, border: `1px solid ${S.colors.border}`, fontSize: '13px', fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box' }}
-                  placeholder={sf.placeholder || ''} />
-              </div>
-            ))}
+            {subFields.map(sf => {
+              const sfType = sf.type || 'text';
+              const inputStyle = { width: '100%', padding: '8px 10px', borderRadius: S.radius.sm, border: `1px solid ${S.colors.border}`, fontSize: '13px', fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box' };
+              let input;
+              if (sfType === 'select') {
+                const opts = typeof sf.options === 'string' ? sf.options.split(',').map(o => o.trim()).filter(Boolean) : (Array.isArray(sf.options) ? sf.options : []);
+                input = (
+                  <select value={row[sf.id] || ''} onChange={e => updateRow(ri, sf.id, e.target.value)} style={inputStyle}>
+                    <option value="">— Wählen —</option>
+                    {opts.map(o => {
+                      const val = typeof o === 'object' ? o.value : o;
+                      const lbl = typeof o === 'object' ? o.label : o;
+                      return <option key={val} value={val}>{lbl}</option>;
+                    })}
+                  </select>
+                );
+              } else if (sfType === 'toggle') {
+                input = (
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '6px', height: '36px', cursor: 'pointer' }}>
+                    <input type="checkbox" checked={!!row[sf.id]} onChange={e => updateRow(ri, sf.id, e.target.checked)} />
+                    <span style={{ fontSize: '12px', color: S.colors.textSecondary }}>{row[sf.id] ? 'Ja' : 'Nein'}</span>
+                  </label>
+                );
+              } else {
+                input = (
+                  <input type={sfType === 'number' ? 'number' : sfType === 'date' ? 'date' : 'text'}
+                    value={row[sf.id] || ''} onChange={e => updateRow(ri, sf.id, sfType === 'number' ? (e.target.value === '' ? '' : Number(e.target.value)) : e.target.value)}
+                    style={inputStyle} placeholder={sf.placeholder || ''} />
+                );
+              }
+              return (
+                <div key={sf.id} style={{ flex: '1 1 200px', minWidth: 0 }}>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: S.colors.textSecondary, display: 'block', marginBottom: '3px' }}>{sf.label}</label>
+                  {input}
+                </div>
+              );
+            })}
           </div>
         </div>
       ))}

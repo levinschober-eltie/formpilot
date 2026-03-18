@@ -36,7 +36,7 @@ const S_REQUIRED_MARK = {
 };
 
 // ═══ Single Canvas Component (reused for each slot) ═══
-const SingleCanvas = memo(({ slotValue, onSlotChange, error, placeholder }) => {
+const SingleCanvas = memo(({ slotValue, onSlotChange, error, placeholder, slotLabel }) => {
   const canvasRef = useRef(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [hasContent, setHasContent] = useState(!!slotValue);
@@ -117,11 +117,28 @@ const SingleCanvas = memo(({ slotValue, onSlotChange, error, placeholder }) => {
     onSlotChange(null);
   }, [onSlotChange]);
 
+  const handleWrapperKeyDown = useCallback((e) => {
+    if ((e.key === ' ' || e.key === 'Enter') && hasContent) {
+      e.preventDefault();
+      clearCanvas();
+    }
+  }, [hasContent, clearCanvas]);
+
+  const wrapperAriaLabel = hasContent
+    ? 'Unterschrift erfasst'
+    : 'Unterschriftsfeld — Bitte mit Maus oder Touch unterschreiben';
+
   return (
     <div>
-      <div style={{ ...S_CANVAS_WRAP, borderColor: error ? (S.colors.danger || '#dc2626') : S.colors.border }}>
+      <div
+        style={{ ...S_CANVAS_WRAP, borderColor: error ? (S.colors.danger || '#dc2626') : S.colors.border }}
+        role="img"
+        aria-label={slotLabel ? `${slotLabel}: ${wrapperAriaLabel}` : wrapperAriaLabel}
+        onKeyDown={handleWrapperKeyDown}
+      >
         {!hasContent && <div style={S_PLACEHOLDER}>{placeholder || '✍️ Hier unterschreiben'}</div>}
         <canvas ref={canvasRef} style={{ ...S_CANVAS, height: '100px' }}
+          tabIndex={0}
           onMouseDown={startDraw} onMouseMove={draw} onMouseUp={endDraw} onMouseLeave={endDraw}
           onTouchStart={startDraw} onTouchMove={draw} onTouchEnd={endDraw} />
       </div>
@@ -129,7 +146,7 @@ const SingleCanvas = memo(({ slotValue, onSlotChange, error, placeholder }) => {
         <span style={{ fontSize: '11px', color: S.colors.textMuted }}>
           {hasContent ? '✓ Unterschrift erfasst' : 'Bitte unterschreiben'}
         </span>
-        <button type="button" onClick={clearCanvas} style={S_BTN}>Löschen</button>
+        <button type="button" onClick={clearCanvas} style={S_BTN} aria-label="Unterschrift löschen">Löschen</button>
       </div>
     </div>
   );
@@ -168,21 +185,25 @@ export const SignatureField = memo(({ field, value, onChange, error }) => {
 
   return (
     <div>
-      {field.signatureSlots.map((slot, index) => (
-        <div key={slot.id}>
+      {field.signatureSlots.map((slot, index) => {
+        const label = slot.label || `Unterschrift ${index + 1}`;
+        return (
+        <div key={slot.id} aria-label={label}>
           {index > 0 && <div style={S_SLOT_DIVIDER} />}
           <div style={S_SLOT_LABEL}>
-            {slot.label || `Unterschrift ${index + 1}`}
+            {label}
             {slot.required && <span style={S_REQUIRED_MARK}>*</span>}
           </div>
           <SingleCanvas
             slotValue={multiValue[slot.id] || null}
             onSlotChange={(dataUrl) => handleSlotChange(slot.id, dataUrl)}
             error={error && typeof error === 'string' && error.includes(slot.label)}
-            placeholder={`✍️ ${slot.label || 'Hier unterschreiben'}`}
+            placeholder={`✍️ ${label}`}
+            slotLabel={label}
           />
         </div>
-      ))}
+        );
+      })}
     </div>
   );
 });

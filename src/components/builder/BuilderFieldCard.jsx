@@ -43,7 +43,7 @@ export const BuilderFieldCard = React.memo(({ field, isSelected, onSelect, onDel
   };
 
   return (
-    <div draggable onDragStart={handleDragStart} onClick={handleClick} style={cardStyle}>
+    <div draggable onDragStart={handleDragStart} onClick={handleClick} style={cardStyle} role="listitem" aria-label={`Feld: ${field.label || field.type}. Alt+Pfeiltasten zum Verschieben.`}>
       <span style={S_GRAB}>≡</span>
       <span style={S_ICON}>{FIELD_TYPE_ICONS[field.type] || '📋'}</span>
       <div style={S_CONTENT}>

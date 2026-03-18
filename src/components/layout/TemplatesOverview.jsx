@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, Suspense, lazy } from 'react';
 import { S, CATEGORY_COLORS } from '../../config/theme';
 import { styles } from '../../styles/shared';
 import { DEMO_TEMPLATES } from '../../config/templates';
@@ -8,7 +8,8 @@ import { storageGet, storageSet } from '../../lib/storage';
 import { ToastMessage } from '../common/ToastMessage';
 import { ConfirmDialog } from '../common/ConfirmDialog';
 import { useConfirm } from '../../hooks/useConfirm';
-import { AIFormGenerator } from '../builder/AIFormGenerator';
+import { ErrorBoundary } from '../common/ErrorBoundary';
+const AIFormGenerator = lazy(() => import('../builder/AIFormGenerator').then(m => ({ default: m.AIFormGenerator })));
 
 // ═══ Extracted Styles (P4) ═══
 const S_TOOLBAR = { display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' };
@@ -94,7 +95,7 @@ export const TemplatesOverview = ({ user, onOpenBuilder, onStartFilling, customT
     <div>
       {toast && <ToastMessage message={toast.message} type={toast.type} onDone={() => setToast(null)} />}
       {confirmState && <ConfirmDialog {...confirmState} onConfirm={handleConfirm} onCancel={handleCancel} />}
-      {showAIGenerator && <AIFormGenerator onClose={() => setShowAIGenerator(false)} onOpenBuilder={handleAISaveAndOpen} onDirectUse={handleAIDirectUse} />}
+      {showAIGenerator && <ErrorBoundary><Suspense fallback={<div style={{ textAlign: 'center', padding: '32px', color: S.colors.textSecondary }}>Laden...</div>}><AIFormGenerator onClose={() => setShowAIGenerator(false)} onOpenBuilder={handleAISaveAndOpen} onDirectUse={handleAIDirectUse} /></Suspense></ErrorBoundary>}
       <input ref={fileInputRef} type="file" accept=".json" onChange={handleImport} style={{ display: 'none' }} />
 
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>

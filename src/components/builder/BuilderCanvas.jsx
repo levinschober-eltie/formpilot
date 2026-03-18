@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { S } from '../../config/theme';
 import { BuilderFieldCard } from './BuilderFieldCard';
 import { dialog } from '../../lib/dialogService';
@@ -45,6 +45,22 @@ export const BuilderCanvas = React.memo(({ pages, activePageIndex, onPageChange,
   const handleDragLeave = useCallback(() => setDropIndex(-1), []);
   const commitPageEdit = useCallback(() => { if (editingPageId && editPageName.trim()) onRenamePage(editingPageId, editPageName.trim()); setEditingPageId(null); }, [editingPageId, editPageName, onRenamePage]);
 
+  // ═══ Keyboard-based field reordering (Alt+Arrow) ═══
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (!selectedFieldId || !e.altKey) return;
+      if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') return;
+      e.preventDefault();
+      const currentIndex = fields.findIndex(f => f.id === selectedFieldId);
+      if (currentIndex === -1) return;
+      const newIndex = e.key === 'ArrowUp' ? currentIndex - 1 : currentIndex + 1;
+      if (newIndex < 0 || newIndex >= fields.length) return;
+      onMoveField(selectedFieldId, newIndex);
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectedFieldId, fields, onMoveField]);
+
   const emptyStyle = fields.length === 0
     ? { flex: 1, minHeight: '200px', borderRadius: S.radius.lg, border: `2px dashed ${S.colors.border}`, padding: '48px 24px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }
     : { flex: 1, minHeight: '200px', borderRadius: S.radius.lg, padding: '0', display: 'flex', flexDirection: 'column' };
@@ -74,7 +90,7 @@ export const BuilderCanvas = React.memo(({ pages, activePageIndex, onPageChange,
             <p style={S_EMPTY_TEXT}>Felder aus der Palette hierher ziehen oder klicken</p>
           </div>
         ) : (
-          <div style={S_FIELDS_WRAP}>
+          <div role="list" aria-label="Formularfelder" style={S_FIELDS_WRAP}>
             {fields.map((field, i) => (
               <React.Fragment key={field.id}>
                 {dropIndex === i && <div style={S_DROP_LINE} />}

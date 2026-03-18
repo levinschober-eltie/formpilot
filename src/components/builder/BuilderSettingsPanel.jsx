@@ -182,13 +182,33 @@ export const BuilderSettingsPanel = React.memo(({ field, allFields, onChange, on
             <input type="range" min={1} max={50} value={field.validation?.maxRows || 10} onChange={e => updV('maxRows', Number(e.target.value))} style={{ width: '100%' }} />
             <label style={S_LABEL}>Spalten</label>
             {(field.subFields || []).map((sf, si) => (
-              <div key={sf.id} style={{ display: 'flex', gap: '4px', marginBottom: '4px', alignItems: 'center' }}>
-                <input value={sf.label} onChange={e => {
-                  const sfs = [...(field.subFields || [])];
-                  sfs[si] = { ...sfs[si], label: e.target.value };
-                  upd('subFields', sfs);
-                }} style={{ ...S_INPUT, flex: 1, marginBottom: 0 }} placeholder="Spaltenname" />
-                <button onClick={() => { if ((field.subFields || []).length <= 1) return; upd('subFields', (field.subFields || []).filter((_, i) => i !== si)); }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: (field.subFields || []).length <= 1 ? S.colors.border : S.colors.textMuted, fontSize: '14px' }}>✕</button>
+              <div key={sf.id} style={{ marginBottom: '6px', padding: '6px', borderRadius: S.radius.sm, border: `1px solid ${S.colors.border}`, background: S.colors.bgInput }}>
+                <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+                  <input value={sf.label} onChange={e => {
+                    const sfs = [...(field.subFields || [])];
+                    sfs[si] = { ...sfs[si], label: e.target.value };
+                    upd('subFields', sfs);
+                  }} style={{ ...S_INPUT, flex: 1, marginBottom: 0 }} placeholder="Spaltenname" />
+                  <select value={sf.type || 'text'} onChange={e => {
+                    const sfs = [...(field.subFields || [])];
+                    sfs[si] = { ...sfs[si], type: e.target.value };
+                    upd('subFields', sfs);
+                  }} style={{ ...S_COND_SELECT, width: 'auto', flex: '0 0 90px', marginBottom: 0 }}>
+                    <option value="text">Text</option>
+                    <option value="number">Zahl</option>
+                    <option value="date">Datum</option>
+                    <option value="select">Auswahl</option>
+                    <option value="toggle">Toggle</option>
+                  </select>
+                  <button onClick={() => { if ((field.subFields || []).length <= 1) return; upd('subFields', (field.subFields || []).filter((_, i) => i !== si)); }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: (field.subFields || []).length <= 1 ? S.colors.border : S.colors.textMuted, fontSize: '14px', flexShrink: 0 }}>✕</button>
+                </div>
+                {(sf.type === 'select') && (
+                  <input value={sf.options || ''} onChange={e => {
+                    const sfs = [...(field.subFields || [])];
+                    sfs[si] = { ...sfs[si], options: e.target.value };
+                    upd('subFields', sfs);
+                  }} style={{ ...S_INPUT, marginTop: '4px', fontSize: '11px' }} placeholder="Optionen (kommagetrennt): Option 1, Option 2, Option 3" />
+                )}
               </div>
             ))}
             <button onClick={() => {

@@ -93,6 +93,7 @@ const BarcodeField = React.memo(({ field, value, onChange, error }) => {
     if (videoRef.current) {
       videoRef.current.srcObject = null;
     }
+    detectorRef.current = null;
   }, []);
 
   // Cleanup on unmount

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, Suspense, lazy } from 'react';
 import { S } from './config/theme';
 import { styles } from './styles/shared';
 import { STORAGE_KEYS, USERS } from './config/constants';
@@ -22,10 +22,11 @@ import { ProjectsScreen } from './components/layout/ProjectsScreen';
 import { ProjectDetail } from './components/layout/ProjectDetail';
 import { TemplateSelector } from './components/filler/TemplateSelector';
 import { FormFiller } from './components/filler/FormFiller';
-import { FormBuilder } from './components/builder/FormBuilder';
+const FormBuilder = lazy(() => import('./components/builder/FormBuilder').then(m => ({ default: m.FormBuilder })));
 import { OfflineIndicator } from './components/common/OfflineIndicator';
 import { InstallPrompt } from './components/common/InstallPrompt';
 import { GlobalDialog } from './components/common/GlobalDialog';
+import { ErrorBoundary } from './components/common/ErrorBoundary';
 
 // ═══ Nav Items (P4: outside render) ═══
 const NAV_ITEMS = [
@@ -47,6 +48,13 @@ const getDefaultTab = (role) => {
 const S_LOADING = { textAlign: 'center' };
 const S_LOADING_ICON = { fontSize: '48px', marginBottom: '12px' };
 const S_LOADING_TEXT = { color: 'var(--fp-text-secondary)' };
+
+// ═══ Lazy Loading Fallback (P4) ═══
+const LoadingFallback = () => (
+  <div style={{ ...styles.app, alignItems: 'center', justifyContent: 'center' }}>
+    <div style={S_LOADING}><div style={S_LOADING_ICON}>📋</div><div style={S_LOADING_TEXT}>Laden...</div></div>
+  </div>
+);
 
 // ═══ FormPilot Main App ═══
 export default function FormPilot() {
@@ -340,7 +348,7 @@ export default function FormPilot() {
   const isLoading = !loaded || (isSupabaseConfigured() && !authChecked);
   if (isLoading) return <div style={{ ...styles.app, alignItems: 'center', justifyContent: 'center' }}><div style={S_LOADING}><div style={S_LOADING_ICON}>📋</div><div style={S_LOADING_TEXT}>Laden...</div></div></div>;
   if (!user) return <><LoginScreen onLogin={handleLogin} /><GlobalDialog /></>;
-  if (builderTemplate) return <><FormBuilder template={builderTemplate} onSave={handleBuilderSave} onClose={() => setBuilderTemplate(null)} /><GlobalDialog /></>;
+  if (builderTemplate) return <><ErrorBoundary><Suspense fallback={<LoadingFallback />}><FormBuilder template={builderTemplate} onSave={handleBuilderSave} onClose={() => setBuilderTemplate(null)} /></Suspense></ErrorBoundary><GlobalDialog /></>;
 
   return (
     <div style={styles.app}>
