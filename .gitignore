@@ -16,6 +16,12 @@ dist-ssr/
 .env.local
 .env.*.local
 
+# Claude Code
+.claude/
+
+# Deno
+deno.lock
+
 # Editor
 .vscode/*
 !.vscode/extensions.json

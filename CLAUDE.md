@@ -2,6 +2,7 @@
 
 Digitaler Formular-Generator für Handwerksbetriebe.
 Eigenständiges Projekt — Multi-File React/Vite + Supabase.
+Wird bald in LagerPilot eingebunden (Library-Build vorhanden).
 
 ## Regeln (NIEMALS brechen)
 FR1: Modular. Neue Features als Hooks/Komponenten. NIE Bestehendes umschreiben.
@@ -25,22 +26,38 @@ Admin: PIN 1234 | Monteur: PIN 5678 | Büro: PIN 9999
 ## Projektstruktur
 ```
 src/
-├── config/          # Theme, Konstanten, Demo-Templates
-├── lib/             # Storage, Validation, Helpers, Supabase
-├── styles/          # Shared Styles
+├── index.js             # Barrel Export (Public API für Embedding)
+├── App.jsx              # Haupt-App (Provider Shell + UI/Navigation)
+├── main.jsx             # SPA Entry Point
+├── config/              # Theme, Konstanten, Demo-Templates
+├── contexts/            # AuthContext (initialUser), DataContext
+├── lib/                 # Storage, Validation, Helpers
+│   ├── supabase/        # 9 modulare Service-Dateien (auth, templates, etc.)
+│   ├── supabaseService.js  # Backwards-compat Barrel Re-Export
+│   ├── aiService.js     # AI Form Generation (Edge Function + Fallback)
+│   └── dialogService.js # Global In-App Dialoge
+├── styles/              # Shared Styles + CSS Variables (--fp-*)
+├── hooks/               # useDebounce, useUndoRedo, useOnlineStatus, etc.
 ├── components/
-│   ├── fields/      # Alle Feldtyp-Komponenten (14 Typen)
-│   ├── filler/      # FormFiller + TemplateSelector
-│   ├── builder/     # FormBuilder + Palette + Canvas + Settings
-│   ├── layout/      # Login, Settings, Submissions, TemplatesOverview
-│   └── common/      # Toast, MiniToggle, shared UI
-├── hooks/           # Custom Hooks (ab S01: useUndoRedo etc.)
-├── pages/           # Page-Level Komponenten (ab S07: Analytics)
-├── App.jsx          # Haupt-App
-└── main.jsx         # Entry Point
+│   ├── fields/          # Alle Feldtyp-Komponenten (14 Typen)
+│   ├── filler/          # FormFiller + TemplateSelector
+│   ├── builder/         # FormBuilder + Palette + Canvas + Settings
+│   ├── layout/          # Login, Settings, Submissions, TemplatesOverview
+│   └── common/          # ErrorBoundary, GlobalDialog, Toast, MiniToggle
+supabase/
+├── migrations/          # SQL-Migrationen (001-005)
+└── functions/           # Edge Functions (verify-pin, generate-form)
 ```
 
-## Workflow
-1. Feature in passender Datei implementieren
-2. Build prüfen: npm run build
-3. Dev-Server: npm run dev
+## Builds
+- SPA: `npm run build` (PWA mit Service Worker)
+- Library: `npm run build:lib` (ESM für Embedding in LagerPilot)
+- Dev: `npm run dev`
+
+## Integration (LagerPilot)
+```jsx
+import { FormPilot, AuthProvider, DataProvider } from 'formpilot/src';
+<AuthProvider initialUser={externerUser}>
+  <DataProvider><FormPilot /></DataProvider>
+</AuthProvider>
+```
