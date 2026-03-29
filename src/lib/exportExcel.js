@@ -176,7 +176,7 @@ export const exportMultipleToExcel = async (submissions, template) => {
   const XLSX = await getXLSX();
   const wb = XLSX.utils.book_new();
 
-  const allFields = template.pages.flatMap(p => p.fields).filter(f => !['heading', 'divider', 'info'].includes(f.type));
+  const allFields = (template.pages || []).flatMap(p => p.fields || []).filter(f => !['heading', 'divider', 'info'].includes(f.type));
 
   const headers = ['ID', 'Ausgef\u00fcllt von', 'Erstellt am', 'Status', ...allFields.map(f => f.label || f.type)];
   const rows = [headers];

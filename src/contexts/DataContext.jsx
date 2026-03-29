@@ -71,6 +71,23 @@ export function DataProvider({ children, externalProjects, externalCustomers, on
     return () => window.removeEventListener('formpilot:logout', handleLogout);
   }, []);
 
+  // ═══ Cross-tab localStorage sync ═══
+  useEffect(() => {
+    const handleStorageChange = (e) => {
+      if (e.key === 'fp_submissions') {
+        try { setSubmissions(JSON.parse(e.newValue) || []); } catch {}
+      } else if (e.key === 'fp_templates') {
+        try { setCustomTemplates(JSON.parse(e.newValue) || []); } catch {}
+      } else if (e.key === 'fp_customers') {
+        try { setCustomers(JSON.parse(e.newValue) || []); } catch {}
+      } else if (e.key === 'fp_projects') {
+        try { setProjects(JSON.parse(e.newValue) || []); } catch {}
+      }
+    };
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
+
   // ═══ Sync external data when props change ═══
   useEffect(() => {
     if (externalProjects) setProjects(externalProjects);

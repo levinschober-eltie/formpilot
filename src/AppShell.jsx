@@ -1,11 +1,13 @@
+import { lazy, Suspense } from 'react';
 import { useRouter } from './lib/router';
 import FormPilot from './App.jsx';
-import { LandingPage } from './pages/LandingPage.jsx';
-import { PricingPage } from './pages/PricingPage.jsx';
-import { Datenschutz } from './pages/Datenschutz.jsx';
-import { Impressum } from './pages/Impressum.jsx';
-import { AGB } from './pages/AGB.jsx';
 import { CookieBanner } from './components/common/CookieBanner.jsx';
+
+const LandingPage = lazy(() => import('./pages/LandingPage.jsx').then(m => ({ default: m.LandingPage })));
+const PricingPage = lazy(() => import('./pages/PricingPage.jsx').then(m => ({ default: m.PricingPage })));
+const Datenschutz = lazy(() => import('./pages/Datenschutz.jsx').then(m => ({ default: m.Datenschutz })));
+const Impressum = lazy(() => import('./pages/Impressum.jsx').then(m => ({ default: m.Impressum })));
+const AGB = lazy(() => import('./pages/AGB.jsx').then(m => ({ default: m.AGB })));
 
 // ═══ Public route map ═══
 const PUBLIC_ROUTES = {
@@ -47,7 +49,9 @@ export function AppShell() {
   if (PublicPage) {
     return (
       <>
-        <PublicPage />
+        <Suspense fallback={null}>
+          <PublicPage />
+        </Suspense>
         <CookieBanner />
       </>
     );
@@ -56,7 +60,9 @@ export function AppShell() {
   // Default: show landing page for unknown routes
   return (
     <>
-      <LandingPage />
+      <Suspense fallback={null}>
+        <LandingPage />
+      </Suspense>
       <CookieBanner />
     </>
   );

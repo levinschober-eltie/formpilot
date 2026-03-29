@@ -4,6 +4,7 @@ import { eq, and, isNull, gt } from "drizzle-orm";
 import { db } from "../db";
 import { invitations, profiles, session as sessionTable } from "../db/schema";
 import { auth, requireAuth, requireRole, getOrgId, type AuthContext } from "../middleware/auth";
+import { checkRateLimit } from "../middleware/rate-limit";
 
 // ─── Validation ─────────────────────────────────────────────────────────────
 
@@ -134,6 +135,13 @@ app.post("/", requireAuth, requireRole("admin"), async (c: AuthContext) => {
 
 // POST /accept — Einladung annehmen (keine Auth erforderlich)
 app.post("/accept", async (c) => {
+  // Rate Limiting auf IP
+  const ip = c.req.header("x-forwarded-for") || c.req.header("x-real-ip") || "unknown";
+  const { allowed } = await checkRateLimit(`invite-accept:${ip}`, 10, 15 * 60 * 1000);
+  if (!allowed) {
+    return c.json({ error: "Zu viele Versuche. Bitte später erneut versuchen." }, 429);
+  }
+
   const body = await c.req.json();
 
   const parsed = acceptInvitationSchema.safeParse(body);

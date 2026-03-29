@@ -179,7 +179,7 @@ app.post("/pin-verify", async (c) => {
     }
 
     // Session direkt in DB erstellen (better-auth hat kein createSession API)
-    const token = crypto.randomUUID() + crypto.randomUUID();
+    const token = Array.from(crypto.getRandomValues(new Uint8Array(32)), b => b.toString(16).padStart(2, '0')).join('');
     const sessionId = crypto.randomUUID();
     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 Tage
 

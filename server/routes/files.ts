@@ -9,8 +9,11 @@ import * as path from "node:path";
 
 const UPLOAD_DIR = process.env.UPLOAD_DIR || "./uploads";
 
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 // Max file size: 10 MB (base64 = ~33% larger than raw, so ~13.3 MB base64 string)
 const MAX_BASE64_SIZE = 14 * 1024 * 1024;
+
+const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/svg+xml', 'application/pdf', 'application/json'];
 
 // Erlaubte Content-Types
 const ALLOWED_CONTENT_TYPES = new Set([
@@ -41,12 +44,12 @@ const uploadBodySchema = z.object({
  */
 function resolveUploadPath(orgId: string, filePath: string): string {
   // Normalisieren und bereinigen — keine ../ erlauben
-  const sanitized = filePath.replace(/\.\./g, "").replace(/^\/+/, "");
-  const fullPath = path.resolve(UPLOAD_DIR, orgId, sanitized);
+  const sanitized = path.normalize(filePath).replace(/^(\.\.(\/|\\|$))+/, '').replace(/^\/+/, "");
+  const uploadDir = path.resolve(UPLOAD_DIR, orgId);
+  const fullPath = path.resolve(uploadDir, sanitized);
 
-  // Sicherheitscheck: Pfad muss innerhalb UPLOAD_DIR bleiben
-  const resolvedBase = path.resolve(UPLOAD_DIR);
-  if (!fullPath.startsWith(resolvedBase)) {
+  // Sicherheitscheck: Pfad muss innerhalb Upload-Dir bleiben
+  if (!fullPath.startsWith(path.resolve(uploadDir))) {
     throw new Error("Ungültiger Dateipfad");
   }
 
@@ -107,6 +110,11 @@ fileRoutes.post("/upload", async (c: AuthContext) => {
     buffer = Buffer.from(raw, "base64");
   } catch {
     return c.json({ error: "Ungültige Base64-Daten" }, 400);
+  }
+
+  // Decoded file size check
+  if (buffer.length > MAX_FILE_SIZE) {
+    return c.json({ error: "Datei zu groß (max. 10 MB)" }, 413);
   }
 
   // Verzeichnis erstellen und Datei schreiben

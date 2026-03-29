@@ -11,7 +11,7 @@ import { secureId } from './helpers';
 export const extractCustomerData = (submission, template) => {
   if (!template || !submission.data) return null;
 
-  const allFields = template.pages.flatMap(p => p.fields);
+  const allFields = (template.pages || []).flatMap(p => p.fields || []);
   const result = { name: '', email: '', phone: '', address: '', project: '' };
 
   allFields.forEach(field => {

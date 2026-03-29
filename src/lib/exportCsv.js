@@ -13,7 +13,7 @@ export const exportSubmissionsCsv = (submissions, allTemplates) => {
   submissions.forEach(sub => {
     const tpl = templateMap[sub.templateId];
     if (!tpl) return;
-    tpl.pages.flatMap(p => p.fields).forEach(f => {
+    (tpl.pages || []).flatMap(p => p.fields || []).forEach(f => {
       if (['heading', 'divider', 'info'].includes(f.type)) return;
       if (f.type === 'signature' && f.multiSignature && Array.isArray(f.signatureSlots) && f.signatureSlots.length > 0) {
         // Multi-signature: one column per slot
@@ -45,7 +45,7 @@ export const exportSubmissionsCsv = (submissions, allTemplates) => {
 
   // Feld-Typ-Map für lesbare Formatierung
   const fieldTypeMap = {};
-  allTemplates.forEach(t => t.pages?.flatMap(p => p.fields).forEach(f => { fieldTypeMap[f.id] = f; }));
+  allTemplates.forEach(t => (t.pages || []).flatMap(p => p.fields || []).forEach(f => { fieldTypeMap[f.id] = f; }));
 
   const formatCsvValue = (val, field) => {
     if (val === null || val === undefined) return '';

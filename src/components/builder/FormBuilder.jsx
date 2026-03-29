@@ -82,7 +82,7 @@ export const FormBuilder = ({ template: initialTemplate, onSave, onClose }) => {
 
   const activePage = template.pages[activePageIndex] || template.pages[0];
   const activeFields = useMemo(() => activePage?.fields || [], [activePage?.fields]);
-  const allFields = useMemo(() => template.pages.flatMap(p => p.fields), [template.pages]);
+  const allFields = useMemo(() => (template.pages || []).flatMap(p => p.fields || []), [template.pages]);
   const selectedField = useMemo(() => allFields.find(f => f.id === selectedFieldId), [allFields, selectedFieldId]);
 
   const upd = useCallback((next) => { setTemplateWithHistory(next); setHasChanges(true); }, [setTemplateWithHistory]);

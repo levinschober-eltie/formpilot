@@ -117,7 +117,7 @@ export const exportSubmissionPdf = (submission, template) => {
   const showWatermark = settings.showWatermark && submission.status !== 'completed';
   const watermarkText = settings.watermarkText || 'ENTWURF';
 
-  const allFields = template.pages.flatMap(p => p.fields);
+  const allFields = (template.pages || []).flatMap(p => p.fields || []);
   const _signatureFields = allFields.filter(f => f.type === 'signature' && submission.data?.[f.id]);
   const _photoFields = allFields.filter(f => f.type === 'photo' && submission.data?.[f.id]);
 
