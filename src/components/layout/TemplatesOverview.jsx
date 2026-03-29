@@ -10,7 +10,7 @@ import { ConfirmDialog } from '../common/ConfirmDialog';
 import { useConfirm } from '../../hooks/useConfirm';
 import { ErrorBoundary } from '../common/ErrorBoundary';
 import { useAuth } from '../../contexts/AuthContext';
-import { useData } from '../../contexts/DataContext';
+import { useTemplates } from '../../hooks/useTemplates';
 const AIFormGenerator = lazy(() => import('../builder/AIFormGenerator').then(m => ({ default: m.AIFormGenerator })));
 
 // ═══ Extracted Styles (P4) ═══
@@ -46,7 +46,7 @@ const ALL_ROLES = ['admin', 'monteur', 'buero'];
 
 export const TemplatesOverview = React.memo(({ onOpenBuilder, onStartFilling }) => {
   const { user } = useAuth();
-  const { customTemplates, handleDeleteTemplate: onDeleteTemplate, updateTemplate } = useData();
+  const { customTemplates, handleDeleteTemplate: onDeleteTemplate, updateTemplate } = useTemplates();
   const [toast, setToast] = useState(null);
   const [showAIGenerator, setShowAIGenerator] = useState(false);
   const [showArchived, setShowArchived] = useState(false);

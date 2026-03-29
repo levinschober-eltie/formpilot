@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { S } from '../../config/theme';
 import { styles } from '../../styles/shared';
 import { useDebounce } from '../../hooks/useDebounce';
-import { useData } from '../../contexts/DataContext';
+import { useProjects } from '../../hooks/useProjects';
 
 // ═══ Constants ═══
 const STATUS_LABELS = {
@@ -44,7 +44,7 @@ const S_STATUS_BADGE = (status) => ({
 
 // ═══ FEATURE: Projektliste ═══
 export const ProjectsScreen = ({ onSelectProject, onCreateProject }) => {
-  const { projects } = useData();
+  const { projects } = useProjects();
   const [search, setSearch] = useState('');
   const debouncedSearch = useDebounce(search);
   const [page, setPage] = useState(0);

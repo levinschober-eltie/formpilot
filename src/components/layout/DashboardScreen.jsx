@@ -2,7 +2,8 @@ import { useState, useEffect, useMemo } from 'react';
 import { S, CATEGORY_COLORS, STATUS_COLORS, STATUS_LABELS } from '../../config/theme';
 import { styles } from '../../styles/shared';
 import { getActivityLog } from '../../lib/customerService';
-import { useData } from '../../contexts/DataContext';
+import { useSubmissions } from '../../hooks/useSubmissions';
+import { useTemplates } from '../../hooks/useTemplates';
 
 // ═══ FEATURE: Dashboard & Analytics ═══
 const S_GRID = { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '12px', marginBottom: '24px' };
@@ -38,7 +39,8 @@ const LOG_LABELS = {
 const S_LOG_DOT = (color) => ({ width: 8, height: 8, borderRadius: '50%', background: color, flexShrink: 0, marginTop: '5px' });
 
 export const DashboardScreen = () => {
-  const { submissions, allTemplates } = useData();
+  const { submissions } = useSubmissions();
+  const { allTemplates } = useTemplates();
   const [recentLog, setRecentLog] = useState([]);
   useEffect(() => { getActivityLog().then(log => setRecentLog(log.slice(0, 10))).catch(() => {}); }, []);
   const stats = useMemo(() => {
