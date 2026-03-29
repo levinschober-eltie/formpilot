@@ -6,6 +6,7 @@ import { storageGet, storageSet } from './lib/storage';
 import { processCustomerFromSubmission, addActivityLog, removeSubmissionFromCustomer } from './lib/customerService';
 import { linkSubmissionToPhase, buildAutoFillData } from './lib/projectService';
 import { isApiConfigured } from './lib/api/client';
+import { secureId } from './lib/helpers';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { DataProvider, useData } from './contexts/DataContext';
 import { LoginScreen } from './components/layout/LoginScreen';
@@ -127,9 +128,11 @@ function FormPilotInner({ hiddenTabs = [], embeddedMode = false, onNavigateToHos
   }, []);
 
   const handleSubmitForm = useCallback(async (data) => {
-    const newSub = { id: 'sub-' + Date.now(), templateId: fillingTemplate.id, templateVersion: fillingTemplate.version, status: 'completed', data, filledBy: user.id, filledByName: user.name, createdAt: new Date().toISOString(), completedAt: new Date().toISOString() };
-    const updated = [...submissions, newSub]; setSubmissions(updated);
-    await storageSet(STORAGE_KEYS.submissions, updated);
+    const newSub = { id: secureId('sub'), templateId: fillingTemplate.id, templateVersion: fillingTemplate.version, status: 'completed', data, filledBy: user.id, filledByName: user.name, createdAt: new Date().toISOString(), completedAt: new Date().toISOString() };
+    const updated = [...submissions, newSub];
+    try {
+      await storageSet(STORAGE_KEYS.submissions, updated);
+      setSubmissions(updated);
     await storageSet(`fp_draft_${fillingTemplate.id}_current`, null);
 
     // ═══ Auto-Kundenerstellung + Aktivitaetslog ═══
@@ -174,18 +177,23 @@ function FormPilotInner({ hiddenTabs = [], embeddedMode = false, onNavigateToHos
       }
     }
 
+    } catch (e) {
+      console.error('[FormPilot] Submission save failed:', e);
+    }
     setFillingTemplate(null); setDraftData(null); setFillingProjectContext(null);
     if (projCtx) { setTab('projects'); } else { setTab('submissions'); }
   }, [fillingTemplate, fillingProjectContext, submissions, allTemplates, user, setSubmissions, setCustomers, refreshProjects]);
 
   const handleStatusChange = useCallback(async (subId, newStatus) => {
-    setSubmissions(prev => {
-      const updated = prev.map(s => s.id === subId ? { ...s, status: newStatus } : s);
-      storageSet(STORAGE_KEYS.submissions, updated);
-      return updated;
-    });
-    setViewingSubmission(prev => prev?.id === subId ? { ...prev, status: newStatus } : prev);
-  }, [setSubmissions]);
+    const updated = submissions.map(s => s.id === subId ? { ...s, status: newStatus } : s);
+    try {
+      await storageSet(STORAGE_KEYS.submissions, updated);
+      setSubmissions(updated);
+      setViewingSubmission(prev => prev?.id === subId ? { ...prev, status: newStatus } : prev);
+    } catch (e) {
+      console.error('[FormPilot] Status change failed:', e);
+    }
+  }, [submissions, setSubmissions]);
 
   const handleDeleteSubmission = useCallback(async (subId) => {
     setSubmissions(prev => {

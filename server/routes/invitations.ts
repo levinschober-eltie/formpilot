@@ -32,7 +32,8 @@ app.get("/", requireAuth, requireRole("admin"), async (c: AuthContext) => {
       .select()
       .from(invitations)
       .where(eq(invitations.organizationId, orgId))
-      .orderBy(invitations.createdAt);
+      .orderBy(invitations.createdAt)
+      .limit(100);
 
     return c.json({ data: result });
   } catch (error: unknown) {
@@ -57,7 +58,8 @@ app.get("/team", requireAuth, async (c: AuthContext) => {
       })
       .from(profiles)
       .where(eq(profiles.organizationId, orgId))
-      .orderBy(profiles.createdAt);
+      .orderBy(profiles.createdAt)
+      .limit(500);
 
     return c.json({ data: result });
   } catch (error: unknown) {
