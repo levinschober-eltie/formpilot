@@ -4,7 +4,9 @@ import { styles } from '../../styles/shared';
 import { getActivityLog, updateCustomerNotes, updateCustomer, deleteCustomer, addActivityLog } from '../../lib/customerService';
 import { exportSubmissionPdf } from '../../lib/exportPdf';
 import { dialog } from '../../lib/dialogService';
-import { useData } from '../../contexts/DataContext';
+import { useSubmissions } from '../../hooks/useSubmissions';
+import { useTemplates } from '../../hooks/useTemplates';
+import { useCustomers } from '../../hooks/useCustomers';
 
 // ═══ Extracted Styles (P4) ═══
 const S_HEADER = { display: 'flex', alignItems: 'flex-start', gap: '16px', marginBottom: '24px' };
@@ -40,7 +42,9 @@ const S_EDIT_INPUT = { width: '100%', padding: '8px 12px', borderRadius: S.radiu
 const S_EDIT_LABEL = { fontSize: '12px', fontWeight: 600, color: S.colors.textMuted, marginBottom: '4px' };
 
 export const CustomerDetail = ({ customer, onBack }) => {
-  const { submissions, allTemplates, handleCustomersChange } = useData();
+  const { submissions } = useSubmissions();
+  const { allTemplates } = useTemplates();
+  const { handleCustomersChange } = useCustomers();
   const [tab, setTab] = useState('contracts');
   const [activityLog, setActivityLog] = useState([]);
   const [notes, setNotes] = useState(customer.notes || '');

@@ -176,3 +176,9 @@ export function useData() {
   if (!ctx) throw new Error('useData must be inside DataProvider');
   return ctx;
 }
+
+// Re-export domain hooks for convenience
+export { useSubmissions } from '../hooks/useSubmissions';
+export { useTemplates } from '../hooks/useTemplates';
+export { useCustomers } from '../hooks/useCustomers';
+export { useProjects } from '../hooks/useProjects';

@@ -85,6 +85,8 @@ formpilot/
 │   │   ├── auth.ts             # better-auth + requireAuth + requireRole
 │   │   ├── api-auth.ts         # API-Key Auth + generateApiKey
 │   │   └── rate-limit.ts       # DB-backed Rate-Limiting
+│   ├── schemas/
+│   │   └── index.ts            # Shared Zod Schemas (aus Drizzle generiert)
 │   └── services/
 │       ├── usage.ts            # Usage-Metering (UPSERT)
 │       └── stripe.ts           # Stripe API (direct fetch)

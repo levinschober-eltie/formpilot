@@ -32,3 +32,4 @@ deno.lock
 *.sln
 *.sw?
 .DS_Store
+.vercel

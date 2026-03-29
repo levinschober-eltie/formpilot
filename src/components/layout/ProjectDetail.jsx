@@ -3,7 +3,8 @@ import { S } from '../../config/theme';
 import { styles } from '../../styles/shared';
 import { linkSubmissionToPhase } from '../../lib/projectService';
 import { dialog } from '../../lib/dialogService';
-import { useData } from '../../contexts/DataContext';
+import { useSubmissions } from '../../hooks/useSubmissions';
+import { useTemplates } from '../../hooks/useTemplates';
 
 // ═══ Extracted Styles (P4) ═══
 const S_BACK_ROW = { display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' };
@@ -53,7 +54,8 @@ const fmtDate = (d) => d ? new Date(d).toLocaleDateString('de-DE', { day: '2-dig
 
 // ═══ FEATURE: Projekt-Detailansicht mit Timeline ═══
 export const ProjectDetail = ({ project, onBack, onProjectChange, onStartFilling }) => {
-  const { submissions, allTemplates } = useData();
+  const { submissions } = useSubmissions();
+  const { allTemplates } = useTemplates();
   const [name, setName] = useState(project.name || '');
   const [description, setDescription] = useState(project.description || '');
   const [phases, setPhases] = useState(project.phases || []);

@@ -4,7 +4,7 @@ import { styles } from '../../styles/shared';
 import { CATEGORY_OPTIONS } from '../../config/constants';
 import { getCachedTemplates } from '../../lib/offlineDb';
 import { useAuth } from '../../contexts/AuthContext';
-import { useData } from '../../contexts/DataContext';
+import { useTemplates } from '../../hooks/useTemplates';
 
 // ═══ Extracted Styles (P4) ═══
 const S_SEARCH = { flex: '1 1 200px', padding: '10px 14px', borderRadius: S.radius.md, border: `1.5px solid ${S.colors.border}`, fontSize: '14px', fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box', background: S.colors.bgInput, minWidth: '150px' };
@@ -17,7 +17,7 @@ const S_EMPTY_DESC = { color: S.colors.textSecondary, fontSize: '14px' };
 
 export const TemplateSelector = ({ onSelect }) => {
   const { user } = useAuth();
-  const { activeTemplates } = useData();
+  const { activeTemplates } = useTemplates();
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [cachedIds, setCachedIds] = useState(new Set());
