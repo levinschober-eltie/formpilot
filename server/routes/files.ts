@@ -223,7 +223,7 @@ fileRoutes.delete("/*", async (c: AuthContext) => {
     return c.json({ error: "Datei konnte nicht gelöscht werden" }, 500);
   }
 
-  return c.json({ ok: true });
+  return c.json({ data: { deleted: true } });
 });
 
 export default fileRoutes;

@@ -110,7 +110,7 @@ app.delete("/:id", async (c: AuthContext) => {
     return c.json({ error: "API-Key nicht gefunden" }, 404);
   }
 
-  return c.json({ success: true });
+  return c.json({ data: { deleted: true } });
 });
 
 export default app;

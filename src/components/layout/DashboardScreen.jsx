@@ -4,6 +4,7 @@ import { styles } from '../../styles/shared';
 import { getActivityLog } from '../../lib/customerService';
 import { useSubmissions } from '../../hooks/useSubmissions';
 import { useTemplates } from '../../hooks/useTemplates';
+import { formatDate } from '../../lib/dateFormatter';
 
 // ═══ FEATURE: Dashboard & Analytics ═══
 const S_GRID = { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '12px', marginBottom: '24px' };
@@ -201,7 +202,7 @@ export const DashboardScreen = () => {
                 <div style={{ fontSize: '13px', fontWeight: 500 }}>{LOG_LABELS[entry.action] || entry.action}</div>
                 {entry.details && <div style={{ fontSize: '12px', color: S.colors.textMuted, marginTop: '2px' }}>{entry.details}</div>}
                 <div style={{ fontSize: '11px', color: S.colors.textMuted, marginTop: '2px' }}>
-                  {new Date(entry.createdAt).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                  {formatDate(entry.createdAt, 'datetime')}
                   {entry.userName && ` · ${entry.userName}`}
                 </div>
               </div>

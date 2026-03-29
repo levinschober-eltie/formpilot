@@ -9,6 +9,7 @@ import { useDebounce } from '../../hooks/useDebounce';
 import { dialog } from '../../lib/dialogService';
 import { useSubmissions } from '../../hooks/useSubmissions';
 import { useTemplates } from '../../hooks/useTemplates';
+import { formatDate } from '../../lib/dateFormatter';
 
 // ═══ FEATURE: Submissions List (Enhanced with Search, Filter, Export) ═══
 const S_TOOLBAR = { display: 'flex', gap: '8px', marginBottom: '16px', flexWrap: 'wrap', alignItems: 'center' };
@@ -141,7 +142,7 @@ export const SubmissionsList = ({ onViewSubmission, onDeleteSubmission }) => {
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontWeight: 600, fontSize: '15px' }}>{tpl?.name || 'Formular'}</div>
                       <div style={{ fontSize: '12px', color: S.colors.textMuted }}>
-                        {new Date(sub.createdAt).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                        {formatDate(sub.createdAt, 'datetime')}
                         {sub.filledByName && ` · ${sub.filledByName}`}
                       </div>
                     </div>

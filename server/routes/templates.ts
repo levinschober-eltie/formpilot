@@ -186,7 +186,7 @@ app.delete("/:id", requireRole("admin"), async (c: AuthContext) => {
     return c.json({ error: "Template nicht gefunden" }, 404);
   }
 
-  return c.json({ success: true });
+  return c.json({ data: { deleted: true } });
 });
 
 export default app;
