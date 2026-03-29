@@ -97,8 +97,12 @@ export function DataProvider({ children, externalProjects, externalCustomers, on
     if (externalCustomers) setCustomers(externalCustomers);
   }, [externalCustomers]);
 
-  // ═══ Persist submissions ═══
-  useEffect(() => { if (loaded) storageSet(STORAGE_KEYS.submissions, submissions); }, [submissions, loaded]);
+  // ═══ Persist submissions (debounced to avoid duplicate writes from App.jsx await+setState) ═══
+  useEffect(() => {
+    if (!loaded) return;
+    const timer = setTimeout(() => storageSet(STORAGE_KEYS.submissions, submissions), 500);
+    return () => clearTimeout(timer);
+  }, [submissions, loaded]);
 
   const allTemplates = useMemo(() => [...DEMO_TEMPLATES, ...customTemplates], [customTemplates]);
 

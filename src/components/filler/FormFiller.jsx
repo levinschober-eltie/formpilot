@@ -57,6 +57,10 @@ export const FormFiller = React.memo(({ template, onSubmit, onCancel, initialDat
   }, [showErrors]);
 
   const navigatingRef = useRef(false);
+  const navTimeoutRef = useRef(null);
+
+  useEffect(() => () => clearTimeout(navTimeoutRef.current), []);
+
   const goNext = useCallback(() => {
     if (navigatingRef.current) return;
     navigatingRef.current = true;
@@ -67,7 +71,7 @@ export const FormFiller = React.memo(({ template, onSubmit, onCancel, initialDat
       setShowErrors(false); setErrors({});
       if (isLastPage) onSubmit(formData); else { setPageIndex(prev => prev + 1); window.scrollTo(0, 0); }
     } finally {
-      setTimeout(() => { navigatingRef.current = false; }, 300);
+      navTimeoutRef.current = setTimeout(() => { navigatingRef.current = false; }, 300);
     }
   }, [currentPage, formData, isLastPage, onSubmit]);
 

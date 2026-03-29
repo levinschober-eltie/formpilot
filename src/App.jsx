@@ -196,11 +196,14 @@ function FormPilotInner({ hiddenTabs = [], embeddedMode = false, onNavigateToHos
   }, [submissions, setSubmissions]);
 
   const handleDeleteSubmission = useCallback(async (subId) => {
-    setSubmissions(prev => {
-      const updated = prev.filter(s => s.id !== subId);
-      storageSet(STORAGE_KEYS.submissions, updated);
-      return updated;
-    });
+    const updated = submissions.filter(s => s.id !== subId);
+    try {
+      await storageSet(STORAGE_KEYS.submissions, updated);
+      setSubmissions(updated);
+    } catch (e) {
+      console.error('[FormPilot] Delete submission failed:', e);
+      return;
+    }
     // Kunde-Verknuepfung bereinigen + Log
     const result = await removeSubmissionFromCustomer(subId);
     if (result) {
@@ -226,7 +229,7 @@ function FormPilotInner({ hiddenTabs = [], embeddedMode = false, onNavigateToHos
     }
     if (projChanged) await refreshProjects();
     setViewingSubmission(null);
-  }, [user, projects, setSubmissions, setCustomers, saveProject, refreshProjects]);
+  }, [submissions, user, projects, setSubmissions, setCustomers, saveProject, refreshProjects]);
 
   const handleBuilderSave = useCallback(async () => { await refreshTemplates(); }, [refreshTemplates]);
 

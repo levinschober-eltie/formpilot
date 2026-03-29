@@ -143,7 +143,7 @@ export async function testAPIKey(apiKey) {
  * @param {number} retryCount - Internal retry counter
  * @returns {Promise<{ template: object, warnings: string[] }>}
  */
-export async function generateFormTemplate(userPrompt, language = 'de', retryCount = 0) {
+export async function generateFormTemplate(userPrompt, language = 'de', retryCount = 0, { signal } = {}) {
   if (!userPrompt || userPrompt.trim().length < 10) {
     throw new Error('Bitte beschreibe dein Formular genauer (mindestens 10 Zeichen).');
   }
@@ -154,6 +154,7 @@ export async function generateFormTemplate(userPrompt, language = 'de', retryCou
       const data = await apiFetch('/api/ai/generate', {
         method: 'POST',
         body: JSON.stringify({ prompt: userPrompt.trim(), language }),
+        signal,
       });
       if (data?.template) {
         // Validate and fix the template from server
@@ -198,6 +199,7 @@ export async function generateFormTemplate(userPrompt, language = 'de', retryCou
         system: SYSTEM_PROMPT,
         messages: [{ role: 'user', content: fullPrompt }],
       }),
+      signal,
     });
   } catch (err) {
     if (err.name === 'TypeError' && err.message.includes('fetch')) {
@@ -230,7 +232,8 @@ export async function generateFormTemplate(userPrompt, language = 'de', retryCou
       return generateFormTemplate(
         userPrompt + '\n\nWICHTIG: Antworte NUR mit einem validen JSON-Objekt. Kein Markdown, kein Text drumherum.',
         language,
-        retryCount + 1
+        retryCount + 1,
+        { signal }
       );
     }
     throw new Error('Die KI hat kein gültiges JSON zurückgegeben. Bitte erneut versuchen.');

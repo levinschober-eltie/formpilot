@@ -85,8 +85,10 @@ const AIFormGenerator = memo(function AIFormGenerator({ onClose, onOpenBuilder, 
   const [progressIdx, setProgressIdx] = useState(0);
   const progressRef = useRef(null);
   const textareaRef = useRef(null);
+  const abortRef = useRef(null);
 
   useEffect(() => { injectSpinner(); }, []);
+  useEffect(() => () => abortRef.current?.abort(), []);
 
   // Progress animation during loading
   useEffect(() => {
@@ -118,11 +120,14 @@ const AIFormGenerator = memo(function AIFormGenerator({ onClose, onOpenBuilder, 
 
     setPhase('loading');
     setError('');
+    abortRef.current?.abort();
+    abortRef.current = new AbortController();
     try {
-      const res = await generateFormTemplate(prompt);
+      const res = await generateFormTemplate(prompt, 'de', 0, { signal: abortRef.current.signal });
       setResult(res);
       setPhase('result');
     } catch (err) {
+      if (err.name === 'AbortError') return;
       if (err.message === 'NO_API_KEY') {
         setError('NO_API_KEY');
       } else {

@@ -33,7 +33,7 @@ const formatExcelValue = (field, value) => {
       if (typeof value === 'object' && !Array.isArray(value)) {
         return Object.entries(value).map(([key, v]) => {
           const item = field.items?.find(i => i.id === key);
-          return `${v?.checked ? '\u2611' : '\u2610'} ${item?.label || key}${v?.note ? ` \u2014 ${v.note}` : ''}`;
+          return `${v?.checked ? '\u2611' : '\u2610'} ${item?.label || key}${v?.note ? ` \u2014 ${sanitizeFormulaInjection(v.note)}` : ''}`;
         }).join('\n');
       }
       return String(value);
@@ -49,10 +49,10 @@ const formatExcelValue = (field, value) => {
       return sanitizeFormulaInjection(value);
     case 'repeater':
       if (!Array.isArray(value) || value.length === 0) return '';
-      return value.map((row, i) => {
-        const cols = Object.entries(row).map(([, v]) => String(v || '')).join(' | ');
+      return sanitizeFormulaInjection(value.map((row, i) => {
+        const cols = Object.entries(row).map(([, v]) => sanitizeFormulaInjection(String(v || ''))).join(' | ');
         return `#${i + 1}: ${cols}`;
-      }).join('\n');
+      }).join('\n'));
     default: {
       const result = String(value);
       return sanitizeFormulaInjection(result);

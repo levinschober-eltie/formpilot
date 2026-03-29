@@ -95,7 +95,7 @@ export const exportSubmissionsCsv = (submissions, allTemplates) => {
     if (/^[=+\-@\t\r]/.test(s)) {
       s = "'" + s;
     }
-    return s.includes(',') || s.includes('"') || s.includes('\n') ? `"${s}"` : s;
+    return s.includes(',') || s.includes('"') || s.includes('\n') || s.includes('\r') ? `"${s}"` : s;
   };
 
   const csv = [headers.map(escape).join(','), ...rows.map(r => r.map(escape).join(','))].join('\n');
