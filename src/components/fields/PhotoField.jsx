@@ -57,7 +57,7 @@ const compressImage = (file, maxWidth = 1200, quality = 0.8) => {
   });
 };
 
-export const PhotoField = ({ field, value, onChange, error }) => {
+export const PhotoField = React.memo(function PhotoField({ field, value, onChange, error }) {
   const fileRef = useRef(null);
   const cameraRef = useRef(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -146,4 +146,4 @@ export const PhotoField = ({ field, value, onChange, error }) => {
       )}
     </div>
   );
-};
+});
