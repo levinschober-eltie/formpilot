@@ -83,6 +83,25 @@ app.on(["POST", "GET"], "/api/auth/**", (c) => {
   return auth.handler(c.req.raw);
 });
 
+// ─── Cleanup Cron Endpoint ─────────────────────────────────────────────────
+app.get("/api/internal/cleanup", async (c) => {
+  const secret = c.req.header("x-cleanup-secret");
+  if (secret !== process.env.BETTER_AUTH_SECRET) {
+    return c.json({ error: "Unauthorized" }, 401);
+  }
+
+  const { cleanupRateLimits } = await import("./middleware/rate-limit");
+  await cleanupRateLimits();
+
+  // Cleanup expired sessions
+  const { db } = await import("./db");
+  const { session } = await import("./db/schema");
+  const { lt } = await import("drizzle-orm");
+  await db.delete(session).where(lt(session.expiresAt, new Date()));
+
+  return c.json({ status: "ok", cleanedAt: new Date().toISOString() });
+});
+
 // ─── API Routes ─────────────────────────────────────────────────────────────
 
 app.route("/api/auth", authRoutes);
