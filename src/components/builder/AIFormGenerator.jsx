@@ -2,7 +2,7 @@ import { useState, useCallback, memo, useRef, useEffect } from 'react';
 import { S } from '../../config/theme';
 import { styles } from '../../styles/shared';
 import { generateFormTemplate, getAISettings } from '../../lib/aiService';
-import { isSupabaseConfigured } from '../../lib/supabase';
+import { isApiConfigured } from '../../lib/api/client';
 
 // ═══ Extracted Styles (P4) ═══
 const S_OVERLAY = {
@@ -105,7 +105,7 @@ const AIFormGenerator = memo(function AIFormGenerator({ onClose, onOpenBuilder, 
   const handleGenerate = useCallback(async () => {
     const settings = await getAISettings();
     // Only require local API key if Supabase is not configured (Edge Function handles it server-side)
-    if (!settings.apiKey && !isSupabaseConfigured()) {
+    if (!settings.apiKey && !isApiConfigured()) {
       setError('NO_API_KEY');
       setPhase('error');
       return;

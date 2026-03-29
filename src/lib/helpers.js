@@ -3,8 +3,15 @@ export const slugify = (str) =>
     .replace(/ä/g, 'ae').replace(/ö/g, 'oe').replace(/ü/g, 'ue').replace(/ß/g, 'ss')
     .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 
+/** Cryptographically secure ID generator (replaces Math.random) */
+export const secureId = (prefix = '') => {
+  const bytes = crypto.getRandomValues(new Uint8Array(6));
+  const hex = Array.from(bytes, b => b.toString(16).padStart(2, '0')).join('');
+  return prefix ? `${prefix}-${Date.now()}-${hex}` : `${Date.now()}-${hex}`;
+};
+
 export const createField = (type) => {
-  const id = `field-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  const id = secureId('field');
   const base = { id, type, label: '', placeholder: '', required: false, width: 'full', conditions: [], conditionLogic: 'AND', validation: {} };
   switch (type) {
     case 'text': return { ...base, label: 'Textfeld' };
@@ -32,7 +39,7 @@ export const createField = (type) => {
 };
 
 export const createEmptyTemplate = () => ({
-  id: `tpl-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+  id: secureId('tpl'),
   name: '', description: '', category: 'custom', icon: '📋', version: 1,
   pages: [{ id: `page-${Date.now()}`, title: 'Seite 1', fields: [] }],
   pdfSettings: { orientation: 'portrait', showLogo: true, showPageNumbers: true, footerText: 'Erstellt mit FormPilot', accentColor: '#2563eb' },

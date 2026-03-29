@@ -1,3 +1,5 @@
+import { secureId } from './helpers';
+
 // ═══ FEATURE: AI Template Validator (Prompt 06) ═══
 
 const VALID_FIELD_TYPES = [
@@ -27,7 +29,7 @@ export function validateAndFixAITemplate(rawTemplate) {
 
   // Top-level fields
   const template = {
-    id: `tpl-ai-${ts}-${Math.random().toString(36).slice(2, 8)}`,
+    id: secureId('tpl-ai'),
     name: typeof rawTemplate.name === 'string' && rawTemplate.name.trim() ? rawTemplate.name.trim() : 'KI-Formular',
     description: typeof rawTemplate.description === 'string' ? rawTemplate.description.trim() : '',
     category: VALID_CATEGORIES.includes(rawTemplate.category) ? rawTemplate.category : 'custom',

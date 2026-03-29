@@ -5,6 +5,7 @@ import { MiniToggle } from '../common/MiniToggle';
 import { OptionsEditor } from './OptionsEditor';
 import { ChecklistItemsEditor } from './ChecklistItemsEditor';
 import { useDebounce } from '../../hooks/useDebounce';
+import { secureId } from '../../lib/helpers';
 
 // ═══ Debounced Input wrapper (P6) ═══
 const DebouncedInput = ({ value, onChange, component = 'input', ...props }) => {
@@ -139,7 +140,7 @@ export const BuilderSettingsPanel = React.memo(({ field, allFields, onChange, on
               ))}
               {(field.signatureSlots || []).length < 5 && (
                 <button onClick={() => {
-                  const id = `sig-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+                  const id = secureId('sig');
                   upd('signatureSlots', [...(field.signatureSlots || []), { id, label: `Unterschrift ${(field.signatureSlots || []).length + 1}`, required: false }]);
                 }} style={S_ADD_COND}>＋ Slot hinzufügen</button>
               )}
@@ -213,7 +214,7 @@ export const BuilderSettingsPanel = React.memo(({ field, allFields, onChange, on
               </div>
             ))}
             <button onClick={() => {
-              const id = `sf-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+              const id = secureId('sf');
               upd('subFields', [...(field.subFields || []), { id, label: `Spalte ${(field.subFields || []).length + 1}`, type: 'text', placeholder: '' }]);
             }} style={S_ADD_COND}>＋ Spalte hinzufügen</button>
           </>}

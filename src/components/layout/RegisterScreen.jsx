@@ -2,8 +2,9 @@
 import { useState } from 'react';
 import { S } from '../../config/theme';
 import { styles } from '../../styles/shared';
-import { supabase, isSupabaseConfigured } from '../../lib/supabase';
-import { createOrganization, createProfile, clearProfileCache } from '../../lib/supabaseService';
+import { isApiConfigured } from '../../lib/api/client';
+import { apiFetch } from '../../lib/api/client';
+import { clearProfileCache } from '../../lib/api';
 
 // ═══ Extracted Styles (P4) ═══
 const S_WRAPPER = { alignItems: 'center', justifyContent: 'center', padding: '20px' };
@@ -24,7 +25,7 @@ export const RegisterScreen = ({ onRegistered, onBack }) => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  if (!isSupabaseConfigured()) return null;
+  if (!isApiConfigured()) return null;
 
   const handleStep1 = () => {
     if (!orgName.trim()) { setError('Bitte Firmennamen eingeben'); return; }
@@ -36,39 +37,31 @@ export const RegisterScreen = ({ onRegistered, onBack }) => {
     if (!name.trim()) { setError('Bitte Namen eingeben'); return; }
     if (!email.trim()) { setError('Bitte E-Mail eingeben'); return; }
     if (password.length < 6) { setError('Passwort muss mindestens 6 Zeichen haben'); return; }
-    if (password !== passwordConfirm) { setError('Passwoerter stimmen nicht ueberein'); return; }
+    if (password !== passwordConfirm) { setError('Passwörter stimmen nicht überein'); return; }
 
     setLoading(true);
     setError('');
     try {
-      // 1. Create Supabase Auth account
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: email.trim(),
-        password,
-      });
-      if (authError) throw authError;
-      if (!authData.user) throw new Error('Registrierung fehlgeschlagen');
-
-      // 2. Create Organization
-      const org = await createOrganization(orgName.trim());
-
-      // 3. Create Profile
+      // Register via API endpoint
       clearProfileCache();
-      const profile = await createProfile(
-        authData.user.id,
-        org.id,
-        name.trim(),
-        email.trim(),
-        'admin'
-      );
+      const result = await apiFetch('/api/auth/register', {
+        method: 'POST',
+        body: JSON.stringify({
+          orgName: orgName.trim(),
+          name: name.trim(),
+          email: email.trim(),
+          password,
+        }),
+      });
+      if (!result?.user) throw new Error('Registrierung fehlgeschlagen');
 
-      // 4. Callback with user data
+      const { user: apiUser, profile } = result;
       onRegistered({
-        id: authData.user.id,
+        id: apiUser.id,
         name: profile.name,
         email: profile.email,
         role: profile.role,
-        organizationId: org.id,
+        organizationId: profile.organization_id,
         profile,
       });
     } catch (e) {
@@ -147,7 +140,7 @@ export const RegisterScreen = ({ onRegistered, onBack }) => {
                 value={passwordConfirm}
                 onChange={e => { setPasswordConfirm(e.target.value); setError(''); }}
                 onKeyDown={e => e.key === 'Enter' && handleRegister()}
-                placeholder="Passwort bestaetigen"
+                placeholder="Passwort bestätigen"
                 style={{ ...styles.input(false), fontSize: '15px' }}
               />
             </div>
@@ -163,7 +156,7 @@ export const RegisterScreen = ({ onRegistered, onBack }) => {
               onClick={() => { setStep(1); setError(''); }}
               style={{ ...styles.btn('secondary'), width: '100%', marginTop: '8px' }}
             >
-              Zurueck
+              Zurück
             </button>
           </>
         )}

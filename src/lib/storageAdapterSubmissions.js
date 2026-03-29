@@ -2,22 +2,22 @@
 // Split from storageAdapter.js for modularity.
 
 import { storageGet, storageSet } from './storage';
-import * as supa from './supabaseService';
+import * as api from './api';
 import { STORAGE_KEYS } from '../config/constants';
 import { getOfflineDb, cacheSubmissions, getCachedSubmissions } from './offlineDb';
 import { syncQueue } from './syncQueue';
-import { isSupabaseMode, isNetworkError } from './storageAdapterShared';
+import { isApiMode, isNetworkError } from './storageAdapterShared';
 
 // ═══ SUBMISSIONS ═══
 export async function loadSubmissions(filters = {}) {
-  if (isSupabaseMode()) {
+  if (isApiMode()) {
     try {
-      const submissions = await supa.getSubmissions(filters);
+      const submissions = await api.getSubmissions(filters);
       // Cache in IndexedDB for offline access
       cacheSubmissions(submissions).catch(() => {});
       return submissions;
     } catch (e) {
-      console.error('[StorageAdapter] Supabase submissions load failed, trying offline cache:', e);
+      console.error('[StorageAdapter] API submissions load failed, trying offline cache:', e);
       if (isNetworkError(e)) {
         const cached = await getCachedSubmissions();
         if (cached && cached.length > 0) return cached;
@@ -28,10 +28,10 @@ export async function loadSubmissions(filters = {}) {
 }
 
 export async function saveSubmission(submission) {
-  if (isSupabaseMode()) {
+  if (isApiMode()) {
     if (navigator.onLine) {
       try {
-        const saved = await supa.saveSubmission(submission);
+        const saved = await api.saveSubmission(submission);
         // Also cache locally
         const db = await getOfflineDb();
         await db.put('offlineSubmissions', saved);
@@ -40,7 +40,7 @@ export async function saveSubmission(submission) {
         if (isNetworkError(e)) {
           return await _saveSubmissionOffline(submission);
         }
-        console.error('[StorageAdapter] Supabase submission save failed:', e);
+        console.error('[StorageAdapter] API submission save failed:', e);
         throw e;
       }
     } else {
@@ -66,10 +66,10 @@ async function _saveSubmissionOffline(submission) {
 }
 
 export async function updateSubmissionStatus(id, status) {
-  if (isSupabaseMode()) {
+  if (isApiMode()) {
     if (navigator.onLine) {
       try {
-        return await supa.updateSubmissionStatus(id, status);
+        return await api.updateSubmissionStatus(id, status);
       } catch (e) {
         if (isNetworkError(e)) {
           // Store status change offline
@@ -82,7 +82,7 @@ export async function updateSubmissionStatus(id, status) {
             return existing;
           }
         }
-        console.error('[StorageAdapter] Supabase submission status update failed:', e);
+        console.error('[StorageAdapter] API submission status update failed:', e);
         throw e;
       }
     } else {
@@ -103,10 +103,10 @@ export async function updateSubmissionStatus(id, status) {
 }
 
 export async function deleteSubmission(id) {
-  if (isSupabaseMode()) {
+  if (isApiMode()) {
     if (navigator.onLine) {
       try {
-        return await supa.deleteSubmission(id);
+        return await api.deleteSubmission(id);
       } catch (e) {
         if (isNetworkError(e)) {
           await syncQueue.enqueue({ type: 'delete', entity: 'submission', data: { id } });
@@ -114,7 +114,7 @@ export async function deleteSubmission(id) {
           await db.delete('offlineSubmissions', id);
           return;
         }
-        console.error('[StorageAdapter] Supabase submission delete failed:', e);
+        console.error('[StorageAdapter] API submission delete failed:', e);
         throw e;
       }
     } else {

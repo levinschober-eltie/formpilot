@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, memo } from 'react';
 import { S } from '../../config/theme';
 import { styles } from '../../styles/shared';
 import { getAISettings, saveAISettings, testAPIKey } from '../../lib/aiService';
-import { isSupabaseConfigured } from '../../lib/supabase';
+import { isApiConfigured } from '../../lib/api/client';
 
 // ═══ Extracted Styles (P4) ═══
 const S_AI_INPUT = { ...styles.input(false), fontSize: '14px', minHeight: '42px' };
@@ -70,7 +70,7 @@ export const SettingsAI = memo(function SettingsAI() {
           {aiTestMsg}
         </div>
       )}
-      {isSupabaseConfigured() && (
+      {isApiConfigured() && (
         <div style={S_SUPABASE_NOTE}>
           <span style={{ color: S.colors.success, fontSize: '14px' }}>&#9679;</span>
           Im Produktivmodus wird der API-Key serverseitig verwaltet. Der lokale Key dient nur als Fallback.

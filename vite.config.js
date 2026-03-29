@@ -46,23 +46,14 @@ export default defineConfig(({ mode }) => {
                 expiration: { maxEntries: 10, maxAgeSeconds: 60 * 60 * 24 * 365 },
               },
             },
-            // Supabase REST API — NetworkFirst with 5s timeout
+            // Railway API — NetworkFirst with 5s timeout
             {
-              urlPattern: /^https:\/\/.*\.supabase\.co\/rest\/v1\/.*/i,
+              urlPattern: /^https:\/\/.*\.railway\.app\/api\/.*/i,
               handler: 'NetworkFirst',
               options: {
-                cacheName: 'supabase-api',
+                cacheName: 'api-cache',
                 expiration: { maxEntries: 100, maxAgeSeconds: 86400 },
                 networkTimeoutSeconds: 5,
-              },
-            },
-            // Supabase Storage — CacheFirst (images, files)
-            {
-              urlPattern: /^https:\/\/.*\.supabase\.co\/storage\/v1\/.*/i,
-              handler: 'CacheFirst',
-              options: {
-                cacheName: 'supabase-storage',
-                expiration: { maxEntries: 200, maxAgeSeconds: 604800 },
               },
             },
           ],
@@ -77,7 +68,7 @@ export default defineConfig(({ mode }) => {
         formats: ['es'],
       },
       rollupOptions: {
-        external: ['react', 'react-dom', 'react/jsx-runtime', '@supabase/supabase-js'],
+        external: ['react', 'react-dom', 'react/jsx-runtime'],
         output: {
           globals: {
             react: 'React',

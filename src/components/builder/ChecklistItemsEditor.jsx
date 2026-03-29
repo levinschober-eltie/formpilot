@@ -1,5 +1,6 @@
 import React from 'react';
 import { S } from '../../config/theme';
+import { secureId } from '../../lib/helpers';
 
 // ═══ Extracted Styles (P4) ═══
 const S_NUM = { fontSize: '12px', color: S.colors.textMuted, flexShrink: 0 };
@@ -8,7 +9,7 @@ const S_DEL = (enabled) => ({ background: 'none', border: 'none', cursor: enable
 const S_ADD = { padding: '6px 12px', borderRadius: S.radius.sm, border: `1px dashed ${S.colors.border}`, background: 'transparent', color: S.colors.textMuted, cursor: 'pointer', fontSize: '12px', fontFamily: 'inherit' };
 
 export const ChecklistItemsEditor = React.memo(({ items, onChange }) => {
-  const add = () => onChange([...items, { id: `item-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`, label: `Prüfpunkt ${items.length + 1}` }]);
+  const add = () => onChange([...items, { id: secureId('item'), label: `Prüfpunkt ${items.length + 1}` }]);
   const remove = (i) => { if (items.length <= 1) return; onChange(items.filter((_, j) => j !== i)); };
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>

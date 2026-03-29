@@ -1,14 +1,14 @@
 // ═══ FEATURE: Storage Adapter (S05) + Offline Fallback (S04) ═══
 // Barrel re-export: all entity-specific adapters + shared helpers.
-// Switches between localStorage and Supabase based on configuration.
+// Switches between localStorage and API based on configuration.
 // Falls back to IndexedDB offline storage when network is unavailable.
 
-import * as supa from './supabaseService';
+import * as api from './api';
 import { getOfflineDb } from './offlineDb';
-import { isSupabaseMode, isNetworkError } from './storageAdapterShared';
+import { isApiMode, isNetworkError } from './storageAdapterShared';
 
 // ═══ Re-export shared helpers ═══
-export { isSupabaseMode, isNetworkError } from './storageAdapterShared';
+export { isApiMode, isSupabaseMode, isNetworkError } from './storageAdapterShared';
 
 // ═══ Re-export entity modules ═══
 export * from './storageAdapterTemplates';
@@ -18,10 +18,10 @@ export * from './storageAdapterProjects';
 
 // ═══ FILE STORAGE ═══
 export async function uploadFileData(bucket, path, base64) {
-  if (isSupabaseMode()) {
+  if (isApiMode()) {
     if (navigator.onLine) {
       try {
-        return await supa.uploadBase64(bucket, path, base64);
+        return await api.uploadBase64(bucket, path, base64);
       } catch (e) {
         if (isNetworkError(e)) {
           // Store file offline
@@ -58,9 +58,9 @@ export async function getFileData(bucket, pathOrBase64) {
     }
   }
 
-  if (isSupabaseMode() && pathOrBase64) {
+  if (isApiMode() && pathOrBase64) {
     try {
-      return await supa.downloadAsBase64(bucket, pathOrBase64);
+      return await api.downloadAsBase64(bucket, pathOrBase64);
     } catch (e) {
       console.error('[StorageAdapter] File download failed:', e);
       return null;
@@ -71,9 +71,9 @@ export async function getFileData(bucket, pathOrBase64) {
 
 // ═══ ACTIVITY LOG ═══
 export async function logActivity(action, entityType, entityId, details = {}) {
-  if (isSupabaseMode()) {
+  if (isApiMode()) {
     try {
-      return await supa.logActivity(action, entityType, entityId, details);
+      return await api.logActivity(action, entityType, entityId, details);
     } catch (e) {
       console.error('[StorageAdapter] Activity log failed:', e);
     }

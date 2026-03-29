@@ -5,7 +5,7 @@ import { STORAGE_KEYS } from './config/constants';
 import { storageGet, storageSet } from './lib/storage';
 import { processCustomerFromSubmission, addActivityLog, removeSubmissionFromCustomer } from './lib/customerService';
 import { linkSubmissionToPhase, buildAutoFillData } from './lib/projectService';
-import { isSupabaseConfigured } from './lib/supabase';
+import { isApiConfigured } from './lib/api/client';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { DataProvider, useData } from './contexts/DataContext';
 import { LoginScreen } from './components/layout/LoginScreen';
@@ -159,7 +159,7 @@ function FormPilotInner({ hiddenTabs = [], embeddedMode = false, onNavigateToHos
 
     // ═══ Projekt-Verknuepfung (wenn aus Projekt heraus erstellt) ═══
     const projCtx = fillingProjectContext;
-    if (projCtx) {
+    if (projCtx && template) {
       const phaseId = projCtx._targetPhaseId;
       const phase = phaseId
         ? projCtx.phases.find(p => p.id === phaseId)
@@ -245,7 +245,7 @@ function FormPilotInner({ hiddenTabs = [], embeddedMode = false, onNavigateToHos
   }, [user, hiddenTabs]);
 
   // ═══ Loading state — wait for both data and auth check ═══
-  const isLoading = !loaded || (isSupabaseConfigured() && !authChecked);
+  const isLoading = !loaded || (isApiConfigured() && !authChecked);
   if (isLoading) return <div style={{ ...styles.app, alignItems: 'center', justifyContent: 'center' }}><div style={S_LOADING}><div style={S_LOADING_ICON}>📋</div><div style={S_LOADING_TEXT}>Laden...</div></div></div>;
   if (!user) return <><LoginScreen onLogin={onLogin} /><GlobalDialog /></>;
   if (builderTemplate) return <><ErrorBoundary><Suspense fallback={<LoadingFallback />}><FormBuilder template={builderTemplate} onSave={handleBuilderSave} onClose={() => setBuilderTemplate(null)} /></Suspense></ErrorBoundary><GlobalDialog /></>;

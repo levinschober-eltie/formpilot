@@ -2,8 +2,8 @@ import { useState, useEffect, useCallback, memo } from 'react';
 import { S } from '../../config/theme';
 import { styles } from '../../styles/shared';
 import { MiniToggle } from '../common/MiniToggle';
-import { isSupabaseConfigured } from '../../lib/supabase';
-import { needsMigration, migrateLocalDataToSupabase } from '../../lib/dataMigration';
+import { isApiConfigured } from '../../lib/api/client';
+import { needsMigration, migrateToApi } from '../../lib/dataMigration';
 
 // ═══ Extracted Styles (P4) ═══
 const S_QUOTA_BAR = { height: '8px', background: S.colors.border, borderRadius: S.radius.full, overflow: 'hidden', marginTop: '8px' };
@@ -44,7 +44,7 @@ export const SettingsInfo = memo(function SettingsInfo({ darkMode, onToggleDarkM
     setMigrationRunning(true);
     setMigrationResult(null);
     try {
-      const result = await migrateLocalDataToSupabase((progress) => {
+      const result = await migrateToApi((progress) => {
         setMigrationProgress(progress);
       });
       setMigrationResult(result);
@@ -61,27 +61,27 @@ export const SettingsInfo = memo(function SettingsInfo({ darkMode, onToggleDarkM
   return (
     <>
       {/* ═══ Cloud-Status & Migration Banner ═══ */}
-      {isSupabaseConfigured() && (
+      {isApiConfigured() && (
         <div style={{ ...styles.card, marginTop: '12px', border: `1px solid ${S.colors.primary}40` }}>
           <h3 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '12px' }}>Cloud-Sync</h3>
           <div style={{ fontSize: '13px', color: S.colors.success, fontWeight: 600, marginBottom: '8px' }}>
             Supabase verbunden
           </div>
           <p style={{ fontSize: '12px', color: S.colors.textSecondary, marginBottom: '12px' }}>
-            Deine Daten werden in der Cloud gespeichert und sind auf allen Geraeten verfuegbar.
+            Deine Daten werden in der Cloud gespeichert und sind auf allen Geräten verfügbar.
           </p>
           {migrationNeeded && !migrationResult && (
             <div style={{ ...S_MIGRATION_BOX, background: `${S.colors.warning}15`, border: `1px solid ${S.colors.warning}40` }}>
               <div style={{ fontSize: '13px', fontWeight: 600, color: S.colors.warning, marginBottom: '6px' }}>Lokale Daten gefunden</div>
               <p style={{ fontSize: '12px', color: S.colors.textSecondary, marginBottom: '10px' }}>
-                Du hast Daten im lokalen Speicher. Moechtest du sie in die Cloud migrieren?
+                Du hast Daten im lokalen Speicher. Möchtest du sie in die Cloud migrieren?
               </p>
               <button
                 onClick={handleMigration}
                 disabled={migrationRunning}
                 style={{ ...styles.btn('primary'), width: '100%', opacity: migrationRunning ? 0.6 : 1 }}
               >
-                {migrationRunning ? 'Migration laeuft...' : 'Daten in Cloud migrieren'}
+                {migrationRunning ? 'Migration läuft...' : 'Daten in Cloud migrieren'}
               </button>
             </div>
           )}
@@ -158,7 +158,7 @@ export const SettingsInfo = memo(function SettingsInfo({ darkMode, onToggleDarkM
           <div><span style={{ color: S.colors.success }}>●</span> fp_excel_export: aktiv</div>
           <div><span style={{ color: S.colors.success }}>●</span> fp_company_branding: aktiv</div>
           <div><span style={{ color: S.colors.textMuted }}>○</span> fp_offline: geplant</div>
-          <div><span style={{ color: isSupabaseConfigured() ? S.colors.success : S.colors.textMuted }}>{isSupabaseConfigured() ? '●' : '○'}</span> fp_supabase: {isSupabaseConfigured() ? 'aktiv' : 'bereit (URL nicht gesetzt)'}</div>
+          <div><span style={{ color: isApiConfigured() ? S.colors.success : S.colors.textMuted }}>{isApiConfigured() ? '●' : '○'}</span> fp_supabase: {isApiConfigured() ? 'aktiv' : 'bereit (URL nicht gesetzt)'}</div>
         </div>
       </div>
     </>

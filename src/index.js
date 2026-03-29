@@ -19,3 +19,6 @@ export { dialog } from './lib/dialogService';
 
 // Theme & Config
 export { S, CATEGORY_COLORS, STATUS_COLORS, STATUS_LABELS } from './config/theme';
+
+// SDK
+export { FormPilotClient, createFormPilotClient, useFormPilot, FormPilotEmbed } from './sdk';

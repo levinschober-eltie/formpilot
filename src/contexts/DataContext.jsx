@@ -5,7 +5,7 @@ import { storageGet, storageSet } from '../lib/storage';
 import { checkIntegrity, restoreFromBackup, createFullBackup } from '../lib/storageBackup';
 import { getCustomers as fetchCustomers } from '../lib/customerService';
 import { getProjects as fetchProjects, saveProject, deleteProject, createProject } from '../lib/projectService';
-import { isSupabaseConfigured } from '../lib/supabase';
+import { isApiConfigured } from '../lib/api/client';
 import { useAuth } from './AuthContext';
 
 const DataContext = createContext(null);
@@ -31,7 +31,7 @@ export function DataProvider({ children, externalProjects, externalCustomers, on
           }
         }
 
-        if (!isSupabaseConfigured() && !externalProjects && !externalCustomers) {
+        if (!isApiConfigured() && !externalProjects && !externalCustomers) {
           const session = await storageGet(STORAGE_KEYS.session);
           if (session) {
             const u = USERS.find(u => u.id === session.userId);
@@ -58,6 +58,18 @@ export function DataProvider({ children, externalProjects, externalCustomers, on
       setLoaded(true);
     })();
   }, [loginFromStorage, externalProjects, externalCustomers]);
+
+  // ═══ Clear all data on logout ═══
+  useEffect(() => {
+    const handleLogout = () => {
+      setSubmissions([]);
+      setCustomTemplates([]);
+      setCustomers([]);
+      setProjects([]);
+    };
+    window.addEventListener('formpilot:logout', handleLogout);
+    return () => window.removeEventListener('formpilot:logout', handleLogout);
+  }, []);
 
   // ═══ Sync external data when props change ═══
   useEffect(() => {

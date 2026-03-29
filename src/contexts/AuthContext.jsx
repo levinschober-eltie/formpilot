@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
-import { supabase, isSupabaseConfigured } from '../lib/supabase';
-import { getCurrentUser, clearProfileCache, signOut as supabaseSignOut } from '../lib/supabaseService';
+import { isApiConfigured } from '../lib/api/client';
+import { getCurrentUser, clearProfileCache, signOut as apiSignOut } from '../lib/api';
 import { storageSet } from '../lib/storage';
 import { STORAGE_KEYS } from '../config/constants';
 
@@ -14,7 +14,7 @@ export function AuthProvider({ children, initialUser = null }) {
   useEffect(() => {
     if (initialUser) return; // External auth (e.g. LagerPilot) — skip internal auth
     /* eslint-disable react-hooks/set-state-in-effect */
-    if (!isSupabaseConfigured()) {
+    if (!isApiConfigured()) {
       setAuthChecked(true);
       return;
     }
@@ -41,36 +41,7 @@ export function AuthProvider({ children, initialUser = null }) {
     };
 
     checkSession();
-
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === 'SIGNED_OUT' || !session) {
-        clearProfileCache();
-        setUser(null);
-      } else if (event === 'SIGNED_IN' && session) {
-        // Refresh profile
-        try {
-          clearProfileCache();
-          const supaUser = await getCurrentUser();
-          if (supaUser?.profile) {
-            const profile = supaUser.profile;
-            setUser({
-              id: profile.id,
-              name: profile.name,
-              email: profile.email,
-              role: profile.role,
-              organizationId: profile.organization_id,
-              profile,
-            });
-          }
-        } catch (e) {
-          console.error('[FormPilot] Auth state change error:', e);
-        }
-      }
-    });
-
     /* eslint-enable react-hooks/set-state-in-effect */
-    return () => subscription?.unsubscribe();
   }, [initialUser]);
 
   // Demo mode: set user from stored session (called by DataContext during init)
@@ -81,20 +52,21 @@ export function AuthProvider({ children, initialUser = null }) {
   const handleLogin = useCallback(async (u) => {
     setUser(u);
     // Only store session in localStorage for demo mode
-    if (!isSupabaseConfigured()) {
+    if (!isApiConfigured()) {
       await storageSet(STORAGE_KEYS.session, { userId: u.id });
     }
   }, []);
 
   const handleLogout = useCallback(async () => {
-    if (isSupabaseConfigured()) {
+    if (isApiConfigured()) {
       try {
-        await supabaseSignOut();
+        await apiSignOut();
       } catch (e) {
-        console.error('Supabase signout error:', e);
+        console.error('API signout error:', e);
       }
     }
     clearProfileCache();
+    window.dispatchEvent(new Event('formpilot:logout'));
     setUser(null);
     await storageSet(STORAGE_KEYS.session, null);
   }, []);

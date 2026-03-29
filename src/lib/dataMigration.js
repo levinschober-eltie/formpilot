@@ -3,8 +3,8 @@
 
 import { storageGet } from './storage';
 import { STORAGE_KEYS } from '../config/constants';
-import * as supa from './supabaseService';
-import { isSupabaseConfigured } from './supabase';
+import * as api from './api';
+import { isApiConfigured } from './api/client';
 
 // NOTE: Migration metadata uses direct localStorage intentionally —
 // these are simple flags/progress tracking, not user data needing IndexedDB backup.
@@ -13,7 +13,7 @@ const MIGRATION_PROGRESS_KEY = 'fp_migration_progress';
 
 // ═══ Check if migration is needed ═══
 export function needsMigration() {
-  if (!isSupabaseConfigured()) return false;
+  if (!isApiConfigured()) return false;
   if (localStorage.getItem(MIGRATION_KEY) === 'true') return false;
 
   // Check if there's local data to migrate
@@ -38,8 +38,8 @@ function saveMigrationProgress(progress) {
 }
 
 // ═══ Main Migration Function ═══
-export async function migrateLocalDataToSupabase(onProgress = () => {}) {
-  if (!isSupabaseConfigured()) {
+export async function migrateToApi(onProgress = () => {}) {
+  if (!isApiConfigured()) {
     return { migrated: {}, errors: ['Supabase nicht konfiguriert'] };
   }
 
@@ -67,7 +67,7 @@ export async function migrateLocalDataToSupabase(onProgress = () => {}) {
     for (const template of templates) {
       if (progress[`template_${template.id}`]) { result.migrated.templates++; result.processed++; continue; }
       try {
-        await supa.saveTemplate(template);
+        await api.saveTemplate(template);
         result.migrated.templates++;
         progress[`template_${template.id}`] = true;
         saveMigrationProgress(progress);
@@ -83,7 +83,7 @@ export async function migrateLocalDataToSupabase(onProgress = () => {}) {
     for (const customer of customers) {
       if (progress[`customer_${customer.id}`]) { result.migrated.customers++; result.processed++; continue; }
       try {
-        await supa.saveCustomer(customer);
+        await api.saveCustomer(customer);
         result.migrated.customers++;
         progress[`customer_${customer.id}`] = true;
         saveMigrationProgress(progress);
@@ -99,7 +99,7 @@ export async function migrateLocalDataToSupabase(onProgress = () => {}) {
     for (const project of projects) {
       if (progress[`project_${project.id}`]) { result.migrated.projects++; result.processed++; continue; }
       try {
-        await supa.saveProject(project);
+        await api.saveProject(project);
         result.migrated.projects++;
         progress[`project_${project.id}`] = true;
         saveMigrationProgress(progress);
@@ -118,7 +118,7 @@ export async function migrateLocalDataToSupabase(onProgress = () => {}) {
         // Check for base64 data in submission fields (photos, signatures)
         const migratedData = await migrateSubmissionFiles(submission.data, submission.id);
         const migratedSub = { ...submission, data: migratedData };
-        await supa.saveSubmission(migratedSub);
+        await api.saveSubmission(migratedSub);
         result.migrated.submissions++;
         progress[`submission_${submission.id}`] = true;
         saveMigrationProgress(progress);
@@ -155,7 +155,7 @@ async function migrateSubmissionFiles(data, submissionId) {
       try {
         const ext = value.match(/data:image\/(\w+)/)?.[1] || 'png';
         const path = `${submissionId}/${key}.${ext}`;
-        await supa.uploadBase64('submissions', path, value);
+        await api.uploadBase64('submissions', path, value);
         migrated[key] = `storage:submissions/${path}`;
       } catch (e) {
         console.error(`File migration failed for ${key}:`, e);
@@ -170,7 +170,7 @@ async function migrateSubmissionFiles(data, submissionId) {
           try {
             const ext = item.match(/data:image\/(\w+)/)?.[1] || 'png';
             const path = `${submissionId}/${key}_${i}.${ext}`;
-            await supa.uploadBase64('submissions', path, item);
+            await api.uploadBase64('submissions', path, item);
             migratedArr.push(`storage:submissions/${path}`);
           } catch {
             migratedArr.push(item);
@@ -179,7 +179,7 @@ async function migrateSubmissionFiles(data, submissionId) {
           try {
             const ext = item.data.match(/data:image\/(\w+)/)?.[1] || 'png';
             const path = `${submissionId}/${key}_${i}.${ext}`;
-            await supa.uploadBase64('submissions', path, item.data);
+            await api.uploadBase64('submissions', path, item.data);
             migratedArr.push({ ...item, data: `storage:submissions/${path}` });
           } catch {
             migratedArr.push(item);

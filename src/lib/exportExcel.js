@@ -1,5 +1,10 @@
 // ═══ FEATURE: Excel Export (SheetJS) ═══
-import * as XLSX from 'xlsx';
+// Lazy-load XLSX (~380KB) only when export is used
+let _XLSX = null;
+async function getXLSX() {
+  if (!_XLSX) _XLSX = await import('xlsx');
+  return _XLSX;
+}
 
 const sanitizeFormulaInjection = (val) => {
   if (typeof val === 'string' && /^[=+\-@\t\r]/.test(val)) {
@@ -73,7 +78,8 @@ const getColumnWidths = (data) => {
   return widths;
 };
 
-const triggerDownload = (workbook, filename) => {
+const triggerDownload = async (workbook, filename) => {
+  const XLSX = await getXLSX();
   const data = XLSX.write(workbook, { type: 'array', bookType: 'xlsx' });
   const blob = new Blob([data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
   const url = URL.createObjectURL(blob);
@@ -87,9 +93,10 @@ const triggerDownload = (workbook, filename) => {
 /**
  * Export a single submission to Excel (.xlsx)
  */
-export const exportSubmissionToExcel = (submission, template) => {
+export const exportSubmissionToExcel = async (submission, template) => {
   if (!template || !submission) return;
 
+  const XLSX = await getXLSX();
   const wb = XLSX.utils.book_new();
 
   // Sheet 1: Formulardaten
@@ -156,16 +163,17 @@ export const exportSubmissionToExcel = (submission, template) => {
   XLSX.utils.book_append_sheet(wb, ws2, 'Metadaten');
 
   const safeName = (template.name || 'Formular').replace(/[^a-zA-Z0-9äöüÄÖÜß_-]/g, '_').slice(0, 40);
-  triggerDownload(wb, `${safeName}_${submission.id}.xlsx`);
+  await triggerDownload(wb, `${safeName}_${submission.id}.xlsx`);
 };
 
 /**
  * Export multiple submissions of one template to Excel (.xlsx)
  * All submissions as rows in a single sheet
  */
-export const exportMultipleToExcel = (submissions, template) => {
+export const exportMultipleToExcel = async (submissions, template) => {
   if (!template || !submissions || submissions.length === 0) return;
 
+  const XLSX = await getXLSX();
   const wb = XLSX.utils.book_new();
 
   const allFields = template.pages.flatMap(p => p.fields).filter(f => !['heading', 'divider', 'info'].includes(f.type));
@@ -196,5 +204,5 @@ export const exportMultipleToExcel = (submissions, template) => {
   XLSX.utils.book_append_sheet(wb, ws, 'Alle Einträge');
 
   const safeName = (template.name || 'Formular').replace(/[^a-zA-Z0-9äöüÄÖÜß_-]/g, '_').slice(0, 40);
-  triggerDownload(wb, `${safeName}_Bulk_${new Date().toISOString().split('T')[0]}.xlsx`);
+  await triggerDownload(wb, `${safeName}_Bulk_${new Date().toISOString().split('T')[0]}.xlsx`);
 };

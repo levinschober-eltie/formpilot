@@ -2,22 +2,22 @@
 // Split from storageAdapter.js for modularity.
 
 import { storageGet, storageSet } from './storage';
-import * as supa from './supabaseService';
+import * as api from './api';
 import { STORAGE_KEYS } from '../config/constants';
 import { getOfflineDb, cacheTemplates, getCachedTemplates } from './offlineDb';
 import { syncQueue } from './syncQueue';
-import { isSupabaseMode, isNetworkError } from './storageAdapterShared';
+import { isApiMode, isNetworkError } from './storageAdapterShared';
 
 // ═══ TEMPLATES ═══
 export async function loadTemplates() {
-  if (isSupabaseMode()) {
+  if (isApiMode()) {
     try {
-      const templates = await supa.getTemplates();
+      const templates = await api.getTemplates();
       // Cache in IndexedDB for offline access
       cacheTemplates(templates).catch(() => {});
       return templates;
     } catch (e) {
-      console.error('[StorageAdapter] Supabase templates load failed, trying offline cache:', e);
+      console.error('[StorageAdapter] API templates load failed, trying offline cache:', e);
       if (isNetworkError(e)) {
         const cached = await getCachedTemplates();
         if (cached && cached.length > 0) return cached;
@@ -28,15 +28,15 @@ export async function loadTemplates() {
 }
 
 export async function saveTemplate(template) {
-  if (isSupabaseMode()) {
+  if (isApiMode()) {
     if (navigator.onLine) {
       try {
-        return await supa.saveTemplate(template);
+        return await api.saveTemplate(template);
       } catch (e) {
         if (isNetworkError(e)) {
           return await _saveTemplateOffline(template);
         }
-        console.error('[StorageAdapter] Supabase template save failed:', e);
+        console.error('[StorageAdapter] API template save failed:', e);
         throw e;
       }
     } else {
@@ -63,10 +63,10 @@ async function _saveTemplateOffline(template) {
 }
 
 export async function deleteTemplate(id) {
-  if (isSupabaseMode()) {
+  if (isApiMode()) {
     if (navigator.onLine) {
       try {
-        return await supa.deleteTemplate(id);
+        return await api.deleteTemplate(id);
       } catch (e) {
         if (isNetworkError(e)) {
           await syncQueue.enqueue({ type: 'delete', entity: 'template', data: { id } });
@@ -74,7 +74,7 @@ export async function deleteTemplate(id) {
           await db.delete('templates', id);
           return;
         }
-        console.error('[StorageAdapter] Supabase template delete failed:', e);
+        console.error('[StorageAdapter] API template delete failed:', e);
         throw e;
       }
     } else {

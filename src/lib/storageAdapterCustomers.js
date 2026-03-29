@@ -2,17 +2,17 @@
 // Split from storageAdapter.js for modularity.
 
 import { storageGet, storageSet } from './storage';
-import * as supa from './supabaseService';
+import * as api from './api';
 import { STORAGE_KEYS } from '../config/constants';
 import { getOfflineDb } from './offlineDb';
 import { syncQueue } from './syncQueue';
-import { isSupabaseMode, isNetworkError } from './storageAdapterShared';
+import { isApiMode, isNetworkError } from './storageAdapterShared';
 
 // ═══ CUSTOMERS ═══
 export async function loadCustomers() {
-  if (isSupabaseMode()) {
+  if (isApiMode()) {
     try {
-      const customers = await supa.getCustomers();
+      const customers = await api.getCustomers();
       // Cache in IndexedDB
       const db = await getOfflineDb();
       const tx = db.transaction('customers', 'readwrite');
@@ -20,7 +20,7 @@ export async function loadCustomers() {
       await tx.done;
       return customers;
     } catch (e) {
-      console.error('[StorageAdapter] Supabase customers load failed, trying offline cache:', e);
+      console.error('[StorageAdapter] API customers load failed, trying offline cache:', e);
       if (isNetworkError(e)) {
         const db = await getOfflineDb();
         const cached = await db.getAll('customers');
@@ -32,15 +32,15 @@ export async function loadCustomers() {
 }
 
 export async function saveCustomer(customer) {
-  if (isSupabaseMode()) {
+  if (isApiMode()) {
     if (navigator.onLine) {
       try {
-        return await supa.saveCustomer(customer);
+        return await api.saveCustomer(customer);
       } catch (e) {
         if (isNetworkError(e)) {
           return await _saveCustomerOffline(customer);
         }
-        console.error('[StorageAdapter] Supabase customer save failed:', e);
+        console.error('[StorageAdapter] API customer save failed:', e);
         throw e;
       }
     } else {
@@ -66,10 +66,10 @@ async function _saveCustomerOffline(customer) {
 }
 
 export async function deleteCustomer(id) {
-  if (isSupabaseMode()) {
+  if (isApiMode()) {
     if (navigator.onLine) {
       try {
-        return await supa.deleteCustomer(id);
+        return await api.deleteCustomer(id);
       } catch (e) {
         if (isNetworkError(e)) {
           await syncQueue.enqueue({ type: 'delete', entity: 'customer', data: { id } });
@@ -77,7 +77,7 @@ export async function deleteCustomer(id) {
           await db.delete('customers', id);
           return;
         }
-        console.error('[StorageAdapter] Supabase customer delete failed:', e);
+        console.error('[StorageAdapter] API customer delete failed:', e);
         throw e;
       }
     } else {

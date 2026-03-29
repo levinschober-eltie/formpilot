@@ -2,8 +2,8 @@
 // Queues offline changes and syncs them when network is available.
 
 import { getOfflineDb } from './offlineDb';
-import * as supa from './supabaseService';
-import { isSupabaseConfigured } from './supabase';
+import * as api from './api';
+import { isApiConfigured } from './api/client';
 
 class SyncQueueManager {
   constructor() {
@@ -39,7 +39,7 @@ class SyncQueueManager {
       this._notify();
 
       // Trigger sync if online
-      if (navigator.onLine && isSupabaseConfigured()) {
+      if (navigator.onLine && isApiConfigured()) {
         this.processQueue();
       }
     } catch (e) {
@@ -50,7 +50,7 @@ class SyncQueueManager {
   // ═══ Process all pending entries ═══
   async processQueue() {
     if (this._processing) return;
-    if (!navigator.onLine || !isSupabaseConfigured()) return;
+    if (!navigator.onLine || !isApiConfigured()) return;
 
     this._processing = true;
     this._notify();
@@ -104,33 +104,33 @@ class SyncQueueManager {
         if (type === 'create' || type === 'update') {
           // Upload any offline files first
           await this._uploadOfflineFiles(data);
-          await supa.saveSubmission(data);
+          await api.saveSubmission(data);
         } else if (type === 'delete') {
-          await supa.deleteSubmission(data.id);
+          await api.deleteSubmission(data.id);
         }
         break;
 
       case 'template':
         if (type === 'create' || type === 'update') {
-          await supa.saveTemplate(data);
+          await api.saveTemplate(data);
         } else if (type === 'delete') {
-          await supa.deleteTemplate(data.id);
+          await api.deleteTemplate(data.id);
         }
         break;
 
       case 'customer':
         if (type === 'create' || type === 'update') {
-          await supa.saveCustomer(data);
+          await api.saveCustomer(data);
         } else if (type === 'delete') {
-          await supa.deleteCustomer(data.id);
+          await api.deleteCustomer(data.id);
         }
         break;
 
       case 'project':
         if (type === 'create' || type === 'update') {
-          await supa.saveProject(data);
+          await api.saveProject(data);
         } else if (type === 'delete') {
-          await supa.deleteProject(data.id);
+          await api.deleteProject(data.id);
         }
         break;
 
@@ -147,7 +147,7 @@ class SyncQueueManager {
       for (const fileMeta of data._offlineFiles) {
         const fileData = await db.get('offlineFiles', fileMeta.path);
         if (fileData && fileData.base64) {
-          await supa.uploadBase64(fileMeta.bucket || 'submissions', fileMeta.path, fileData.base64);
+          await api.uploadBase64(fileMeta.bucket || 'submissions', fileMeta.path, fileData.base64);
           // Clean up offline file
           await db.delete('offlineFiles', fileMeta.path);
         }

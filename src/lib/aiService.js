@@ -1,6 +1,6 @@
 // ═══ FEATURE: AI Form Generator Service (Prompt 06) ═══
 import { validateAndFixAITemplate } from './aiTemplateValidator';
-import { supabase, isSupabaseConfigured } from './supabase';
+import { apiFetch, isApiConfigured } from './api/client';
 import { storageGet, storageSet } from './storage';
 
 const MODEL = 'claude-sonnet-4-6';
@@ -148,19 +148,19 @@ export async function generateFormTemplate(userPrompt, language = 'de', retryCou
     throw new Error('Bitte beschreibe dein Formular genauer (mindestens 10 Zeichen).');
   }
 
-  // Try Edge Function first (secure: API key on server)
-  if (isSupabaseConfigured()) {
+  // Try server-side AI endpoint first (secure: API key on server)
+  if (isApiConfigured()) {
     try {
-      const { data, error } = await supabase.functions.invoke('generate-form', {
-        body: { prompt: userPrompt.trim(), language },
+      const data = await apiFetch('/api/ai/generate', {
+        method: 'POST',
+        body: JSON.stringify({ prompt: userPrompt.trim(), language }),
       });
-      if (error) throw error;
       if (data?.template) {
-        // Validate and fix the template from Edge Function
+        // Validate and fix the template from server
         return validateAndFixAITemplate(data.template);
       }
     } catch (e) {
-      console.warn('[FormPilot] Edge Function nicht verfügbar, Fallback auf direkte API:', e.message);
+      console.warn('[FormPilot] Server AI endpoint nicht verfügbar, Fallback auf direkte API:', e.message);
     }
   }
 

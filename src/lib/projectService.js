@@ -1,11 +1,11 @@
 import { storageGet, storageSet } from './storage';
+import { secureId } from './helpers';
 
 // ═══ FEATURE: Project Service ═══
 
 const STORAGE_KEY = 'fp_projects';
 
-const generateId = (prefix) =>
-  `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+const generateId = (prefix) => secureId(prefix);
 
 const DEFAULT_PHASES = [
   'Pachtvertrag',
@@ -86,7 +86,7 @@ export const createProject = async (name, description = '') => {
 export const extractSharedData = (submission, template) => {
   if (!template || !submission?.data) return {};
 
-  const allFields = template.pages.flatMap(p => p.fields);
+  const allFields = (template.pages || []).flatMap(p => p.fields || []);
   const result = {};
 
   allFields.forEach(field => {
@@ -134,7 +134,7 @@ export const linkSubmissionToPhase = async (projectId, phaseId, submissionId, te
 export const buildAutoFillData = (project, template) => {
   if (!project?.sharedData || !template) return {};
 
-  const allFields = template.pages.flatMap(p => p.fields);
+  const allFields = (template.pages || []).flatMap(p => p.fields || []);
   const sharedLower = {};
   for (const [key, val] of Object.entries(project.sharedData)) {
     sharedLower[key.toLowerCase().trim()] = val;

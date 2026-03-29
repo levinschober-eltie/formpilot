@@ -2,17 +2,17 @@
 // Split from storageAdapter.js for modularity.
 
 import { storageGet, storageSet } from './storage';
-import * as supa from './supabaseService';
+import * as api from './api';
 import { STORAGE_KEYS } from '../config/constants';
 import { getOfflineDb } from './offlineDb';
 import { syncQueue } from './syncQueue';
-import { isSupabaseMode, isNetworkError } from './storageAdapterShared';
+import { isApiMode, isNetworkError } from './storageAdapterShared';
 
 // ═══ PROJECTS ═══
 export async function loadProjects() {
-  if (isSupabaseMode()) {
+  if (isApiMode()) {
     try {
-      const projects = await supa.getProjects();
+      const projects = await api.getProjects();
       // Cache in IndexedDB
       const db = await getOfflineDb();
       const tx = db.transaction('projects', 'readwrite');
@@ -20,7 +20,7 @@ export async function loadProjects() {
       await tx.done;
       return projects;
     } catch (e) {
-      console.error('[StorageAdapter] Supabase projects load failed, trying offline cache:', e);
+      console.error('[StorageAdapter] API projects load failed, trying offline cache:', e);
       if (isNetworkError(e)) {
         const db = await getOfflineDb();
         const cached = await db.getAll('projects');
@@ -32,15 +32,15 @@ export async function loadProjects() {
 }
 
 export async function saveProject(project) {
-  if (isSupabaseMode()) {
+  if (isApiMode()) {
     if (navigator.onLine) {
       try {
-        return await supa.saveProject(project);
+        return await api.saveProject(project);
       } catch (e) {
         if (isNetworkError(e)) {
           return await _saveProjectOffline(project);
         }
-        console.error('[StorageAdapter] Supabase project save failed:', e);
+        console.error('[StorageAdapter] API project save failed:', e);
         throw e;
       }
     } else {
@@ -66,10 +66,10 @@ async function _saveProjectOffline(project) {
 }
 
 export async function deleteProject(id) {
-  if (isSupabaseMode()) {
+  if (isApiMode()) {
     if (navigator.onLine) {
       try {
-        return await supa.deleteProject(id);
+        return await api.deleteProject(id);
       } catch (e) {
         if (isNetworkError(e)) {
           await syncQueue.enqueue({ type: 'delete', entity: 'project', data: { id } });
@@ -77,7 +77,7 @@ export async function deleteProject(id) {
           await db.delete('projects', id);
           return;
         }
-        console.error('[StorageAdapter] Supabase project delete failed:', e);
+        console.error('[StorageAdapter] API project delete failed:', e);
         throw e;
       }
     } else {

@@ -3,7 +3,7 @@ import { S } from '../../config/theme';
 import { styles } from '../../styles/shared';
 import { STORAGE_KEYS } from '../../config/constants';
 import { storageGet, storageSet } from '../../lib/storage';
-import { createField } from '../../lib/helpers';
+import { createField, secureId } from '../../lib/helpers';
 import { ToastMessage } from '../common/ToastMessage';
 import { BuilderPalette } from './BuilderPalette';
 import { BuilderCanvas } from './BuilderCanvas';
@@ -70,6 +70,16 @@ export const FormBuilder = ({ template: initialTemplate, onSave, onClose }) => {
     return () => clearInterval(autoSaveRef.current);
   }, []);
 
+  useEffect(() => {
+    if (!hasChanges) return;
+    const handler = (e) => {
+      e.preventDefault();
+      e.returnValue = '';
+    };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, [hasChanges]);
+
   const activePage = template.pages[activePageIndex] || template.pages[0];
   const activeFields = useMemo(() => activePage?.fields || [], [activePage?.fields]);
   const allFields = useMemo(() => template.pages.flatMap(p => p.fields), [template.pages]);
@@ -122,7 +132,7 @@ export const FormBuilder = ({ template: initialTemplate, onSave, onClose }) => {
     const field = activeFields.find(f => f.id === fid);
     if (!field) return;
     const copy = JSON.parse(JSON.stringify(field));
-    copy.id = `field-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    copy.id = secureId('field');
     copy.label = `${copy.label} (Kopie)`;
     const idx = activeFields.findIndex(f => f.id === fid);
     const nf = [...activeFields]; nf.splice(idx + 1, 0, copy);

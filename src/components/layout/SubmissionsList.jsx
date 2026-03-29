@@ -59,7 +59,7 @@ export const SubmissionsList = ({ onViewSubmission, onDeleteSubmission }) => {
     return ids.map(id => ({ id, name: templateMap[id]?.name || id }));
   }, [submissions, templateMap]);
 
-  const handleBulkExcelExport = useCallback(() => {
+  const handleBulkExcelExport = useCallback(async () => {
     if (filtered.length === 0) return;
     setExcelExporting(true);
     try {
@@ -74,13 +74,13 @@ export const SubmissionsList = ({ onViewSubmission, onDeleteSubmission }) => {
       if (entries.length === 1) {
         const [tplId, subs] = entries[0];
         const tpl = templateMap[tplId];
-        if (tpl) exportMultipleToExcel(subs, tpl);
+        if (tpl) await exportMultipleToExcel(subs, tpl);
       } else {
         // Export each template group
-        entries.forEach(([tplId, subs]) => {
+        for (const [tplId, subs] of entries) {
           const tpl = templateMap[tplId];
-          if (tpl) exportMultipleToExcel(subs, tpl);
-        });
+          if (tpl) await exportMultipleToExcel(subs, tpl);
+        }
       }
     } catch { /* export error */ }
     setExcelExporting(false);

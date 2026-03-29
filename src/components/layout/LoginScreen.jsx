@@ -3,8 +3,8 @@ import { useState } from 'react';
 import { S } from '../../config/theme';
 import { styles } from '../../styles/shared';
 import { USERS } from '../../config/constants';
-import { isSupabaseConfigured } from '../../lib/supabase';
-import { signInWithEmail, signInWithPin, getCachedProfile, clearProfileCache } from '../../lib/supabaseService';
+import { isApiConfigured } from '../../lib/api/client';
+import { signInWithEmail, signInWithPin, getCachedProfile, clearProfileCache } from '../../lib/api';
 import { RegisterScreen } from './RegisterScreen';
 
 // ═══ Extracted Styles (P4) ═══
@@ -26,7 +26,7 @@ const tabStyle = (active) => ({
 });
 
 export const LoginScreen = ({ onLogin }) => {
-  const supabaseMode = isSupabaseConfigured();
+  const supabaseMode = isApiConfigured();
   const [mode, setMode] = useState(supabaseMode ? 'email' : 'demo'); // 'email' | 'pin' | 'demo' | 'register'
   const [pin, setPin] = useState('');
   const [email, setEmail] = useState('');

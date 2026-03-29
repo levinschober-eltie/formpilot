@@ -1,5 +1,6 @@
 import { storageGet, storageSet } from './storage';
 import { STORAGE_KEYS, CUSTOMER_FIELD_PATTERNS } from '../config/constants';
+import { secureId } from './helpers';
 
 // ═══ FEATURE: Kunden-Service (Auto-Erkennung + Log) ═══
 
@@ -84,7 +85,7 @@ export const processCustomerFromSubmission = async (submission, template) => {
   } else {
     // Neuen Kunden erstellen
     existing = {
-      id: `cust-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      id: secureId('cust'),
       name: extracted.name || extracted.project,
       email: extracted.email || '',
       phone: extracted.phone || '',
@@ -109,7 +110,7 @@ export const processCustomerFromSubmission = async (submission, template) => {
 export const addActivityLog = async (entry) => {
   const log = await storageGet(STORAGE_KEYS.activityLog) || [];
   log.unshift({
-    id: `log-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+    id: secureId('log'),
     ...entry,
     createdAt: new Date().toISOString(),
   });

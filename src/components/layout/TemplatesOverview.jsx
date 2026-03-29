@@ -3,7 +3,7 @@ import { S, CATEGORY_COLORS } from '../../config/theme';
 import { styles } from '../../styles/shared';
 import { DEMO_TEMPLATES } from '../../config/templates';
 import { STORAGE_KEYS, ROLES } from '../../config/constants';
-import { createEmptyTemplate } from '../../lib/helpers';
+import { createEmptyTemplate, secureId } from '../../lib/helpers';
 import { storageGet, storageSet } from '../../lib/storage';
 import { ToastMessage } from '../common/ToastMessage';
 import { ConfirmDialog } from '../common/ConfirmDialog';
@@ -110,7 +110,7 @@ export const TemplatesOverview = React.memo(({ onOpenBuilder, onStartFilling }) 
 
   const handleDuplicate = useCallback(async (t) => {
     const copy = JSON.parse(JSON.stringify(t));
-    copy.id = `tpl-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    copy.id = secureId('tpl');
     copy.name = `${t.name} (Kopie)`;
     copy.version = 1;
     copy.isActive = false;
@@ -141,7 +141,7 @@ export const TemplatesOverview = React.memo(({ onOpenBuilder, onStartFilling }) 
       const text = await file.text();
       const tpl = JSON.parse(text);
       if (!tpl.pages || !Array.isArray(tpl.pages)) throw new Error('Ungültiges Format');
-      tpl.id = `tpl-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+      tpl.id = secureId('tpl');
       tpl.name = tpl.name ? `${tpl.name} (Import)` : 'Importiertes Formular';
       tpl.version = 1;
       tpl.isDemo = false;
@@ -162,7 +162,7 @@ export const TemplatesOverview = React.memo(({ onOpenBuilder, onStartFilling }) 
 
   const handleActivateDemo = useCallback(async (demo) => {
     const copy = JSON.parse(JSON.stringify(demo));
-    copy.id = `tpl-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    copy.id = secureId('tpl');
     copy.isDemo = false;
     copy.isActive = true;
     copy.visibleForRoles = [...ALL_ROLES];
@@ -332,7 +332,7 @@ export const TemplatesOverview = React.memo(({ onOpenBuilder, onStartFilling }) 
                   <button onClick={() => handleActivateDemo(t)} style={styles.btn('primary', 'sm')}>Aktivieren</button>
                   <button onClick={() => {
                     const copy = JSON.parse(JSON.stringify(t));
-                    copy.id = `tpl-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+                    copy.id = secureId('tpl');
                     copy.name = `${t.name} (Kopie)`;
                     copy.isDemo = false; copy.version = 1;
                     onOpenBuilder(copy);
