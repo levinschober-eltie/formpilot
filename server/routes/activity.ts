@@ -8,8 +8,8 @@ import { requireAuth, getOrgId, type AuthContext } from "../middleware/auth";
 // ─── Validation ─────────────────────────────────────────────────────────────
 
 const createActivitySchema = z.object({
-  action: z.string().min(1, "Action ist erforderlich"),
-  entityType: z.string().min(1, "Entity-Typ ist erforderlich"),
+  action: z.string().min(1, "Action ist erforderlich").max(255).trim(),
+  entityType: z.string().min(1, "Entity-Typ ist erforderlich").max(255).trim(),
   entityId: z.string().uuid().optional().or(z.null()),
   details: z.record(z.string(), z.unknown()).optional(),
 });

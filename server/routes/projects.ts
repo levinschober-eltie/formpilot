@@ -10,8 +10,8 @@ import { requireAuth, requireRole, getOrgId, type AuthContext } from "../middlew
 const PROJECT_STATUSES = ["planning", "active", "completed", "archived"] as const;
 
 const createProjectSchema = z.object({
-  name: z.string().min(1, "Name ist erforderlich"),
-  description: z.string().optional().or(z.null()),
+  name: z.string().min(1, "Name ist erforderlich").max(255).trim(),
+  description: z.string().max(2000).optional().or(z.null()),
   status: z.enum(PROJECT_STATUSES).default("planning"),
   customerId: z.string().uuid().nullable().optional(),
   sharedData: z.record(z.string(), z.unknown()).optional(),

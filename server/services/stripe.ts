@@ -89,7 +89,7 @@ export function constructEvent(
   const signaturePart = parts.find((p) => p.startsWith("v1="));
 
   if (!timestampPart || !signaturePart) {
-    throw new Error("Ungueltige Stripe-Signatur: fehlende Felder");
+    throw new Error("Ungültige Stripe-Signatur: fehlende Felder");
   }
 
   const timestamp = timestampPart.slice(2);
@@ -111,16 +111,16 @@ export function constructEvent(
     expectedBuf.length !== computedBuf.length ||
     !timingSafeEqual(expectedBuf, computedBuf)
   ) {
-    throw new Error("Ungueltige Stripe-Signatur: Signatur stimmt nicht");
+    throw new Error("Ungültige Stripe-Signatur: Signatur stimmt nicht");
   }
 
-  // 5. Timestamp-Toleranz pruefen (5 Minuten)
+  // 5. Timestamp-Toleranz prüfen (5 Minuten)
   const now = Math.floor(Date.now() / 1000);
   const tolerance = 300; // 5 Minuten
   if (Math.abs(now - parseInt(timestamp, 10)) > tolerance) {
-    throw new Error("Ungueltige Stripe-Signatur: Timestamp zu alt");
+    throw new Error("Ungültige Stripe-Signatur: Timestamp zu alt");
   }
 
-  // 6. Event parsen und zurueckgeben
+  // 6. Event parsen und zurückgeben
   return JSON.parse(payload);
 }

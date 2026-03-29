@@ -8,11 +8,11 @@ import { requireAuth, requireRole, getOrgId, type AuthContext } from "../middlew
 // ─── Validation ─────────────────────────────────────────────────────────────
 
 const createCustomerSchema = z.object({
-  name: z.string().min(1, "Name ist erforderlich"),
-  email: z.string().email().optional().or(z.literal("")).or(z.null()),
-  phone: z.string().optional().or(z.null()),
-  address: z.string().optional().or(z.null()),
-  notes: z.string().optional().or(z.null()),
+  name: z.string().min(1, "Name ist erforderlich").max(255).trim(),
+  email: z.string().email().trim().optional().or(z.literal("")).or(z.null()),
+  phone: z.string().max(30).optional().or(z.null()),
+  address: z.string().max(500).optional().or(z.null()),
+  notes: z.string().max(5000).optional().or(z.null()),
   metadata: z.record(z.string(), z.unknown()).optional(),
 });
 

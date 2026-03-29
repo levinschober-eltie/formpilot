@@ -10,8 +10,8 @@ import { requireAuth, requireRole, getOrgId, type AuthContext } from "../middlew
 const CATEGORIES = ["service", "abnahme", "mangel", "pruefung", "uebergabe", "custom"] as const;
 
 const createTemplateSchema = z.object({
-  name: z.string().min(1, "Name ist erforderlich"),
-  description: z.string().optional(),
+  name: z.string().min(1, "Name ist erforderlich").max(255).trim(),
+  description: z.string().max(2000).optional(),
   category: z.enum(CATEGORIES).default("custom"),
   icon: z.string().default("📋"),
   schema: z.record(z.string(), z.unknown()),

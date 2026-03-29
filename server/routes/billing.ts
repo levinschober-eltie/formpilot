@@ -35,7 +35,7 @@ billingRoutes.get("/subscription", requireAuth, async (c: AuthContext) => {
     .limit(1);
 
   if (!subscription) {
-    // Kein Abo vorhanden -> Free-Plan Defaults zurueckgeben
+    // Kein Abo vorhanden -> Free-Plan Defaults zurückgeben
     return c.json({
       subscription: {
         plan: "free",
@@ -106,7 +106,7 @@ billingRoutes.post(
     const parsed = checkoutSchema.safeParse(body);
 
     if (!parsed.success) {
-      return c.json({ error: "Ungueltiger Plan", details: parsed.error.flatten() }, 400);
+      return c.json({ error: "Ungültiger Plan", details: parsed.error.flatten() }, 400);
     }
 
     const { plan } = parsed.data;
@@ -114,7 +114,7 @@ billingRoutes.post(
     const priceId = PRICE_IDS[plan];
 
     if (!priceId) {
-      return c.json({ error: `Kein Preis fuer Plan "${plan}" konfiguriert` }, 500);
+      return c.json({ error: `Kein Preis für Plan "${plan}" konfiguriert` }, 500);
     }
 
     // Bestehende Subscription / Customer laden
@@ -209,15 +209,15 @@ billingRoutes.post("/webhook", async (c) => {
     return c.json({ error: "Fehlende Signatur oder Webhook-Secret" }, 400);
   }
 
-  // Raw Body fuer Signatur-Verifikation (NICHT c.req.json())
+  // Raw Body für Signatur-Verifikation (NICHT c.req.json())
   const rawBody = await c.req.text();
 
   let event: any;
   try {
     event = constructEvent(rawBody, signature, webhookSecret);
   } catch (err) {
-    console.error("Webhook-Signatur ungueltig:", err);
-    return c.json({ error: "Ungueltige Signatur" }, 400);
+    console.error("Webhook-Signatur ungültig:", err);
+    return c.json({ error: "Ungültige Signatur" }, 400);
   }
 
   // ─── Event-Handler ───────────────────────────────────────────────────
@@ -229,8 +229,8 @@ billingRoutes.post("/webhook", async (c) => {
         const customerId = session.customer;
         const subscriptionId = session.subscription;
 
-        // Subscription-Details von Stripe holen wuerden einen Extra-API-Call benoetigen.
-        // Die relevanten Daten kommen ueber subscription.updated Event.
+        // Subscription-Details von Stripe holen würden einen Extra-API-Call benötigen.
+        // Die relevanten Daten kommen über subscription.updated Event.
         // Hier setzen wir nur die IDs und den initialen Status.
         await db
           .update(subscriptions)
@@ -326,7 +326,7 @@ billingRoutes.post("/webhook", async (c) => {
     }
   } catch (err) {
     console.error(`Webhook-Event ${event.type} Verarbeitung fehlgeschlagen:`, err);
-    // Trotzdem 200 zurueckgeben, damit Stripe nicht wiederholt
+    // Trotzdem 200 zurückgeben, damit Stripe nicht wiederholt
     return c.json({ received: true, error: "Verarbeitung fehlgeschlagen" });
   }
 

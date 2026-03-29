@@ -6,7 +6,7 @@ import { incrementUsage } from "../services/usage";
 // ─── Zod Schema ────────────────────────────────────────────────────────────
 
 const generateBodySchema = z.object({
-  prompt: z.string().min(10, "Bitte beschreibe dein Formular genauer (mindestens 10 Zeichen)."),
+  prompt: z.string().min(10, "Bitte beschreibe dein Formular genauer (mindestens 10 Zeichen).").max(2000).trim(),
   language: z.string().default("de"),
 });
 

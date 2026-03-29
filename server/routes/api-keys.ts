@@ -14,7 +14,7 @@ import { generateApiKey } from "../middleware/api-auth";
 // ─── Validation ─────────────────────────────────────────────────────────────
 
 const createKeySchema = z.object({
-  name: z.string().min(1, "Name ist erforderlich").max(100),
+  name: z.string().min(1, "Name ist erforderlich").max(100).trim(),
   scopes: z
     .array(z.enum(["read", "write"]))
     .default(["read", "write"]),
@@ -51,7 +51,7 @@ app.get("/", async (c: AuthContext) => {
   return c.json({ data: keys });
 });
 
-// POST / — Neuen API-Key erstellen (gibt vollen Key nur einmal zurueck!)
+// POST / — Neuen API-Key erstellen (gibt vollen Key nur einmal zurück!)
 app.post("/", async (c: AuthContext) => {
   const orgId = getOrgId(c);
   const profile = c.get("user");

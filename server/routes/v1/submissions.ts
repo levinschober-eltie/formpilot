@@ -15,13 +15,13 @@ const createSubmissionSchema = z.object({
   status: z.enum(STATUSES).default("draft"),
   data: z.record(z.string(), z.unknown()).default({}),
   metadata: z.record(z.string(), z.unknown()).optional(),
-  filledByName: z.string().optional(),
+  filledByName: z.string().max(255).optional(),
   customerId: z.string().uuid().nullable().optional(),
-  customerName: z.string().optional(),
-  customerEmail: z.string().email().optional().or(z.literal("")),
+  customerName: z.string().max(255).optional(),
+  customerEmail: z.string().email().trim().optional().or(z.literal("")),
   projectId: z.string().uuid().nullable().optional(),
-  projectName: z.string().optional(),
-  projectAddress: z.string().optional(),
+  projectName: z.string().max(255).optional(),
+  projectAddress: z.string().max(500).optional(),
   signatures: z.array(z.unknown()).default([]),
   photos: z.array(z.unknown()).default([]),
   gpsLat: z.string().optional(),
@@ -154,7 +154,7 @@ app.put("/:id", requireScope("write"), async (c: ApiAuthContext) => {
     );
   }
 
-  // Pruefen ob Submission existiert und zur Org gehoert
+  // Prüfen ob Submission existiert und zur Org gehört
   const [existing] = await db
     .select({ id: submissions.id })
     .from(submissions)
@@ -215,7 +215,7 @@ app.put("/:id", requireScope("write"), async (c: ApiAuthContext) => {
   return c.json({ data: updated });
 });
 
-// DELETE /:id — Submission loeschen (write scope)
+// DELETE /:id — Submission löschen (write scope)
 app.delete("/:id", requireScope("write"), async (c: ApiAuthContext) => {
   const orgId = c.get("orgId");
   const id = c.req.param("id")!;

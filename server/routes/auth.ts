@@ -14,9 +14,9 @@ import { checkRateLimit } from "../middleware/rate-limit";
 // ─── Validation ─────────────────────────────────────────────────────────────
 
 const registerSchema = z.object({
-  orgName: z.string().min(2, "Organisationsname muss mindestens 2 Zeichen haben"),
-  name: z.string().min(1, "Name ist erforderlich"),
-  email: z.string().email("Ungültige E-Mail-Adresse"),
+  orgName: z.string().min(2, "Organisationsname muss mindestens 2 Zeichen haben").max(255).trim(),
+  name: z.string().min(1, "Name ist erforderlich").max(255).trim(),
+  email: z.string().email("Ungültige E-Mail-Adresse").trim(),
   password: z.string().min(8, "Passwort muss mindestens 8 Zeichen haben"),
 });
 

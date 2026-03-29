@@ -71,7 +71,7 @@ export async function authenticateApiKey(
 
   if (!found) return null;
 
-  // Ablauf pruefen
+  // Ablauf prüfen
   if (found.expiresAt && found.expiresAt < new Date()) return null;
 
   // lastUsedAt aktualisieren (non-blocking)
@@ -91,7 +91,7 @@ export async function authenticateApiKey(
 
 /**
  * Hono-Middleware: Validiert API-Key, setzt orgId/scopes/keyId auf Context.
- * Bei fehlendem/ungueltigem Key -> 401.
+ * Bei fehlendem/ungültigem Key -> 401.
  */
 export async function requireApiAuth(
   c: Context<ApiAuthEnv>,
@@ -116,7 +116,7 @@ export async function requireApiAuth(
 // ─── requireScope Middleware Factory ────────────────────────────────────────
 
 /**
- * Erzeugt Middleware die prueft ob der API-Key den erforderlichen Scope hat.
+ * Erzeugt Middleware die prüft ob der API-Key den erforderlichen Scope hat.
  * Typische Scopes: "read", "write"
  */
 export function requireScope(scope: string) {
@@ -143,8 +143,8 @@ export function requireScope(scope: string) {
 // ─── generateApiKey ─────────────────────────────────────────────────────────
 
 /**
- * Generiert einen neuen API-Key fuer eine Organisation.
- * Der volle Key wird nur einmal zurueckgegeben!
+ * Generiert einen neuen API-Key für eine Organisation.
+ * Der volle Key wird nur einmal zurückgegeben!
  *
  * @returns { key, prefix, id } - key ist der volle Klartext-Key
  */

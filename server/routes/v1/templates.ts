@@ -17,8 +17,8 @@ const CATEGORIES = [
 ] as const;
 
 const createTemplateSchema = z.object({
-  name: z.string().min(1, "Name ist erforderlich"),
-  description: z.string().optional(),
+  name: z.string().min(1, "Name ist erforderlich").max(255).trim(),
+  description: z.string().max(2000).optional(),
   category: z.enum(CATEGORIES).default("custom"),
   icon: z.string().default("\ud83d\udccb"),
   schema: z.record(z.string(), z.unknown()),
@@ -142,7 +142,7 @@ app.put("/:id", requireScope("write"), async (c: ApiAuthContext) => {
     );
   }
 
-  // Pruefen ob Template zur Org gehoert
+  // Prüfen ob Template zur Org gehört
   const [existing] = await db
     .select({ id: templates.id, version: templates.version })
     .from(templates)
@@ -182,7 +182,7 @@ app.put("/:id", requireScope("write"), async (c: ApiAuthContext) => {
   return c.json({ data: updated });
 });
 
-// DELETE /:id — Template loeschen (write scope)
+// DELETE /:id — Template löschen (write scope)
 app.delete("/:id", requireScope("write"), async (c: ApiAuthContext) => {
   const orgId = c.get("orgId");
   const id = c.req.param("id")!;

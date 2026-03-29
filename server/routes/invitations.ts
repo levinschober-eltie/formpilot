@@ -9,13 +9,13 @@ import { checkRateLimit } from "../middleware/rate-limit";
 // ─── Validation ─────────────────────────────────────────────────────────────
 
 const createInvitationSchema = z.object({
-  email: z.string().email("Ungueltige E-Mail-Adresse"),
+  email: z.string().email("Ungültige E-Mail-Adresse").trim(),
   role: z.enum(["admin", "monteur", "buero"]).default("monteur"),
 });
 
 const acceptInvitationSchema = z.object({
-  token: z.string().uuid("Ungueltiger Token"),
-  name: z.string().min(1, "Name ist erforderlich"),
+  token: z.string().uuid("Ungültiger Token"),
+  name: z.string().min(1, "Name ist erforderlich").max(255).trim(),
   password: z.string().min(8, "Passwort muss mindestens 8 Zeichen haben"),
 });
 
@@ -82,7 +82,7 @@ app.post("/", requireAuth, requireRole("admin"), async (c: AuthContext) => {
   const profile = c.get("user");
 
   try {
-    // Pruefen ob E-Mail bereits in der Organisation existiert
+    // Prüfen ob E-Mail bereits in der Organisation existiert
     const [existingProfile] = await db
       .select()
       .from(profiles)
@@ -93,7 +93,7 @@ app.post("/", requireAuth, requireRole("admin"), async (c: AuthContext) => {
       return c.json({ error: "Diese E-Mail-Adresse ist bereits in der Organisation registriert" }, 409);
     }
 
-    // Pruefen ob bereits eine offene Einladung fuer diese E-Mail existiert
+    // Prüfen ob bereits eine offene Einladung für diese E-Mail existiert
     const [existingInvitation] = await db
       .select()
       .from(invitations)
@@ -108,7 +108,7 @@ app.post("/", requireAuth, requireRole("admin"), async (c: AuthContext) => {
       .limit(1);
 
     if (existingInvitation) {
-      return c.json({ error: "Es existiert bereits eine offene Einladung fuer diese E-Mail-Adresse" }, 409);
+      return c.json({ error: "Es existiert bereits eine offene Einladung für diese E-Mail-Adresse" }, 409);
     }
 
     // Einladung erstellen
@@ -154,7 +154,7 @@ app.post("/accept", async (c) => {
   const { token, name, password } = parsed.data;
 
   try {
-    // Einladung suchen: gueltig, nicht angenommen, nicht abgelaufen
+    // Einladung suchen: gültig, nicht angenommen, nicht abgelaufen
     const [invitation] = await db
       .select()
       .from(invitations)
@@ -168,10 +168,10 @@ app.post("/accept", async (c) => {
       .limit(1);
 
     if (!invitation) {
-      return c.json({ error: "Einladung ungueltig oder abgelaufen" }, 404);
+      return c.json({ error: "Einladung ungültig oder abgelaufen" }, 404);
     }
 
-    // User ueber better-auth erstellen
+    // User über better-auth erstellen
     let authUser;
     try {
       authUser = await auth.api.signUpEmail({
@@ -226,7 +226,7 @@ app.post("/accept", async (c) => {
         userAgent: c.req.header("user-agent") ?? null,
       });
 
-    // Profil ohne pinHash zurueckgeben
+    // Profil ohne pinHash zurückgeben
     const { pinHash: _pin, ...safeProfile } = profile;
 
     return c.json({
@@ -260,7 +260,7 @@ app.delete("/:id", requireAuth, requireRole("admin"), async (c: AuthContext) => 
     return c.json({ data: { id: deleted.id } });
   } catch (error: unknown) {
     console.error("Delete invitation error:", error);
-    return c.json({ error: "Einladung konnte nicht geloescht werden" }, 500);
+    return c.json({ error: "Einladung konnte nicht gelöscht werden" }, 500);
   }
 });
 
