@@ -31,7 +31,7 @@ export function useOnlineStatus() {
     });
 
     // Get initial sync status
-    syncQueue.getQueueStatus().then(setSyncStatus);
+    syncQueue.getQueueStatus().then(setSyncStatus).catch(() => {});
 
     return () => {
       window.removeEventListener('online', handleOnline);

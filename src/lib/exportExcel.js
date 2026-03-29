@@ -28,7 +28,7 @@ const formatExcelValue = (field, value) => {
         const labels = { 1: 'Gut', 2: 'Mittel', 3: 'Schlecht' };
         return labels[value] || String(value);
       }
-      return `${value}/${field.maxStars || 5}`;
+      return `${Number(value) || 0}/${field.maxStars || 5}`;
     case 'checklist':
       if (typeof value === 'object' && !Array.isArray(value)) {
         return Object.entries(value).map(([key, v]) => {

@@ -40,7 +40,7 @@ const S_LOG_DOT = (color) => ({ width: 8, height: 8, borderRadius: '50%', backgr
 export const DashboardScreen = () => {
   const { submissions, allTemplates } = useData();
   const [recentLog, setRecentLog] = useState([]);
-  useEffect(() => { getActivityLog().then(log => setRecentLog(log.slice(0, 10))); }, []);
+  useEffect(() => { getActivityLog().then(log => setRecentLog(log.slice(0, 10))).catch(() => {}); }, []);
   const stats = useMemo(() => {
     const now = new Date();
     const today = now.toISOString().split('T')[0];

@@ -163,6 +163,17 @@ app.post("/pin-verify", async (c) => {
     // PIN hashen
     const pinHash = await hashPin(parsed.data.pin);
 
+    // PIN-Kollision prüfen (Uniqueness auf Application-Ebene)
+    const matches = await db
+      .select({ id: profiles.id })
+      .from(profiles)
+      .where(eq(profiles.pinHash, pinHash))
+      .limit(2);
+
+    if (matches.length > 1) {
+      return c.json({ error: "PIN-Konflikt — bitte Administrator kontaktieren" }, 409);
+    }
+
     // Profil über pin_hash finden
     const [profile] = await db
       .select()

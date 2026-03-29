@@ -61,7 +61,7 @@ export const CustomerDetail = ({ customer, onBack }) => {
   }, [submissions, customer.submissionIds]);
 
   useEffect(() => {
-    getActivityLog({ customerId: customer.id }).then(setActivityLog);
+    getActivityLog({ customerId: customer.id }).then(setActivityLog).catch(() => {});
   }, [customer.id]);
 
   const handleSaveNotes = useCallback(async () => {

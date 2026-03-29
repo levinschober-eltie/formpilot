@@ -79,12 +79,15 @@ export const storageSet = async (key, value) => {
       }
     }
   } catch (e) {
-    console.error('Storage error:', e);
     if (e?.name === 'QuotaExceededError' || e?.code === 22) {
+      console.error('[FormPilot] localStorage quota exceeded for key:', key);
+      window.dispatchEvent(new CustomEvent('formpilot:storage-quota', { detail: { key } }));
       dialog.alert({
         title: 'Speicher voll',
         message: 'Speicher voll — Daten konnten nicht gespeichert werden. Bitte alte Einträge löschen.',
       });
+    } else {
+      console.error('[FormPilot] Storage write failed:', e);
     }
   }
   // Mirror to IndexedDB backup (fire-and-forget, non-blocking)
