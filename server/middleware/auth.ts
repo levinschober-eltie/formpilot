@@ -64,33 +64,38 @@ type Role = "admin" | "buero" | "monteur";
  * Bei fehlender/ungültiger Session -> 401.
  */
 export async function requireAuth(c: Context<AuthEnv>, next: Next): Promise<Response | void> {
-  const sessionData = await auth.api.getSession({
-    headers: c.req.raw.headers,
-  });
+  try {
+    const sessionData = await auth.api.getSession({
+      headers: c.req.raw.headers,
+    });
 
-  if (!sessionData) {
-    return c.json({ error: "Nicht authentifiziert" }, 401);
+    if (!sessionData) {
+      return c.json({ error: "Nicht authentifiziert" }, 401);
+    }
+
+    // Profil über userId laden
+    const [profile] = await db
+      .select()
+      .from(profiles)
+      .where(eq(profiles.userId, sessionData.user.id))
+      .limit(1);
+
+    if (!profile) {
+      return c.json({ error: "Kein Profil gefunden" }, 401);
+    }
+
+    if (!profile.active) {
+      return c.json({ error: "Konto deaktiviert" }, 403);
+    }
+
+    c.set("user", profile);
+    c.set("session", sessionData);
+
+    await next();
+  } catch (error) {
+    console.error("[Auth] Middleware error:", error);
+    return c.json({ error: "Authentifizierungsfehler" }, 500);
   }
-
-  // Profil über userId laden
-  const [profile] = await db
-    .select()
-    .from(profiles)
-    .where(eq(profiles.userId, sessionData.user.id))
-    .limit(1);
-
-  if (!profile) {
-    return c.json({ error: "Kein Profil gefunden" }, 401);
-  }
-
-  if (!profile.active) {
-    return c.json({ error: "Konto deaktiviert" }, 403);
-  }
-
-  c.set("user", profile);
-  c.set("session", sessionData);
-
-  await next();
 }
 
 // ─── requireRole Middleware Factory ─────────────────────────────────────────

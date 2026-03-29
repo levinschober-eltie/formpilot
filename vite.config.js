@@ -15,7 +15,7 @@ export default defineConfig(({ mode }) => {
       react(),
       // PWA only for SPA build
       ...(!isLib ? [VitePWA({
-        registerType: 'autoUpdate',
+        registerType: 'prompt',
         includeAssets: ['favicon.svg'],
         manifest: {
           name: 'FormPilot',

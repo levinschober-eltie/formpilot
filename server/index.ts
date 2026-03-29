@@ -2,6 +2,7 @@ import "dotenv/config";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
+import { secureHeaders } from "hono/secure-headers";
 import { serve } from "@hono/node-server";
 import { auth } from "./middleware/auth";
 import authRoutes from "./routes/auth";
@@ -44,6 +45,14 @@ const PORT = Number(process.env.PORT) || 3001;
 // ─── Global Middleware ──────────────────────────────────────────────────────
 
 app.use("*", logger());
+
+app.use("*", secureHeaders({
+  strictTransportSecurity: "max-age=63072000; includeSubDomains; preload",
+  contentSecurityPolicy: {
+    defaultSrc: ["'none'"],
+    frameAncestors: ["'none'"],
+  },
+}));
 
 app.use(
   "*",

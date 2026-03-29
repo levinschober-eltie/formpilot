@@ -25,6 +25,7 @@ import { OfflineIndicator } from './components/common/OfflineIndicator';
 import { InstallPrompt } from './components/common/InstallPrompt';
 import { GlobalDialog } from './components/common/GlobalDialog';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
+import { UpdateNotification } from './components/common/UpdateNotification';
 
 // ═══ Nav Items (P4: outside render) ═══
 const NAV_ITEMS = [
@@ -316,6 +317,7 @@ function FormPilotInner({ hiddenTabs = [], embeddedMode = false, onNavigateToHos
         </div>
       )}
       <InstallPrompt />
+      <UpdateNotification />
       <GlobalDialog />
     </div>
   );
